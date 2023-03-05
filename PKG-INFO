@@ -1,0 +1,33 @@
+Metadata-Version: 2.1
+Name: xython
+Version: 0
+Summary: xymon rewrite in python
+Home-page: https://github.com/xython-monitoring
+Author: Corentin Labbe
+Author-email: clabbe.montjoie@gmail.com
+License: GPL version 2
+Project-URL: Documentation, https://github.com/xython-monitoring/xython
+Project-URL: Source, https://github.com/xython-monitoring/xython
+Description: # xython
+
+        **Xython** is a rewrite in python of xymon.
+
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: System :: Monitoring
+Requires-Python: >=3.7, <4
+Description-Content-Type: text/markdown

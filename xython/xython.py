@@ -1,0 +1,1357 @@
+#!/usr/bin/env python3
+
+"""
+    xython: a xymon monitoring replacement in python
+    Copyright (C) 2023 Corentin LABBE <clabbe.montjoie@gmail.com>
+    SPDX-License-Identifier: GPL-2.0
+"""
+
+import os
+import time
+import re
+import sys
+from random import randint
+import socket
+from datetime import datetime
+import sqlite3
+import select
+from .xython_tests import ping
+from .xython_tests import dohttp
+from .xython_tests import dossh
+import celery
+from .common import xytime
+from .common import xytime_
+from .common import xyts_
+from .common import gcolor
+from .common import gif
+from .common import setcolor
+from .common import xydhm
+from .common import xydelay
+from .common import COLORS
+
+from .rules import xy_rule_disks
+from .rules import xy_rule_port
+from .rules import xy_rule_proc
+from .rules import xy_rule_mem
+from .rules import xy_rule_cpu
+
+
+class xy_host:
+    def __init__(self, name):
+        self.last_ping = 0
+        self.name = name
+        self.tests = []
+        self.hostip = ""
+        self.rules = {}
+        self.rules["DISK"] = None
+        self.rules["INODE"] = None
+        self.rules["PORT"] = []
+        self.rules["PROC"] = []
+        self.rules["MEMPHYS"] = None
+        self.rules["MEMACT"] = None
+        self.rules["MEMSWAP"] = None
+        self.rules["CPU"] = None
+
+    # def debug(self, buf):
+    #    if self.edebug:
+    #        print(buf)
+
+    def add_test(self, ttype, url, port):
+        T = None
+        for Tt in self.tests:
+            if Tt.type == ttype:
+                # self.debug("DEBUG: found test %s" % ttype)
+                T = Tt
+        if T is None:
+            # self.debug(f"DEBUG: create test  {ttype} with URL={url}")
+            T = xytest(self.name, ttype, url, port)
+            self.tests.append(T)
+        else:
+            T.add(url)
+
+
+class xytest:
+    def __init__(self, hostname, ttype, url, port):
+        self.ts = time.time()
+        self.hostname = hostname
+        self.next = time.time()
+        self.type = ttype
+        self.urls = []
+        self.urls.append(url)
+        self.port = port
+
+    def add(self, url):
+        self.urls.append(url)
+
+
+class xythonsrv:
+    def __init__(self):
+        self.xy_hosts = []
+        self.tests = []
+        self.xythonmode = 2
+        self.uclients = []
+        self.clients = []
+        self.s = None
+        self.us = None
+        self.netport = 1984
+        self.edebug = False
+        self.readonly = False
+        self.rules = {}
+        self.rules["DISK"] = None
+        self.rules["INODE"] = None
+        self.rules["PORT"] = []
+        self.rules["PROC"] = []
+        self.rules["MEMPHYS"] = None
+        self.rules["MEMACT"] = None
+        self.rules["MEMSWAP"] = None
+        self.rules["CPU"] = None
+        self.autoreg = True
+        self.celtasks = []
+        self.celerytasks = {}
+        self.celery_workers = None
+        self.ts_page = time.time()
+        self.ts_tests = time.time()
+        self.expires = []
+        self.stats = {}
+        self.uptime_start = time.time()
+        self.etcdir = '/etc/xymon/'
+        self.xt_logdir = "/var/log/xython/"
+        self.wwwdir = None
+        self.xy_data = None
+        self.xt_data = None
+        self.vars = {}
+        self.debugs = []
+
+    def stat(self, name, value):
+        if name not in self.stats:
+            self.stats[name] = {}
+            self.stats[name]["cumul"] = 0
+            self.stats[name]["count"] = 0
+            self.stats[name]["min"] = 10000000
+            self.stats[name]["max"] = 0
+        self.stats[name]["last"] = value
+        self.stats[name]["cumul"] += value
+        self.stats[name]["count"] += 1
+        if value < self.stats[name]["min"]:
+            self.stats[name]["min"] = value
+        if value > self.stats[name]["max"]:
+            self.stats[name]["max"] = value
+        if self.stats[name]["count"] % 100 != 0:
+            return
+
+        return
+        print("STAT %s count=%d moy=%f min=%f max=%f" % (
+            name,
+            self.stats[name]["count"],
+            self.stats[name]["cumul"] / self.stats[name]["count"],
+            self.stats[name]["min"],
+            self.stats[name]["max"]))
+
+    def history_update(self, hostname, cname, ts, duration, color, ocolor):
+        req = f'INSERT INTO history(hostname, column, ts, duration, color, ocolor)VALUES ("{hostname}", "{cname}", {ts}, {duration}, "{color}", "{ocolor}")'
+        res = self.sqc.execute(req)
+
+    # used only at start
+    def column_set(self, hostname, cname, color, ts, expire = 60):
+        color = gcolor(color)
+        now = time.time()
+        req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {now} + {expire}, "{color}")'
+        res = self.sqc.execute(req)
+
+    def debug(self, buf):
+        if self.debug:
+            print(buf)
+
+    def debugdev(self, facility, buf):
+        if self.debug and facility in self.debugs:
+            print(buf)
+
+    def log(self, facility, buf):
+        f = open("%s/%s.log" % (self.xt_logdir, facility), 'a')
+        f.write(f"{xytime(time.time())} {buf}\n")
+        f.close()
+
+    def error(self, buf):
+        print(buf)
+        self.log("error", buf)
+
+    # get variables from /etc/xymon
+    def xymon_getvar(self, varname):
+        if varname in self.vars:
+            return self.vars[varname]
+        f = open(f"{self.etcdir}/xymonserver.cfg", 'r')
+        for line in f:
+            line = line.rstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            sline = line.split("=")
+            if len(sline) < 1:
+                continue
+            if sline[0] == varname:
+                found = sline[1].split('"')[1]
+                #self.debug(f"getvar {varname}={found}")
+                return found
+        self.debugdev('vars', "DEBUG: did not found %s" % varname)
+        return ""
+
+    def xymon_replace(self, buf):
+        #self.debug(f"REPLACE {buf}")
+        ireplace = 0
+        while ireplace < 10:
+            self.debugdev('vars', f"REPLACE {ireplace} {buf}")
+            toreplace = re.findall(r"\$[A-Z][A-Z_]*", buf)
+            if len(toreplace) == 0:
+                return buf
+            for xvar in toreplace:
+                xvarbase = xvar.replace("$", "")
+                self.debugdev('vars', f"XVARBASE=={xvarbase} from {xvar}")
+                buf = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), buf)
+            ireplace += 1
+        return buf
+
+    # TODO template jinja ?
+    def gen_html(self, kind, hostname, column, ts):
+        now = time.time()
+        gcolor = 'green'
+        html = ""
+        # concat
+        fh = open(self.webdir + "/stdnormal_header", "r")
+        html += fh.read()
+        fh.close()
+
+        if kind == 'nongreen' or kind == 'all':
+            # dump hosts
+            html += "<center>\n"
+            html += '<A NAME=begindata>&nbsp;</A>\n'
+            html += '<A NAME="hosts-blk">&nbsp;</A>\n'
+            html += '<A NAME=hosts-blk-1>&nbsp;</A>\n'
+
+            html += '<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n'
+            html += '<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>'
+
+            # TODO handle all green column
+            if kind == 'nongreen':
+                res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green'")
+                # TODO
+                gcolor = 'red'
+            else:
+                res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
+            results = self.sqc.fetchall()
+            cols = []
+            for col in results:
+                colname = col[0]
+                cols.append(colname)
+            # for each column
+                html += '<TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n<A HREF="$XYMONSERVERCGIURL/columndoc.sh?%s"><FONT COLOR="#87a9e5" SIZE="-1"><B>%s</B></FONT></A> </TD>\n' % (colname, colname)
+            html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
+
+            if kind == 'nongreen':
+                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green")')
+            else:
+                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
+            hostlist = self.sqc.fetchall()
+            # TODO results up is not used
+            for host in hostlist:
+                H = self.find_host(host[0])
+                if H is None:
+                    continue
+                # if kind == 'nongreen':
+                res = self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
+                #else:
+                #    res = self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
+                results = self.sqc.fetchall()
+                hcols = {}
+                hts = {}
+                for col in results:
+                    hcols[col[0]] = col[2]
+                    hts[col[0]] = col[1]
+                html += '<TR class=line>\n'
+                html += '<TD NOWRAP ALIGN=LEFT><A NAME="%s">&nbsp;</A>\n' % H.name
+                html += '<A HREF="/xymon/xymon.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">%s</FONT></A>' % H.name
+                for Cname in cols:
+                    if Cname not in hcols:
+                        html += '<TD ALIGN=CENTER>-</TD>\n'
+                    else:
+                        html += '<TD ALIGN=CENTER>'
+                        lcolor = hcols[Cname]
+                        lts = hts[Cname]
+                        dhm = xydhm(lts, now)
+                        if self.xythonmode > 0:
+                            html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts), Cname, lcolor, Cname, lcolor)
+                        else:
+                            html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts), Cname, lcolor, Cname, lcolor)
+                html += '</TR>\n'
+
+            html += '</TABLE></CENTER><BR>'
+
+        history_extra = ""
+        if kind == 'svcstatus':
+            rdata = self.get_histlogs(hostname, column, ts)
+            if rdata is None:
+                html = "HIST not found"
+                return html
+            gcolor = rdata["first"]
+            html += '<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY="Detail Status">'
+            # TODO replace with first line of status (without color)
+            html += '<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"]
+            html += '<PRE>'
+            data = ''.join(rdata["data"])
+            data.replace("\n", '<br>')
+            data = re.sub("\n", '<br>', data)
+            for gifc in COLORS:
+                data = re.sub("&%s" % gifc, '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % gifc, data)
+            html += data
+            html += '</PRE>\n</TD></TR></TABLE>'
+            html += '<br><br>\n'
+            html += '<table align="center" border=0 summary="Status report info">'
+            html += f'<tr><td align="center"><font COLOR="#87a9e5" SIZE="-1">Status unchanged in {xydhm(ts, now)}<br>'
+            html += 'Status %s<br>' % rdata["sender"]
+            if self.xythonmode > 0:
+                html += '<a href="$XYMONSERVERCGIURL/xythoncgi.py?CLIENT={hostname}">Client data</a> available<br>'
+            else:
+                html += '<a href="$XYMONSERVERCGIURL/svcstatus.sh?CLIENT={hostname}">Client data</a> available<br>'
+            html += '</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n'
+            history_extra = f'AND hostname="{hostname}" AND column="{column}"'
+
+        # history
+        res = self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
+        results = self.sqc.fetchall()
+        hcount = len(results)
+        if hcount > 0:
+            lastevent = results[hcount - 1]
+            minutes = (now - lastevent[2]) // 60 + 1
+        else:
+            minutes = 0
+        html += '<center>'
+        html += '<TABLE SUMMARY="$EVENTSTITLE" BORDER=0>\n<TR BGCOLOR="#333333">'
+        # TODO minutes
+        html += f'<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR="#33ebf4">{hcount}&nbsp;events&nbsp;received&nbsp;in&nbsp;the&nbsp;past&nbsp;{minutes}&nbsp;minutes</FONT></TD></TR>\n'
+        for change in results:
+            hhostname = change[0]
+            hcol = change[1]
+            hts = change[2]
+            hduration = change[3]
+            hcolor = change[4]
+            hocolor = change[5]
+            html += '<TR BGCOLOR=#000000>'
+            html += '<TD ALIGN=CENTER>%s</TD>' % xytime(hts)
+            html += '<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>' % (hcolor, hhostname)
+            html += '<TD ALIGN=LEFT>%s</TD>' % hcol
+            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts - hduration)}">'
+            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hocolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hocolor}" TITLE="{hocolor}"></A>'
+            html += '<IMG SRC="$XYMONSERVERWWWURL/gifs/arrow.gif" BORDER=0 ALT="From -&gt; To">'
+            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts)}">'
+            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hcolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hcolor}" TITLE="{hcolor}"></A>'
+            html += '</TR>'
+        html += '</center>'
+
+        fh = open(self.webdir + "/stdnormal_footer", "r")
+        html += fh.read()
+        fh.close()
+
+        fh = open(self.etcdir + "xymonmenu.cfg")
+        body_header = fh.read()
+        fh.close()
+        html = re.sub("&XYMONBODYHEADER", body_header, html)
+        html = re.sub("&XYMONBODYFOOTER", "", html)
+        html = re.sub("&XYMONDREL", "xython 0", html)
+        html = re.sub("&XYMWEBREFRESH", "60", html)
+        html = re.sub("&XYMWEBBACKGROUND", gcolor, html)
+        html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
+        html = re.sub("&HTMLCONTENTTYPE", self.xymon_getvar("HTMLCONTENTTYPE"), html)
+        # find remaining variables
+        ireplace = 0
+        while ireplace < 20:
+            toreplace = re.findall(r"\&XY[A-Z][A-Z]*", html)
+            for xvar in toreplace:
+                xvarbase = xvar.replace("&", "")
+                html = re.sub(xvar, self.xymon_getvar(xvarbase), html)
+            toreplace = re.findall(r"\$XY[A-Z][A-Z]*", html)
+            for xvar in toreplace:
+                xvarbase = xvar.replace("$", "")
+                html = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), html)
+            ireplace += 1
+
+        if kind == 'nongreen':
+            fhtml = open(self.wwwdir + '/nongreen.html', 'w')
+            fhtml.write(html)
+            fhtml.close()
+            return
+        if kind == 'all':
+            fhtml = open(self.wwwdir + '/xython.html', 'w')
+            fhtml.write(html)
+            fhtml.close()
+            return
+        return html
+
+    def dump(self, hostname):
+        print("======= DUMP HOST %s" % hostname)
+        H = self.find_host(hostname)
+        if H is None:
+            return
+        req = f'SELECT * FROM columns WHERE hostname == "{hostname}"'
+        res = self.sqc.execute(req)
+        results = self.sqc.fetchall()
+        for sqr in results:
+            print(f'{sqr[1]} {sqr[4]} TS={sqr[2]}')
+        for T in H.tests:
+            for url in T.urls:
+                print("\tTEST: %s %s" % (T.type, url))
+        print(H.rules)
+
+    def read_hosts(self):
+        self.debug("DEBUG: read_hosts")
+        try:
+            fhosts = open(self.etcdir + "hosts.cfg", 'r')
+        except:
+            self.error("ERROR: cannot open hosts.cfg")
+            return False
+        for line in fhosts:
+            line = line.rstrip()
+            line = re.sub(r"\s+", " ", line)
+            if len(line) == 0:
+                continue
+            sline = line.split(" ")
+            if line[0] == '#':
+                continue
+            if len(sline) < 2:
+                continue
+            i = 0
+            host_ip = sline[i]
+            i += 1
+            while sline[i] == ' ':
+                i += 1
+            host_name = sline[i]
+            i += 1
+            self.debug("DEBUG: %s %s" % (host_ip, host_name))
+            H = xy_host(host_name)
+            H.hostip = host_ip
+            while i < len(sline):
+                test = sline[i]
+                if len(test) == 0:
+                    continue
+                if test[0] == '#':
+                    test = test[1:]
+                if test[0:4] == 'conn':
+                    H.add_test("conn", test, None)
+                elif test[0:3] == 'ssh':
+                    #self.debug(f"\tDEBUG: ssh tests {test}")
+                    port = 22
+                    remain = test[3:]
+                    if len(remain) > 0:
+                        self.debug(f"REMAIN: {remain}")
+                        if remain[0] != ':':
+                            self.error(f"Config error, missing : at {sline}")
+                            return False
+                        words = remain.split(":")
+                        port = int(words[1])
+                    H.add_test("ssh", test, port)
+                elif test[0:4] == 'http':
+                    self.debug("\tDEBUG: HTTP tests %s" % test)
+                    H.add_test("http", test, None)
+                else:
+                    self.log("todo", f"TODO hosts: {test}")
+                    self.debug("\tDEBUG: test=%s" % test)
+                i += 1
+            self.xy_hosts.append(H)
+        return True
+
+    def find_host(self, hostname):
+        for H in self.xy_hosts:
+            if H.name == hostname:
+                return H
+        return None
+
+    def save_hostdata(self, hostname, buf, ts):
+        if self.readonly:
+            return
+        hdir = "%s/%s" % (self.xt_hostdata, hostname)
+        if not os.path.exists(hdir):
+            os.mkdir(hdir)
+        hfile = "%s/%d" % (hdir, ts)
+        f = open(hfile, 'w')
+        f.write(buf)
+        f.close()
+
+    # initial status conn 1675773637 1675773637 0 gr - -1
+    # tatus conn 1675796496 1675773637 22859 re gr 2
+    # later status conn 1675845763 1675796496 49267 gr re 1
+    def save_hist(self, hostname, column, color, ocolor, ts, ots, duration):
+        if self.readonly:
+            return
+        histfile = "%s/%s" % (self.xt_histdir, hostname)
+        f = open(histfile, "a+")
+        f.write("%s %d %d %d %s %s %d\n" % (column, ts, ots, duration, color[0:2], ocolor[0:2], 1))
+        f.close()
+
+    def column_update(self, hostname, cname, color, ts, data, expire, updater):
+        color = gcolor(color)
+        ts_start = time.time()
+        H = self.find_host(hostname)
+        if not H:
+            #self.debug("DEBUG: %s not exists" % hostname)
+            # TODO autoregister
+            H = xy_host(hostname)
+            H.hostip = hostname
+            self.xy_hosts.append(H)
+        ocolor = "-"
+        ots = ts
+        res = self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
+        results = self.sqc.fetchall()
+        if len(results) > 1:
+            self.error("ERROR: this is impossible")
+            return
+        if len(results) == 0:
+            if color == 'purple':
+                self.error("ERROR: creating a purple column")
+                return
+            #self.debug("DEBUG: create column %s on %s" % (cname, hostname))
+        else:
+            result = results[0]
+            ocolor = result[4]
+            ots = result[2]
+        if color == 'purple':
+            if ocolor == 'purple':
+                self.error("ERROR: cannot go from purple to purple")
+                return
+        #self.debug("%s %s color=%s ocolor=%s ts=%s ots=%s" % (hostname, cname, ocolor, color, ts, ots))
+        if color == ocolor:
+            ts = ots
+        else:
+            duration = ts - ots
+            self.save_hist(hostname, cname, color, ocolor, ts, ots, duration)
+            self.history_update(hostname, cname, ts, duration, color, ocolor)
+
+        #req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
+        now = time.time()
+        res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES (?, ?, ?, ?, ?)', (hostname, cname, ts, time.time() + expire, color))
+        #self.sqconn.commit()
+        if color == 'purple':
+            #duplicate
+            rdata = self.get_histlogs(hostname, cname, ots)
+            if rdata is None:
+                return
+            data = ''.join(rdata["data"])
+            fdata = rdata["first"] + '\n' + data + '\n' + rdata["clientid"] + '\n' + rdata["sender"] + '\n' + rdata["changed"]
+            self.save_histlogs(hostname, cname, data, ts, "purple", "xython")
+            return
+        self.save_histlogs(hostname, cname, data, ts, color, updater)
+        ts_end = time.time()
+        self.stat("COLUPDATE", ts_end - ts_start)
+
+    def get_histlogs(self, hostname, column, ts):
+        try:
+            if self.xythonmode == 0 or (self.xythonmode == 1 and int(self.uptime_start) > int(ts)):
+                fhist = f"{self.histlogs}/{hostname}/{column}/{xytime_(int(ts))}"
+            else:
+                fhist = f"{self.xt_histlogs}/{hostname}/{column}/{int(ts)}"
+            f = open(fhist, 'r')
+        except:
+            self.error(f"ERROR: Fail to open {fhist} {ts}")
+            return None
+        try:
+            data = f.readlines()
+        except:
+            self.error(f"ERROR: Fail to read {fhist} {ts}")
+            return None
+        f.close()
+        if len(data) < 4:
+            self.error("ERROR: get_histlogs: histlog is too small")
+            return None
+        ret = {}
+        ret["first"] = data.pop(0)
+        ret["clientid"] = data.pop(-1)
+        ret["sender"] = data.pop(-1)
+        ret["changed"] = data.pop(-1)
+        ret["data"] = data
+        return ret
+
+    def save_histlogs(self, hostname, column, buf, ts, color, updater):
+        if self.readonly:
+            return
+        # TODO add header/footer
+        # self.debug("DEBUG: save_histlogs %s %s" % (hostname, column))
+        hdir = "%s/%s" % (self.xt_histlogs, hostname)
+        if not os.path.exists(hdir):
+            os.mkdir(hdir)
+        hdir = "%s/%s/%s" % (self.xt_histlogs, hostname, column)
+        if not os.path.exists(hdir):
+            os.mkdir(hdir)
+        hfile = "%s/%d" % (hdir, ts)
+        f = open(hfile, 'w')
+        f.write("%s " % color)
+        f.write(buf)
+        # TODO calcul
+        f.write("status unchanged in 0.00 minutes\n")
+        # TODO get IP
+        f.write(f"Message received from {updater}\n")
+        # TODO what is the purpose of this ?
+        f.write(f"Client data ID {int(ts)}\n")
+        f.close()
+
+    # read hist of a host, creating columns
+    # this permit to detect current blue
+    # a dropped column is detecte by checking existence of host.col files BUT on my system some
+    # column has host.col and are still detected as droped by xymon, how it achieves this ?
+    # we could speed up reading by only checking last line of host.col BUT I want to validate
+    # that I perfectly understood format of all file
+    def read_hist(self, name):
+        self.debug(f"DEBUG: read_hist {name}")
+        H = self.find_host(name)
+        if H is None:
+            self.error(f"ERROR: read_hist: {name} not found")
+            return False
+        histdir = self.histdir
+        if self.xythonmode > 0:
+            histdir = self.xt_histdir
+        histbase = f"{histdir}/{name}"
+        try:
+            fhost = open(histbase)
+        except FileNotFoundError:
+            self.debug(f"DEBUG: {histbase} does not exists")
+            return True
+        # find current columns
+        hostcols = {}
+        dirFiles = os.listdir(histdir)
+        for hostcol in dirFiles:
+            # TODO does column has a character restrictions ?
+            if not re.match(r'%s\.[a-z0-9_-]+' % name, hostcol):
+                continue
+            # The value is "do we have saw it ?"
+            column = re.sub(f'{name}.', '', hostcol)
+            hostcols[column] = False
+
+        for line in fhost:
+            line = line.rstrip()
+            sline = line.split(" ")
+            if len(sline) != 7:
+                self.error("ERROR: read_hist: wrong len")
+                return False
+            column = sline[0]
+            if column not in hostcols:
+                #self.debug(f"DEBUG: ignore dropped {name} {column}")
+                continue
+            hostcols[column] = True
+            # validate column name
+            if not re.match(r"[a-z]", column):
+                self.error("ERROR: column name %s is not good in %s" % (sline, self.histdir + name))
+                return False
+            tsb = int(sline[1])
+            tsa = int(sline[2])
+            duration = int(sline[3])
+            if tsa + duration != tsb:
+                self.error(f"ERROR: TS/duration in histlog invalid {sline} TSA+DUR={tsa + duration}")
+            st_new = sline[4]
+            st_old = sline[5]
+            # check color, if blue read histlogs
+            if st_new == 'blue' or st_new == 'bl':
+                self.debug(f"DEBUG: BLUE CASE {sline}")
+                print(xytime(int(tsa)))
+                bbuf = self.get_histlogs(H.name, column, tsa)
+                print(xytime(int(tsb)))
+                bbuf = self.get_histlogs(H.name, column, tsb)
+                #print(bbuf)
+            self.debugdev("hist", "DEBUG: %s goes from %s to %s" % (column, st_old, st_new))
+            if self.readonly:
+                self.column_update(H.name, column, st_new, int(tsb), None, 3 * 60, "xython")
+            else:
+                self.column_set(H.name, column, st_new, tsb)
+        for column in hostcols:
+            if not hostcols[column]:
+                self.error(f"ERROR: remains of {name} {column}")
+        return True
+
+    def check_purples(self):
+        ts_start = time.time()
+        now = time.time()
+        req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple"'
+        res = self.sqc.execute(req)
+        results = self.sqc.fetchall()
+        for col in results:
+            expire = col[3]
+            pdate = xytime(col[2])
+            pedate = xytime(expire)
+            pnow = xytime(now)
+            self.debug("DEBUG: purplelize %s %s %d<%d %s %s < %s" % (col[0], col[1], col[3], now, pdate, pedate, pnow))
+            self.column_update(col[0], col[1], "purple", time.time(), None, 0, "xythond")
+        ts_end = time.time()
+        self.stat("PURPLE", ts_end - ts_start)
+        return
+
+    # gen all tests to be scheduled
+    def gen_tests(self):
+        now = time.time()
+        self.debug("DEBUG: GEN TESTS")
+        for H in self.xy_hosts:
+            for T in H.tests:
+                self.debug("DEBUG: %s %s\n" % (H.name, T.type))
+                # self.debug(T.urls)
+                tnext = now + randint(1, 30)
+                res = self.sqc.execute(f'INSERT OR REPLACE INTO tests(hostname, column, next) VALUES ("{H.name}", "{T.type}", {tnext})')
+
+    def dump_tests(self):
+        for T in self.tests:
+            print("%s %d" % (T.name, int(T.ts)))
+
+    def dohttp(self, T):
+        name = f"{T.hostname}_http"
+        ctask = dohttp.delay(T.hostname, T.urls)
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+
+    def doping(self, T):
+        H = self.find_host(T.hostname)
+        hostip = H.hostip
+        name = f"{T.hostname}_conn"
+        self.debug(f"DEBUG: doping for {name}")
+        if name in self.celerytasks:
+            self.error(f"ERROR: lagging test for {name}")
+            return False
+        ctask = ping.delay(T.hostname, H.hostip)
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+        return True
+
+    def do_ssh(self, T):
+        name = f"{T.hostname}_ssh"
+        ctask = dossh.delay(T.hostname, T.port)
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+
+    def do_tests(self):
+        self.celery_workers = celery.current_app.control.inspect().ping()
+        if self.celery_workers is None:
+            self.error("ERROR: no celery workers")
+            return
+        ts_start = time.time()
+        now = time.time()
+        res = self.sqc.execute(f'SELECT * FROM tests WHERE next < {now}')
+        results = self.sqc.fetchall()
+        self.log("tests", f"DEBUG: DO TESTS {len(results)}")
+        if len(results) == 0:
+            return
+        lag = 0
+        for test in results:
+            hostname = test[0]
+            ttype = test[1]
+            H = self.find_host(hostname)
+            for T in H.tests:
+                if T.type == ttype:
+                    if T.type == 'conn':
+                        if not self.doping(T):
+                            lag += 1
+                    if T.type == 'http':
+                        self.dohttp(T)
+                    if T.type == 'ssh':
+                        self.do_ssh(T)
+        res = self.sqc.execute(f'UPDATE tests SET next = {now} + 120 WHERE next < {now}')
+        ts_end = time.time()
+        self.stat("tests", ts_end - ts_start)
+        self.stat("tests-lag", lag)
+        # RIP celery tasks
+        now = time.time()
+        for ctask in self.celtasks:
+            if ctask.ready():
+                ret = ctask.get()
+                self.debug(f'DEBUG: result for {ret["hostname"]} {ret["type"]}')
+                self.column_update(ret["hostname"], ret["type"], ret["color"], time.time(), ret["txt"], 180, "xython-tests")
+                self.celtasks.remove(ctask)
+                name = f'{ret["hostname"]}_{ret["type"]}'
+                if name not in self.celerytasks:
+                    self.error(f"ERROR: BUG {name} not found")
+                else:
+                    del(self.celerytasks[name])
+        ts_end = time.time()
+        self.stat("tests-rip", ts_end - ts_start)
+        self.stat("tests-remains", len(self.celtasks))
+        return
+
+    # TODO hardcoded hostname
+    def do_xythond(self):
+        now = time.time()
+        buf = f"{xytime(now)} - xythond\n"
+        for stat in self.stats:
+            color = '&clear'
+            moy = round(self.stats[stat]["cumul"] / self.stats[stat]["count"],4)
+            smin = round(self.stats[stat]["min"],4)
+            smax = round(self.stats[stat]["max"],4)
+            cur = round(self.stats[stat]["last"],4)
+            if stat == 'tests-lag' and cur > 0:
+                color = '&yellow'
+            buf += f'{color} {stat:13} CURRENT={cur:10} COUNT={self.stats[stat]["count"]:10} MOY={moy:8} MIN={smin:8} MAX={smax:8}\n'
+        uptime = now - self.uptime_start
+        uptimem = int(uptime/60)
+        if uptimem < 1:
+            uptimem = 1
+        buf += f"Up since {xytime(self.uptime_start)} ({xydhm(self.uptime_start, now)})\n"
+        if "COLUPDATE" in self.stats:
+            if "count" in self.stats["COLUPDATE"]:
+                buf += f'UPDATE/m: {int(self.stats["COLUPDATE"]["count"]/uptimem)}\n'
+        #for worker in self.celery_workers:
+        #    print(worker)
+        res = self.sqc.execute(f'SELECT count(hostname) FROM columns')
+        results = self.sqc.fetchall()
+        buf += f"Hosts: {results[0][0]}\n"
+        res = self.sqc.execute(f'SELECT count(next) FROM tests')
+        results = self.sqc.fetchall()
+        buf += f"Active tests: {results[0][0]}\n"
+        self.column_update(socket.gethostname(), "xythond", "green", time.time(), buf, 1600, "xythond")
+
+    def scheduler(self):
+        #self.debug("====================")
+        now = time.time()
+        if now > self.ts_tests + 5:
+            self.do_tests()
+            self.ts_tests = now
+        self.check_purples()
+        if now > self.ts_page + 30:
+            xythond_start = time.time()
+            self.do_xythond()
+            self.stat("xythond", time.time() - xythond_start)
+
+            ts_start = time.time()
+            self.gen_html("nongreen", None, None, None)
+            self.gen_html("all", None, None, None)
+            ts_end = time.time()
+            self.stat("HTML", ts_end - ts_start)
+            self.ts_page = now
+        self.stat("SCHEDULER", time.time() - now)
+
+    def read_analysis(self, hostname):
+        f = open(f"{self.etcdir}/analysis.cfg", 'r')
+        currhost = None
+        self.rules = {}
+        self.rules["DISK"] = xy_rule_disks()
+        self.rules["INODE"] = xy_rule_disks()
+        self.rules["PORT"] = []
+        self.rules["PROC"] = []
+        self.rules["MEMPHYS"] = None
+        self.rules["MEMACT"] = None
+        self.rules["MEMSWAP"] = None
+        self.rules["CPU"] = None
+        for line in f:
+            line = line.rstrip()
+            line = re.sub(r"\s+", " ", line)
+            line = re.sub(r"^\s+", "", line)
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            if line[0:4] == 'HOST':
+                currhost = line[5:]
+                continue
+            if line[0:7] == 'DEFAULT':
+                currhost = "DEFAULT"
+                continue
+            memoryrule = None
+            if line[0:7] == 'MEMSWAP':
+                memoryrule = 'MEMSWAP'
+                remain = line[8:]
+            if line[0:6] == 'MEMACT':
+                memoryrule = 'MEMACT'
+                remain = line[7:]
+            if line[0:7] == 'MEMPHYS':
+                memoryrule = 'MEMPHYS'
+                remain = line[8:]
+            if memoryrule is not None:
+                rm = xy_rule_mem()
+                rm.init_from(remain)
+                if currhost == 'DEFAULT':
+                    self.rules[memoryrule] = rm
+                else:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    H.rules[memoryrule] = rm
+            elif line[0:4] == 'LOAD' or line[0:2] == 'UP':
+                if self.rules["CPU"] is None:
+                    rc = xy_rule_cpu()
+                else:
+                    rc = self.rules["CPU"]
+                if currhost == 'DEFAULT':
+                    rc.init_from(line)
+                    self.rules["CPU"] = rc
+                if currhost == hostname:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    if H.rules["CPU"] is None:
+                        rc = xy_rule_cpu()
+                    else:
+                        rc = H.rules["CPU"]
+                    rc.init_from(line)
+                    H.rules["CPU"] = rc
+            elif line[0:4] == 'PORT':
+                rp = xy_rule_port()
+                rp.init_from(line[5:])
+                if currhost == 'DEFAULT':
+                    self.rules["PORT"].append(rp)
+                if currhost == hostname:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    H.rules["PORT"].append(rp)
+            elif line[0:4] == 'PROC':
+                rp = xy_rule_proc()
+                rp.init_from(line[5:])
+                if currhost == 'DEFAULT':
+                    self.rules["PROC"].append(rp)
+                if currhost == hostname:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    H.rules["PROC"].append(rp)
+            elif line[0:4] == 'DISK':
+                if currhost == 'DEFAULT':
+                    rxd = self.rules["DISK"]
+                    rxd.add(line[5:])
+                if currhost == hostname:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    if H.rules["DISK"] is None:
+                        H.rules["DISK"] = xy_rule_disks()
+                    rxd = H.rules["DISK"]
+                    rxd.add(line[5:])
+            elif line[0:5] == 'INODE':
+                if currhost == 'DEFAULT':
+                    rxd = self.rules["INODE"]
+                    rxd.add(line[6:])
+                if currhost == hostname:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    if H.rules["INODE"] is None:
+                        H.rules["INODE"] = xy_rule_disks()
+                    rxd = H.rules["INODE"]
+                    rxd.add(line[6:])
+            else:
+                self.log("todo", line)
+        # add default rules for DISK/INODE
+        self.rules["DISK"].add('%.* 90 95')
+        self.rules["INODE"].add('%.* 70 90')
+        if self.rules["CPU"] is None:
+            self.rules["CPU"] = xy_rule_cpu()
+        if self.rules["MEMPHYS"] is None:
+            self.rules["MEMPHYS"] = xy_rule_mem()
+            self.rules["MEMPHYS"].init_from("100 101")
+        if self.rules["MEMACT"] is None:
+            self.rules["MEMACT"] = xy_rule_mem()
+            self.rules["MEMACT"].init_from("90 97")
+        if self.rules["MEMSWAP"] is None:
+            self.rules["MEMSWAP"] = xy_rule_mem()
+            self.rules["MEMSWAP"].init_from("50 80")
+
+    def parse_free(self, hostname, buf, sender):
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_free: host is None")
+            return False
+        now = time.time()
+        # TODO handle other OS case
+        color = 'green'
+        sbuf = f"{xytime(now)} - Memory OK\n"
+        sbuf += "          Memory        Used       Total      Percentage\n"
+
+        for memtype in ["MEMPHYS", "MEMACT", "MEMSWAP"]:
+            if H.rules[memtype] is not None:
+                ret = H.rules[memtype].memcheck(buf, memtype)
+            elif self.rules[memtype] is not None:
+                ret = self.rules[memtype].memcheck(buf, memtype)
+            sbuf += ret["txt"]
+            color = setcolor(ret["color"], color)
+
+        sbuf += buf
+        self.column_update(hostname, "memory", color, time.time(), sbuf, 4 * 60, sender)
+        self.stat("PARSEFREE", time.time() - now)
+        return True
+
+    # TODO Machine has been up more than 0 days
+    def parse_uptime(self, hostname, buf, sender):
+        now = time.time()
+        color = 'green'
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_uptime: host is None")
+            return
+        udisplay = re.sub(r"^.*up ", "up", buf)
+        sbuf = f"{xytime(now)} {udisplay}\n"
+        gret = self.rules["CPU"].cpucheck(buf)
+        if H.rules["CPU"] is not None:
+            ret = H.rules["CPU"].cpucheck(buf)
+        if H.rules["CPU"] is not None and H.rules["CPU"].loadset:
+            color = setcolor(ret["LOAD"]["color"], color)
+            sbuf += ret["LOAD"]["txt"]
+        else:
+            color = setcolor(gret["LOAD"]["color"], color)
+            sbuf += gret["LOAD"]["txt"]
+        if H.rules["CPU"] is not None and H.rules["CPU"].upset:
+            color = setcolor(ret["UP"]["color"], color)
+            sbuf += ret["UP"]["txt"]
+        else:
+            color = setcolor(gret["UP"]["color"], color)
+            sbuf += gret["UP"]["txt"]
+        sbuf += buf
+        self.column_update(hostname, "cpu", color, time.time(), sbuf, 4 * 60, sender)
+
+    def parse_ps(self, hostname, buf, sender):
+        now = time.time()
+        color = 'green'
+        sbuf = f"{xytime(now)} - procs Ok\n"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_ports: host is None")
+            return
+        sline = buf.split("\n")
+        for procrule in self.rules["PROC"]:
+            ret = procrule.check(sline)
+            sbuf += ret["txt"] + '\n'
+            if color == 'green':
+                color = ret["color"]
+        for procrule in H.rules["PROC"]:
+            ret = procrule.check(sline)
+            sbuf += ret["txt"] + '\n'
+            if color == 'green':
+                color = ret["color"]
+        sbuf += buf
+        ts_end = time.time()
+        self.stat("parseps", ts_end - now)
+        self.column_update(hostname, "procs", color, time.time(), sbuf, 4 * 60, sender)
+
+    #TODO
+    def parse_ports(self, hostname, buf, sender):
+        now = time.time()
+        color = 'clear'
+        sbuf = f"{xytime(now)} - ports Ok\n"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_ports: host is None")
+            return
+        sline = buf.split("\n")
+        for port in self.rules["PORT"]:
+            ret = port.check(sline)
+            sbuf += ret["txt"] + '\n'
+            color = setcolor(ret["color"], color)
+        for port in H.rules["PORT"]:
+            ret = port.check(sline)
+            sbuf += ret["txt"] + '\n'
+            color = setcolor(ret["color"], color)
+        sbuf += buf
+        self.column_update(hostname, "ports", color, time.time(), sbuf, 4 * 60, sender)
+
+    def parse_df(self, hostname, buf, inode, sender):
+        now = time.time()
+        if inode:
+            column = 'inode'
+            S = "INODE"
+        else:
+            column = 'disk'
+            S = "DISK"
+        color = 'green'
+        sbuf = f"{xytime(now)} - disk Ok\n"
+
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_ports: host is None")
+            return
+        sline = buf.split("\n")
+        for line in sline:
+            if len(line) == 0:
+                continue
+            if line[0] != '/':
+                continue
+            if H.rules[S] is not None:
+                ret = H.rules[S].check(line)
+            else:
+                ret = None
+            if ret is not None:
+                sbuf += ret["txt"] + '\n'
+                color = ret["color"]
+            else:
+                ret = self.rules[S].check(line)
+                if ret is not None:
+                    sbuf += ret["txt"] + '\n'
+                    color = ret["color"]
+        sbuf += buf
+        self.column_update(hostname, column, color, time.time(), sbuf, 4 * 60, sender)
+        return
+
+    def parse_status(self, msg):
+        self.debug(f"DEBUG: parse_status from {msg['addr']}")
+        hdata = msg["buf"]
+        column = None
+        # only first line is important
+        sline = hdata.split("\n")
+        line = sline[0]
+        sline = line.split(" ")
+        hostcol = sline[1]
+        color = sline[2]
+        hc = hostcol.split(".")
+        if len(hc) < 2:
+            return False
+        column = hc[-1]
+        del(hc[-1])
+        hostname = ".".join(hc)
+        if color not in COLORS:
+            self.error("ERROR: invalid color")
+            return False
+        expire = 30 * 60
+        wstatus = sline[0].replace("status", "")
+        if len(wstatus) > 0:
+            # either group and/or +x
+            if wstatus[0] == '+':
+                delay = wstatus[1:]
+                expire = xydelay(wstatus)
+        self.debug("HOST.COL=%s %s %s color=%s expire=%d" % (sline[1], hostname, column, color, expire))
+
+        if column is not None:
+            self.column_update(hostname, column, color, time.time(), hdata, expire, msg["addr"])
+        return False
+
+    def parse_hostdata(self, msg):
+        hdata = msg["buf"]
+        hostname = None
+        section = None
+        buf = ""
+        # non hostdata begin with status
+        # hostdata begin with an empty line ?
+        firstchars = hdata[0:6]
+        #self.debug(firstchars)
+        if firstchars == 'status':
+            self.parse_status(msg)
+            return
+        #self.debug("THIS IS HISTDATA")
+        for line in hdata.split("\n"):
+            line = line.rstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '[' and line[len(line) - 1] == ']':
+                if section is not None:
+                    if section == '[collector:]':
+                        for cline in buf.split("\n"):
+                            if len(cline) == 0:
+                                continue
+                            if cline[0:6] == 'client':
+                                scline = cline.split(" ")
+                                cname = scline[1]
+                                if cname.endswith(".linux"):
+                                    hostname = cname.replace(".linux", "")
+                        if hostname is None:
+                            self.error("ERROR: no hostname in collector")
+                            return
+                    if section == '[free]':
+                        self.parse_free(hostname, buf, msg["addr"])
+                    if section == '[uptime]':
+                        self.parse_uptime(hostname, buf, msg["addr"])
+                    if section == '[df]':
+                        self.parse_df(hostname, buf, False, msg["addr"])
+                    if section == '[inode]':
+                        self.parse_df(hostname, buf, True, msg["addr"])
+                    if section == '[ports]':
+                        self.parse_ports(hostname, buf, msg["addr"])
+                    if section == '[ps]':
+                        self.parse_ps(hostname, buf, msg["addr"])
+                section = line
+                buf = ""
+                continue
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]']:
+                buf += line
+                buf += '\n'
+        if hostname is not None:
+            self.save_hostdata(hostname, hdata, time.time())
+        else:
+            self.error("ERROR: invalid client data without hostname")
+
+    def unet_start(self):
+        if os.path.exists(self.unixsock):
+            os.unlink(self.unixsock)
+        self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.us.bind(self.unixsock)
+        os.chmod(self.unixsock, 666)
+        self.us.listen(10)
+        self.us.setblocking(0)
+        self.uclients = []
+        self.debug("DEBUG: create unix socket")
+
+    def unet_loop(self):
+        try:
+            c, addr = self.us.accept()
+            self.uclients.append(c)
+            c.setblocking(0)
+        except socket.error:
+            #self.debug("DEBUG: nobody")
+            pass
+        for C in self.uclients:
+            try:
+                rbuf = C.recv(64000)
+                if not rbuf:
+                    self.uclients.remove(C)
+                    continue
+            except socket.error:
+                #self.debug("DEBUG: nothing to recv")
+                continue
+            buf = rbuf.decode("UTF8")
+            sbuf = buf.split(" ")
+            cmd = sbuf[0]
+            if cmd == 'GETSTATUS':
+                hostname = sbuf[1]
+                service = sbuf[2].rstrip()
+                if len(sbuf) > 3:
+                    ts = xyts_(sbuf[3], None)
+                else:
+                    res = self.sqc.execute('SELECT ts FROM columns WHERE hostname == ? AND column == ?', (hostname, service))
+                    results = self.sqc.fetchall()
+                    if len(results) != 1:
+                        C.send(b"ERROR: no service\n")
+                        C.close()
+                        continue
+                    ts = results[0][0]
+                data = self.gen_html("svcstatus", hostname, service, ts)
+                try:
+                    C.send(data.encode("UTF8"))
+                except BrokenPipeError as error:
+                    self.error("Client get away")
+                    pass
+            C.close()
+
+    def set_netport(self, port):
+        if port < 0 or port > 65535:
+            return False
+        self.netport = port
+        return True
+
+    def net_start(self):
+        self.s = socket.socket()
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.log('network', f"DEBUG: listen on {self.netport}")
+        self.s.bind(("0.0.0.0", self.netport))
+        self.s.setblocking(0)
+        self.clients = []
+        self.s.listen(1000)
+
+    def net_loop(self):
+        now = time.time()
+        try:
+            c, addr = self.s.accept()
+            c.setblocking(0)
+            self.log('network', 'DEBUG: Got connection from %s' % str(addr))
+            C = {}
+            C["s"] = c
+            C["t"] = now
+            C["buf"] = ""
+            # we need only IP
+            C["addr"] = addr[0]
+            self.clients.append(C)
+        except socket.error:
+            # self.debug("DEBUG: nobody")
+            pass
+        # readlist = []
+        # for C in self.clients:
+        #    readlist.append(C["s"])
+        # rread, rwrite, rerror = select.select(readlist, [], readlist, 1)
+        # print(rread)
+        # print(rerror)
+        for C in self.clients:
+            client = C["s"]
+            try:
+                buf = client.recv(64000)
+            except socket.error as e:
+                if C["t"] + 30 < now:
+                    self.debug(f'TIMEOUT client len={len(C["buf"])} addr=${C["addr"]}')
+                    client.close()
+                    self.parse_hostdata(C)
+                    self.clients.remove(C)
+                # else:
+                #    self.debug("DEBUG: nothing to recv")
+                # print(self.clients)
+                # print(e)
+                # return True
+                continue
+            if not buf:
+                # self.debug("DEBUG: client disconnected")
+                client.close()
+                self.parse_hostdata(C)
+                self.clients.remove(C)
+            else:
+                # self.debug(f"DEBUG: got data len={len(buf)}")
+                C["buf"] += buf.decode("UTF8")
+        return True
+
+    def set_xymonvar(self, p):
+        self.xy_data = p
+        self.vars["XYMONVAR"] = p
+
+    def init(self):
+        ts_start = time.time()
+        if self.xy_data is None:
+            self.xy_data = self.xymon_replace("$XYMONVAR")
+        self.histdir = self.xymon_replace("$XYMONHISTDIR/")
+        self.xy_hostdata = self.xy_data + 'hostdata/'
+        self.histlogs = self.xymon_replace("$XYMONHISTLOGS")
+        self.serverdir = self.xymon_replace("$XYMONHOME")
+        webdir = self.xymon_replace("$XYTHON_WEB")
+        if webdir == '':
+            self.webdir = self.serverdir + "/web/"
+        else:
+            self.webdir = webdir
+        if self.wwwdir is None:
+            self.wwwdir = self.serverdir + "/www/"
+        if self.xt_data is None:
+            self.xt_data = "/var/lib/xython/"
+        # TODO use the XYXXX variables
+        self.xt_hostdata = f"{self.xt_data}/hostdata"
+        self.xt_histlogs = f"{self.xt_data}/histlogs"
+        self.xt_histdir = f"{self.xt_data}/hist/"
+        self.unixsock = '/tmp/xython.sock'
+        if self.xythonmode > 0:
+            if not os.path.exists(self.xt_histlogs):
+                os.mkdir(self.xt_histlogs)
+            if not os.path.exists(self.xt_histdir):
+                os.mkdir(self.xt_histdir)
+            if not os.path.exists(self.xt_hostdata):
+                os.mkdir(self.xt_hostdata)
+            if not os.path.exists(self.xt_logdir):
+                os.mkdir(self.xt_logdir)
+        self.db = self.xt_data + '/xython.db'
+        self.debug(f"DEBUG: DB is {self.db}")
+        self.sqconn = sqlite3.connect(self.db)
+        self.sqc = self.sqconn.cursor()
+        self.sqc.execute('''CREATE TABLE IF NOT EXISTS columns
+            (hostname text, column text, ts date, expire date, color text, UNIQUE(hostname, column))''')
+        self.sqc.execute('''CREATE TABLE IF NOT EXISTS history
+            (hostname text, column text, ts date, duration int, color text, ocolor text)''')
+        self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
+            (hostname text, column text, next date, UNIQUE(hostname, column))''')
+        self.sqc.execute('DELETE FROM tests')
+        if not self.read_hosts():
+            self.error("ERROR: failed to read hosts")
+            sys.exit(1)
+        for H in self.xy_hosts:
+            self.debug(f"DEBUG: init FOUND: {H.name}")
+            if not self.read_hist(H.name):
+                self.error(f"ERROR: failed to read hist for {H.name}")
+            self.read_analysis(H.name)
+        self.gen_tests()
+        self.sqconn.commit()
+        ts_end = time.time()
+        self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
+
+    def print(self):
+        print(f"VAR is {self.xy_data}")
+        print(f"HIST is {self.histdir}")
+        print(f"HISTLOGS is {self.histlogs}")
+        print(f"XHIST is {self.xt_histdir}")
+        print(f"XHOSTDATA is {self.xt_hostdata}")
+        print(f"XHISTLOGS is {self.xt_histlogs}")
+        print(f"WEB is {self.webdir}")
+        print(f"WWW is {self.wwwdir}")
+        print(f"DB is {self.db}")
+        print(f"LOG is {self.xt_logdir}")

@@ -1,0 +1,156 @@
+  PID  PPID USER      STARTED S PRI %CPU         TIME %MEM        RSZ        VSZ CMD
+    2     0 root       Dec 13 S  19  0.0     00:00:28  0.0          0          0 [kthreadd]
+    3     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [rcu_gp]
+    4     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [rcu_par_gp]
+    5     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [netns]
+    9     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [mm_percpu_wq]
+   10     2 root       Dec 13 I  19  0.0     00:00:00  0.0          0          0  \_ [rcu_tasks_kthread]
+   12     2 root       Dec 13 S  19  0.0     00:34:51  0.0          0          0  \_ [ksoftirqd/0]
+   13     2 root       Dec 13 I  19  0.2     05:14:02  0.0          0          0  \_ [rcu_preempt]
+   14     2 root       Dec 13 S 139  0.0     00:00:22  0.0          0          0  \_ [migration/0]
+   15     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/0]
+   16     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/1]
+   17     2 root       Dec 13 S 139  0.0     00:00:43  0.0          0          0  \_ [migration/1]
+   18     2 root       Dec 13 S  19  0.0     00:27:36  0.0          0          0  \_ [ksoftirqd/1]
+   21     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/2]
+   22     2 root       Dec 13 S 139  0.0     00:00:44  0.0          0          0  \_ [migration/2]
+   23     2 root       Dec 13 S  19  0.0     00:27:41  0.0          0          0  \_ [ksoftirqd/2]
+   26     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/3]
+   27     2 root       Dec 13 S 139  0.0     00:00:44  0.0          0          0  \_ [migration/3]
+   28     2 root       Dec 13 S  19  0.0     00:26:43  0.0          0          0  \_ [ksoftirqd/3]
+   31     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [kdevtmpfs]
+   32     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [inet_frag_wq]
+   33     2 root       Dec 13 S  19  0.0     00:00:14  0.0          0          0  \_ [khungtaskd]
+   35     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [oom_reaper]
+   36     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [writeback]
+   37     2 root       Dec 13 S  19  0.0     00:37:47  0.0          0          0  \_ [kcompactd0]
+   38     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [kblockd]
+   39     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [blkcg_punt_bio]
+   40     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [ata_sff]
+   41     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [devfreq_wq]
+   42     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [watchdogd]
+   46     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [rpciod]
+   47     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [xprtiod]
+   49     2 root       Dec 13 S  19  0.0     01:37:19  0.0          0          0  \_ [kswapd0]
+   50     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [nfsiod]
+   58     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [ci_otg]
+   59     2 root       Dec 13 S  90  0.0     00:00:49  0.0          0          0  \_ [irq/81-7000c000.i2c]
+   60     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/82-7000c400.i2c]
+   61     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/83-7000c500.i2c]
+   62     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/84-7000c700.i2c]
+   63     2 root       Dec 13 S  90  0.0     00:00:16  0.0          0          0  \_ [irq/85-7000d000.i2c]
+   64     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/86-as3722]
+   65     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/119-lm90]
+   66     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/120-700e2000.thermal-sensor]
+   67     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/121-soctherm_edp]
+   68     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [kvub300c]
+   69     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [kvub300p]
+   70     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [kvub300d]
+   71     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/u9:0]
+   72     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [sdhci]
+   73     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/123-mmc1]
+   74     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [mmc_complete]
+   77     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [mld]
+   78     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [ipv6_addrconf]
+  117     2 root       Dec 13 S  90  0.0     00:11:20  0.0          0          0  \_ [irq/128-tegra-devfreq]
+  119     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [sdhci]
+  120     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/122-mmc0]
+  121     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/129-700b0400.mmc cd]
+  122     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [mmc_complete]
+  126     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_0]
+  127     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_0]
+  128     2 root       Dec 13 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_1]
+  129     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_1]
+  131     2 root       Dec 13 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/135-70090000.usb]
+  151     2 root       Dec 13 S  19  0.0     00:54:37  0.0          0          0  \_ [jbd2/sda1-8]
+  152     2 root       Dec 13 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 7327     2 root       Jan 07 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_2]
+ 7328     2 root       Jan 07 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_2]
+ 7329     2 root       Jan 07 S  19  0.0     00:41:33  0.0          0          0  \_ [usb-storage]
+28099     2 root     15:10:01 I  39  0.0     00:00:05  0.0          0          0  \_ [kworker/3:0H-kblockd]
+ 6235     2 root     23:10:01 I  39  0.0     00:00:05  0.0          0          0  \_ [kworker/0:1H-kblockd]
+23670     2 root     02:10:02 I  39  0.0     00:00:01  0.0          0          0  \_ [kworker/1:1H-kblockd]
+ 5810     2 root     05:08:01 I  19  0.1     00:00:39  0.0          0          0  \_ [kworker/1:1-events]
+27032     2 root     07:10:01 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/2:1H-kblockd]
+ 2512     2 root     09:00:29 I  19  0.1     00:00:09  0.0          0          0  \_ [kworker/1:0-events]
+11141     2 root     10:10:01 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/1:0H]
+ 2621     2 root     10:24:42 I  19  0.1     00:00:03  0.0          0          0  \_ [kworker/3:0-events]
+  383     2 root     10:42:25 I  19  0.2     00:00:04  0.0          0          0  \_ [kworker/2:2-events]
+12769     2 root     10:50:46 I  19  0.0     00:00:00  0.0          0          0  \_ [kworker/0:3-events]
+24848     2 root     11:00:14 I  19  0.4     00:00:03  0.0          0          0  \_ [kworker/0:0-events]
+27872     2 root     11:00:32 I  19  0.1     00:00:01  0.0          0          0  \_ [kworker/3:1-events]
+27896     2 root     11:00:32 I  19  0.0     00:00:00  0.0          0          0  \_ [kworker/u8:1-events_unbound]
+31931     2 root     11:04:21 I  19  0.0     00:00:00  0.0          0          0  \_ [kworker/2:1]
+ 6298     2 root     11:07:17 I  19  0.0     00:00:00  0.0          0          0  \_ [kworker/u8:2-events_unbound]
+ 6359     2 root     11:08:14 I  19  0.2     00:00:01  0.0          0          0  \_ [kworker/0:1-events_power_efficient]
+ 6552     2 root     11:10:02 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/2:2H]
+ 6554     2 root     11:10:02 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/3:2H]
+ 6581     2 root     11:10:02 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/0:2H]
+15540     2 root     11:14:47 I  19  0.4     00:00:00  0.0          0          0  \_ [kworker/0:2-events]
+    1     0 root       Dec 13 S  19  0.0     00:15:10  0.0       1420       2020 init [3]
+ 2058     1 postgres   Dec 13 S  19  0.0     00:23:31  0.5      11480     155656 /usr/lib/postgresql-14/bin/postgres -D /etc/postgresql-14 --data-directory=/var/lib/postgresql/14/data --unix-socket-directories=/run/postgresql
+ 2060  2058 postgres   Dec 13 S  19  0.0     00:09:06  1.7      35724     155780  \_ postgres: checkpointer
+ 2061  2058 postgres   Dec 13 S  19  0.0     00:06:59  0.4       8296     155656  \_ postgres: background writer
+ 2062  2058 postgres   Dec 13 S  19  0.0     01:14:13  0.3       6760     155656  \_ postgres: walwriter
+ 2063  2058 postgres   Dec 13 S  19  0.0     00:10:39  0.2       4384     156060  \_ postgres: autovacuum launcher
+ 2064  2058 postgres   Dec 13 S  19  0.0     01:01:34  0.1       2296      12760  \_ postgres: stats collector
+ 2065  2058 postgres   Dec 13 S  19  0.0     00:00:14  0.1       3784     155956  \_ postgres: logical replication launcher
+ 7850  2058 postgres   Jan 20 S  19  0.9     11:47:59  1.4      30504     157544  \_ postgres: lavaserver lavaserver 127.0.0.1(49630) idle
+ 2409     1 root       Dec 13 S  19  0.7     16:46:57  0.8      16648     939752 /usr/bin/containerd
+ 2477     1 root       Dec 13 S  19  0.0     00:00:01  0.0        804       2272 /usr/sbin/in.tftpd -l -R 4096:32767 -s /var/lib/lava/dispatcher/tmp
+ 3054     1 root       Dec 13 S  19  0.0     00:01:05  0.0       1508       2300 /sbin/rpcbind
+ 3102     1 nobody     Dec 13 S  19  0.0     00:00:00  0.0       1468       2380 /sbin/rpc.statd --no-notify
+ 3135     1 root       Dec 13 S  19  1.6   1-13:04:55  0.0       1768       2396 ser2net -P /var/run/ser2net.pid
+ 3163     1 root       Dec 13 S  19  0.0     00:00:20  0.0        824       2816 ser2net4 -c /etc/ser2net.yaml -P /var/run/ser2net4.pid
+ 3232     1 xymon      Dec 13 S  19  0.0     00:07:18  0.0       1352       2084 /usr/xymon/client/bin/xymonlaunch --config=/usr/xymon/client/etc/clientlaunch.cfg --log=/usr/xymon/client/logs/clientlaunch.log --pidfile=/usr/xymon/client/logs/clientlaunch.tegra.pid
+14345     1 root       Dec 31 S  19  0.0     00:04:15  0.0       1696       3080 /usr/sbin/crond
+20631 14345 root     11:16:01 S  19  0.0     00:00:00  0.0       1552       3080  \_ /usr/sbin/CROND
+20632 20631 root     11:16:01 S   4  4.0     00:00:00  0.1       2772       3896      \_ /bin/bash /opt/montjoie/bin/lance_cron cron /opt/checks/fake_client.sh
+20654 20632 root     11:16:01 S   4  1.0     00:00:00  0.0        976       3632          \_ /bin/sh /opt/checks/fake_client.sh
+20656 20654 root     11:16:01 S   4  5.0     00:00:00  0.1       2472       3632              \_ /bin/bash /opt/checks/fake_client
+20728 20656 root     11:16:02 R   4  0.0     00:00:00  0.0       1704       3108              |   \_ ps -Aww f -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
+20657 20654 root     11:16:01 S   4  2.0     00:00:00  0.0        688       2008              \_ nc -w 2 -q 2 192.168.1.100 12346
+ 7808     1 root       Jan 20 S  19  0.0     00:52:19  0.6      13068      26032 gunicorn: master [lava_server.wsgi]
+ 7816  7808 lavaser+   Jan 20 S  19  0.1     02:16:08  2.6      54164      72800  \_ gunicorn: worker [lava_server.wsgi]
+ 7840     1 lavaser+   Jan 20 S  19  5.7   3-02:53:57  2.0      41728      78472 /usr/bin/python3.10 /usr/bin/lava-server manage lava-scheduler
+ 7875     1 root       Jan 20 S  19  0.7     09:39:28  1.1      24420      51616 /usr/bin/python3.10 /usr/bin/lava-worker --url http://localhost --level DEBUG --name tegra --log-file /var/log/lava-dispatcher/tegra.log --token-file /var/lib/lava/dispatcher/tegra/token --exit-on-version-mismatch
+ 8138     1 root       Jan 31 S  19  0.0     00:00:32  0.1       2632       7520 sshd: root@pts/1
+ 8140  8138 root       Jan 31 S  19  0.0     00:00:01  0.1       2724       8496  \_ -bash
+23761     1 root       Jan 31 S  19  0.0     00:00:45  0.1       2980       7520 sshd: root@pts/3
+23766 23761 root       Jan 31 S  19  0.0     00:00:02  0.1       2936       8496  \_ -bash
+11618     1 lavaser+   Feb 08 S  19  0.0     00:32:38  2.1      43284      92560 /usr/bin/python3.10 /usr/bin/lava-server manage lava-publisher
+30465     1 root       Feb 08 S  19  0.0     00:00:02  0.1       2372       5664 /usr/sbin/smartd -p /run/smartd.pid
+11693     1 root       Feb 08 S  19  0.0     00:00:00  0.0        304       4088 /sbin/agetty --noclear 38400 tty1 linux
+11707     1 root       Feb 08 S  19  0.0     00:00:00  0.0        304       4088 /sbin/agetty 38400 tty2 linux
+11721     1 root       Feb 08 S  19  0.0     00:00:00  0.0        304       4088 /sbin/agetty 38400 tty3 linux
+11732     1 root       Feb 08 S  19  0.0     00:00:00  0.0        304       4088 /sbin/agetty 38400 tty4 linux
+11745     1 root       Feb 08 S  19  0.0     00:00:00  0.0        304       4088 /sbin/agetty 38400 tty5 linux
+11756     1 root       Feb 08 S  19  0.0     00:00:00  0.0        304       4088 /sbin/agetty 38400 tty6 linux
+11769     1 root       Feb 08 S  19  0.0     00:00:00  0.0        664       2040 /sbin/agetty -L 115200 ttyS0 vt100
+11130     1 root       Feb 10 S  19  0.0     00:00:18  0.1       2444       7520 sshd: root@pts/6
+11152 11130 root       Feb 10 S  19  0.0     00:00:00  0.1       2888       8468  \_ -bash
+12538     1 root       Feb 10 S  19  0.0     00:00:00  0.1       2548       7520 sshd: root@pts/9
+12558 12538 root       Feb 10 S  19  0.0     00:00:00  0.1       2692       8504  \_ -bash
+12560     1 root       Feb 10 S  19  0.0     00:37:54  1.2      24844    2288316 /usr/bin/dockerd -p /run/docker.pid
+ 8582     1 root       Feb 15 S  19  0.0     00:00:38  0.1       2604      23700 /usr/sbin/rsyslogd -f /etc/rsyslog.conf -i /run/rsyslogd.pid
+29591     1 ntp        Feb 15 S  19  0.0     00:28:47  0.2       5768       7164 /usr/sbin/ntpd -g -u ntp:ntp -p /var/run/ntpd.pid
+16089     1 root       Feb 16 S  19  0.0     00:18:52  0.2       5276       7820 /usr/bin/cf-execd
+15564 16089 root     11:15:07 S  19  0.0     00:00:00  0.1       3040       7820  \_ /usr/bin/cf-execd
+15565 15564 root     11:15:07 S  19 26.3     00:00:14  0.3       8052       9508      \_ /var/cfengine/bin/cf-agent -Dfrom_cfexecd,scheduled_run
+19565 15565 root     11:15:56 S  19  0.3     00:00:00  0.1       2592       3764          \_ /bin/sh /var/cfengine/modules/libs
+19571 19565 root     11:15:56 S  19 22.3     00:00:01  0.0       1856       3764              \_ /bin/sh /var/cfengine/modules/libs
+20713 19571 root     11:16:01 S  19  1.0     00:00:00  0.1       2396       3764                  \_ /bin/sh /var/cfengine/modules/libs
+24886     1 root       Feb 18 S  19  0.0     00:00:00  0.0       2012       5836 sshd: /usr/sbin/sshd -o PidFile=/run/sshd.pid -f /etc/ssh/sshd_config [listener] 0 of 10-100 startups
+  735     1 root       Feb 18 S  19  0.0     00:10:55  0.3       6692      14960 /usr/sbin/apache2 -D INFO -D SSL -D LANGUAGE -D PROXY -d /usr/lib/apache2 -f /etc/apache2/httpd.conf -k start
+ 6711   735 apache   11:10:03 S  19  0.0     00:00:00  0.1       3560      14452  \_ /usr/sbin/apache2 -D INFO -D SSL -D LANGUAGE -D PROXY -d /usr/lib/apache2 -f /etc/apache2/httpd.conf -k start
+ 6715   735 apache   11:10:03 S  19  0.0     00:00:00  0.2       4400      15092  \_ /usr/sbin/apache2 -D INFO -D SSL -D LANGUAGE -D PROXY -d /usr/lib/apache2 -f /etc/apache2/httpd.conf -k start
+10632   735 apache   11:10:21 S  19  0.0     00:00:00  0.2       4400      15092  \_ /usr/sbin/apache2 -D INFO -D SSL -D LANGUAGE -D PROXY -d /usr/lib/apache2 -f /etc/apache2/httpd.conf -k start
+10992   735 apache   11:10:24 S  19  0.0     00:00:00  0.2       4400      15092  \_ /usr/sbin/apache2 -D INFO -D SSL -D LANGUAGE -D PROXY -d /usr/lib/apache2 -f /etc/apache2/httpd.conf -k start
+28557     1 root       Mar 08 S  19  0.0     00:00:26  0.1       2240      39588 /usr/libexec/postfix/master -w
+28559 28557 postfix    Mar 08 S  19  0.0     00:00:20  0.1       3064      39844  \_ qmgr -l -t unix -u
+ 9972 28557 postfix    Mar 09 S  19  0.0     00:00:01  0.2       4200      42704  \_ tlsmgr -l -t unix -u
+ 6971 28557 postfix  10:46:28 S  19  0.0     00:00:00  0.1       2160      39696  \_ pickup -l -t unix -u
+ 6105     1 root       Mar 08 S  19  0.0     00:00:00  0.1       2984      17044 /lib/systemd/systemd-udevd
+ 6936     1 root     11:10:04 S  18  0.0     00:00:00  0.4       8756      11236 /usr/bin/perl -wT /usr/sbin/munin-node --config /etc/munin/munin-node.conf
+17140     1 xymon    11:15:18 S  19  0.0     00:00:00  0.0        976       3632 sh -c vmstat 300 2 1>/usr/xymon/client/tmp/xymon_vmstat.tegra.17033 2>&1; mv /usr/xymon/client/tmp/xymon_vmstat.tegra.17033 /usr/xymon/client/tmp/xymon_vmstat.tegra
+17145 17140 xymon    11:15:18 S  19  0.0     00:00:00  0.0        768       2356  \_ vmstat 300 2

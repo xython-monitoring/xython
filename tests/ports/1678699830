@@ -1,0 +1,92 @@
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 127.0.0.1:39871         0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:5500            0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:8001            0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:39231           0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:8000          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:57038         127.0.0.1:5432          TIME_WAIT
+tcp        0      0 127.0.0.1:49630         127.0.0.1:5432          ESTABLISHED
+tcp        0      0 192.168.1.22:22         192.168.1.100:38684     ESTABLISHED
+tcp        0      0 127.0.0.1:42922         127.0.0.1:5432          TIME_WAIT
+tcp        0      0 127.0.0.1:60974         127.0.0.1:8000          TIME_WAIT
+tcp        0      0 192.168.1.22:50698      192.168.1.100:12346     TIME_WAIT
+tcp        0      0 127.0.0.1:40546         127.0.0.1:8001          TIME_WAIT
+tcp        0      0 127.0.0.1:36454         127.0.0.1:5432          TIME_WAIT
+tcp        1      0 192.168.1.22:53304      192.168.1.100:5308      CLOSE_WAIT
+tcp        0      0 127.0.0.1:50592         127.0.0.1:8000          TIME_WAIT
+tcp        0      0 192.168.1.22:22         192.168.1.100:38290     ESTABLISHED
+tcp        0      0 127.0.0.1:50332         127.0.0.1:5500          ESTABLISHED
+tcp        0      0 127.0.0.1:42518         127.0.0.1:8001          TIME_WAIT
+tcp        0      0 192.168.1.22:49178      192.168.1.100:5308      ESTABLISHED
+tcp        0      0 127.0.0.1:57820         127.0.0.1:8001          TIME_WAIT
+tcp        0      0 192.168.1.22:22         192.168.1.100:36326     ESTABLISHED
+tcp        0      0 127.0.0.1:5500          127.0.0.1:50332         ESTABLISHED
+tcp        0      0 192.168.1.22:42408      192.168.1.100:1984      TIME_WAIT
+tcp        0      0 192.168.1.22:22         192.168.1.100:51252     ESTABLISHED
+tcp        0      0 127.0.0.1:8001          127.0.0.1:48560         ESTABLISHED
+tcp        0      0 127.0.0.1:5432          127.0.0.1:49630         ESTABLISHED
+tcp        0      0 127.0.0.1:48560         127.0.0.1:8001          ESTABLISHED
+tcp        0      0 127.0.0.1:46410         127.0.0.1:8000          TIME_WAIT
+tcp6       0      0 :::8088                 :::*                    LISTEN
+tcp6       0      0 :::8001                 :::*                    LISTEN
+tcp6       0      0 :::4949                 :::*                    LISTEN
+tcp6       0      0 :::60094                :::*                    LISTEN
+tcp6       0      0 :::60007                :::*                    LISTEN
+tcp6       0      0 :::60006                :::*                    LISTEN
+tcp6       0      0 :::60005                :::*                    LISTEN
+tcp6       0      0 :::60004                :::*                    LISTEN
+tcp6       0      0 :::60003                :::*                    LISTEN
+tcp6       0      0 :::60002                :::*                    LISTEN
+tcp6       0      0 :::60001                :::*                    LISTEN
+tcp6       0      0 :::60015                :::*                    LISTEN
+tcp6       0      0 :::111                  :::*                    LISTEN
+tcp6       0      0 :::60014                :::*                    LISTEN
+tcp6       0      0 :::60013                :::*                    LISTEN
+tcp6       0      0 :::60011                :::*                    LISTEN
+tcp6       0      0 :::60010                :::*                    LISTEN
+tcp6       0      0 :::60009                :::*                    LISTEN
+tcp6       0      0 :::60008                :::*                    LISTEN
+tcp6       0      0 :::60023                :::*                    LISTEN
+tcp6       0      0 :::60022                :::*                    LISTEN
+tcp6       0      0 :::60021                :::*                    LISTEN
+tcp6       0      0 :::60020                :::*                    LISTEN
+tcp6       0      0 :::60018                :::*                    LISTEN
+tcp6       0      0 :::60017                :::*                    LISTEN
+tcp6       0      0 :::60016                :::*                    LISTEN
+tcp6       0      0 :::60024                :::*                    LISTEN
+tcp6       0      0 :::81                   :::*                    LISTEN
+tcp6       0      0 :::80                   :::*                    LISTEN
+tcp6       0      0 ::1:5432                :::*                    LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN
+tcp6       0      0 :::40981                :::*                    LISTEN
+tcp6       0      0 ::1:80                  ::1:38616               ESTABLISHED
+tcp6       0      0 ::1:80                  ::1:45178               TIME_WAIT
+tcp6       0      0 ::1:38614               ::1:80                  ESTABLISHED
+tcp6       0      0 ::1:80                  ::1:55414               TIME_WAIT
+tcp6       0      0 ::1:80                  ::1:58454               TIME_WAIT
+tcp6       0      0 ::1:80                  ::1:51978               TIME_WAIT
+tcp6       0      0 ::1:80                  ::1:33816               TIME_WAIT
+tcp6       0      0 ::1:80                  ::1:33804               TIME_WAIT
+tcp6       0      0 ::1:80                  ::1:38614               ESTABLISHED
+tcp6       0      0 ::1:38616               ::1:80                  ESTABLISHED
+udp        0      0 0.0.0.0:111             0.0.0.0:*
+udp        0      0 192.168.1.22:123        0.0.0.0:*
+udp        0      0 127.0.0.1:123           0.0.0.0:*
+udp        0      0 0.0.0.0:123             0.0.0.0:*
+udp        0      0 0.0.0.0:39597           0.0.0.0:*
+udp        0      0 127.0.0.1:734           0.0.0.0:*
+udp        0      0 0.0.0.0:43963           0.0.0.0:*
+udp        0      0 0.0.0.0:69              0.0.0.0:*
+udp6       0      0 :::111                  :::*
+udp6       0      0 fe80::204:4bff:fe2f:5023:123 :::*
+udp6       0      0 2a01:cb1d:3d5:a100:204:4bff:fe2f:5023:123 :::*
+udp6       0      0 ::1:123                 :::*
+udp6       0      0 :::123                  :::*
+udp6       0      0 ::1:54430               ::1:54430               ESTABLISHED
+udp6       0      0 :::58334                :::*
+udp6       0      0 :::69                   :::*

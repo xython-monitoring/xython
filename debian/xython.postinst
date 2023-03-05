@@ -1,0 +1,117 @@
+#! /bin/sh
+# postinst script for xython
+#
+# see: dh_installdeb(1)
+
+. /usr/share/debconf/confmodule
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+# Workaround for http://bugs.debian.org/560317 in case debconf is too old like on Squeeze
+export DPKG_MAINTSCRIPT_PACKAGE=${DPKG_MAINTSCRIPT_PACKAGE:-xython}
+export DPKG_MAINTSCRIPT_NAME=${DPKG_MAINTSCRIPT_NAME:-postinst}
+
+case "$1" in
+    configure)
+
+	getent group xython > /dev/null || addgroup --system xython
+	getent passwd xython > /dev/null || adduser --system \
+		--home /var/lib/xython --no-create-home \
+		--ingroup xython --disabled-password --disabled-login \
+		--gecos "Xymon System Monitor" xython
+
+	# Setup permissions for the newly created "xython" user to write
+	# data where he needs to.
+	# And for the Apache-run CGI's to generate reports.
+
+	# Create or migrate directories
+	test -d /var/run/xython || mkdir /var/run/xython
+	chown xython:xython /var/run/xython
+
+	test -d /var/log/xython || mkdir /var/log/xython
+	chown xython:adm /var/log/xython ; chmod 2755 /var/log/xython
+
+	cd /var/lib/xython; chown xython:xython . acks data disabled hist histlogs hostdata logs rrd tmp www
+	#cd /var/lib/xython/www; chown xython:xython html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
+	cd /etc/xython;
+	if [ -e critical.cfg ]; then
+	    chgrp www-data critical.cfg
+	    chmod g+w critical.cfg
+	fi
+	if [ -e critical.cfg.bak ]; then
+	    chgrp www-data critical.cfg.bak
+	    chmod g+w critical.cfg.bak
+	fi
+
+	if ! test -e /etc/xython/hosts.cfg ; then
+		if test -e /etc/default/xython-client ; then
+			. /etc/default/xython-client || true
+		fi
+		cat > /etc/xython/hosts.cfg <<EOF
+#
+# Master configuration file for Xymon
+#
+# This file defines several things:
+#
+# 1) By adding hosts to this file, you define hosts that are monitored by Xymon
+# 2) By adding "page", "subpage", "group" definitions, you define the layout
+#    of the Xymon webpages, and how hosts are divided among the various webpages
+#    that Xymon generates.
+# 3) Several other definitions can be done for each host, see the hosts.cfg(5)
+#    man-page.
+#
+# You need to define at least the Xymon server itself here.
+
+#0.0.0.0	.default.	# NOPROPRED:+apt,+libs
+
+#group Servers
+127.0.0.1	$(hostname)	# bbd http://$(hostname)/
+
+#group Dialup
+#0.0.0.0	notebook.bla.net # noconn dialup
+EOF
+	fi
+
+	test -e /etc/xython/xythonpasswd   || touch /etc/xython/xythonpasswd
+	test -e /etc/xython/xythongroups   || touch /etc/xython/xythongroups
+
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+case "$1" in
+    configure)
+	if [ -e /usr/share/apache2/apache2-maintscript-helper ] ; then
+            . /usr/share/apache2/apache2-maintscript-helper
+            # Enable CGI support
+            apache2_invoke enmod cgi
+            # Finally enable the xython web interface
+	    echo "Enable apache2 xython"
+            apache2_invoke enconf xython
+        elif test -e /etc/init.d/apache2 ; then
+	    invoke-rc.d apache2 reload || :
+	fi
+    ;;
+esac
+
+exit 0

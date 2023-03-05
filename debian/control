@@ -1,0 +1,47 @@
+Source: xython
+Section: net
+Priority: optional
+Maintainer: Corentin Labbe <clabbe.montjoie@gmail.com>
+Build-Depends: debhelper,
+               python3-setuptools,
+               dh-apache2,
+               dh-cmake,
+	       dh-cmake-compat (= 1),
+               dh-python,
+               dpkg-dev (>= 1.16.1~),
+	       python3-dev,
+	       python3-celery,
+	       python3-requests,
+               procps
+Standards-Version: 4.4.0
+Homepage: http://github.com/xython-monitoring/xython/
+Rules-Requires-Root: no
+
+Package: xython
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: lsb-base (>= 3.0-6),
+	 python3,
+	 python3-celery,
+	 python3-requests,
+	 ${python3:Depends},
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: apache2 | httpd-cgi
+Description: monitoring system for systems, networks and applications
+ Xymon (previously called Hobbit) is a network- and applications-
+ monitoring system designed for use in large-scale networks. But it will
+ also work just fine on a small network with just a few nodes. It is
+ low-overhead and high-performance, with an easy to use web front-end.
+ .
+ Network services are monitored remotely. Machine health and
+ statistics are monitored through a locally installed client package
+ (xymon-client). Additional (remote as well as local) checks are
+ available in the package hobbit-plugins.
+ .
+ Alerts can trigger when monitoring detects a problem, resulting in
+ e-mails or calls to your pager or mobile phone.
+ .
+ Xymon has a great deal of inspiration from the non-free Big Brother
+ package, but does not include any Big Brother code.
+

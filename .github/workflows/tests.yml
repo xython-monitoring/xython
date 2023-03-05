@@ -1,0 +1,97 @@
+---
+# yamllint disable rule:line-length
+name: Build and tests
+
+on:  # yamllint disable-line rule:truthy
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e "."
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=16 --max-line-length=127 --statistics
+      - name: Test with pytest
+        run: |
+          pytest
+      - name: Try to setup.py
+        run: |
+          python setup.py install
+      - name: install xymon
+        run: |
+          sudo apt-get -y install xymon
+      - name: create root directories
+        run: |
+          sudo mkdir /var/log/xython
+      - name: create directories
+        run: |
+          mkdir log www data
+      - name: check XYMONVAR
+        run: |
+          grep -r XYMONVAR /etc/xymon
+      - name: Run tload
+        run: |
+          xythond --tload -d --logdir log -x 0 -R --wwwdir www --vardir data
+
+  yamllint:
+    runs-on: ubuntu-latest
+    name: Test YAML files
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install yamllint
+        run: sudo apt-get -y install yamllint
+      - name: verify yaml files
+        run: find -iname '*.yml' | xargs --no-run-if-empty yamllint
+
+#  markdownlint:
+#    runs-on: ubuntu-latest
+#    name: Test markdown
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Run markdownlint
+#        uses: actionshub/markdownlint@main
+  debian:
+    runs-on: ubuntu-latest
+    name: build debian package
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install packages
+        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery
+      - name: create orig targz
+        run: cd .. && tar czf xython_0-1.orig.tar.gz xython
+      - name: Run ls
+        run: ls -l
+      - name: Run debuild
+        run: debuild -i -us -uc -b
+      - name: Check content of package
+        run: find
+      - name: Install package
+        run: sudo dpkg -i ../*deb
+      - name: Verify xython user was created
+        run: grep xython /etc/passwd
+      - name: Move package deb
+        run: sudo mv ../*deb .
+      - name: Keep generated deb
+        uses: actions/upload-artifact@v3
+        with:
+          name: debianpkg
+          path: xython*deb

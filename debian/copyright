@@ -1,0 +1,33 @@
+This package was debianized by Corentin LABBE <clabbe.montjoie@gmail.com> on
+Sat,  1 Apr 2023 11:12:25 +0200.
+
+It was downloaded from:
+
+   http://github.com/xython-monitoring/xython
+
+Upstream Authors:
+
+   Corentin LABBE <clabbe.montjoie@gmail.com>
+
+-------------------------------------------------------------------------------
+
+Files: *
+Copyright: © 2023 Corentin LABBE <clabbe.montjoie@gmail.com>
+License: GPL-2
+
+On Debian systems, the complete text of the GNU General
+Public License can be found in `/usr/share/common-licenses/GPL'.
+
+-------------------------------------------------------------------------------
+
+Files: xymon/*
+Copyright: © 2002-2016 Henrik Størner <henrik@hswn.dk>
+License: GPL-2 with OpenSSL exception
+
+-------------------------------------------------------------------------------
+
+Files: debian/*
+Copyright: © 2023 Corentin LABBE <clabbe.montjoie@gmail.com>
+License: PD
+   The packaging done by Corentin LABBE <clabbe.montjoie@gmail.com> is hereby
+   released as public domain.
