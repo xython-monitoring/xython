@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os
+
 import sys
 from codecs import open
 
@@ -28,6 +28,7 @@ consider upgrading to a supported Python version.
 requires = [
     "celery>=2",
     "requests>=2",
+    "pytz"
 ]
 test_requirements = [
     "pytest>=3",
@@ -50,7 +51,9 @@ setup(
     package_dir={"xython": "xython"},
     entry_points={
         'console_scripts': [
-            "xythond = xython:main"
+            "xythond = xython:main",
+            "xythonc = xython_client:main",
+            "xython-nshow = xython_nshow:main",
         ],
     },
     include_package_data=True,

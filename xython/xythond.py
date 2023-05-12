@@ -12,7 +12,7 @@ from xython import xythonsrv
 import sys
 
 def main():
-    print("xython vTODO")
+    print("xythond vTODO")
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", "-d", help="increase debug level", action="store_true")
     parser.add_argument("--daemon", "-D", help="start daemon", action="store_true")
@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--wwwdir", help="Override xython www directory")
     parser.add_argument("--xymonvardir", help="Override xymon var directory")
     parser.add_argument("--vardir", help="Override xython var directory")
+    parser.add_argument("--quit", help="Quit after x seconds", type=int, default=0)
     args = parser.parse_args()
 
     X = xythonsrv()
@@ -59,6 +60,9 @@ def main():
             X.net_loop()
             X.scheduler()
             time.sleep(0.01)
+            if args.quit > 0:
+                if X.uptime_start > time.time() + args.quit:
+                    sys.exit(0)
         sys.exit(0)
 
     if args.tload:

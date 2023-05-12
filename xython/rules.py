@@ -141,7 +141,7 @@ class xy_rule_cpu():
 
     def cpucheck(self, upline):
         ret = {}
-        loadavg = re.search(r"load average: [0-9]+[,\.][0-9]+,\s([0-9]+[,\.][0-9]+),", upline)
+        loadavg = re.search(r"load average[s]*: [0-9]+[,\.][0-9]+,\s([0-9]+[,\.][0-9]+),", upline)
         if not loadavg:
             print("ERROR: fail to find load")
             return None
@@ -159,9 +159,11 @@ class xy_rule_cpu():
             ret["LOAD"] = {}
             ret["LOAD"]["color"] = 'green'
             ret["LOAD"]["txt"] = f'&green load {self.xload} < {self.loadwarn}\n'
-        rup = re.search(r"up (.*),\s*[0-9]+\susers", upline)
+        rup = re.search(r"up (.*),\s*[0-9]+\suser", upline)
         if not rup:
+            # TODO return an ret["error"]
             print("ERROR: failed to find uptime")
+            print(upline)
             return None
         sup = rup.group(1)
         sup.replace(",", '')

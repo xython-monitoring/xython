@@ -248,7 +248,6 @@ def test_rule_mem():
     f = open("./tests/memory/test2")
     data = f.read()
     f.close()
-    print(data)
     xm = xy_rule_mem()
     xm.init_from("10 20")
     assert xm.warn == 10
@@ -307,6 +306,8 @@ def test_rule_cpu():
     ret = xrc.cpucheck(" 09:26:10 up 25 days, 19:15,  1 user,  load average: 0.00, 0.07, 0.06 [IO: 0.00, 0.01, 0.05 CPU: 0.00, 0.05, 0.05")
     # OPNsense
     ret = xrc.cpucheck(" 9:27AM  up 389 days, 23:32, 1 user, load averages: 0.19, 0.14, 0.09")
+    assert ret is not None
+    assert xrc.xuptime == 389 * DAY_M + 23 * 60 + 32
 
 
 def test_setcolor():

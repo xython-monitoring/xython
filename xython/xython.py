@@ -13,6 +13,11 @@ import sys
 from random import randint
 import socket
 from datetime import datetime
+try:
+    import pika
+    has_pika = True
+except ImportError:
+    has_pika = False
 import sqlite3
 import select
 from .xython_tests import ping
@@ -121,6 +126,7 @@ class xythonsrv:
         self.xt_data = None
         self.vars = {}
         self.debugs = []
+        self.msgn = 0
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -175,10 +181,32 @@ class xythonsrv:
         print(buf)
         self.log("error", buf)
 
+    # get configuration values from xython
+    def xython_getvar(self, varname):
+        # TODO handle fail
+        f = open(f"{self.etcdir}/xython.cfg", 'r')
+        for line in f:
+            line = line.rstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            sline = line.split("=")
+            if len(sline) < 1:
+                continue
+            if sline[0] == varname:
+                #found = sline[1].split('"')[1]
+                found = sline[1]
+                #self.debug(f"getvar {varname}={found}")
+                return found
+        self.debugdev('vars', "DEBUG: did not found %s" % varname)
+        return None
+
     # get variables from /etc/xymon
     def xymon_getvar(self, varname):
         if varname in self.vars:
             return self.vars[varname]
+        # TODO handle fail
         f = open(f"{self.etcdir}/xymonserver.cfg", 'r')
         for line in f:
             line = line.rstrip()
@@ -402,9 +430,9 @@ class xythonsrv:
         print(H.rules)
 
     def read_hosts(self):
-        self.debug("DEBUG: read_hosts")
+        self.debug(f"DEBUG: read_hosts in {self.etcdir}")
         try:
-            fhosts = open(self.etcdir + "hosts.cfg", 'r')
+            fhosts = open(self.etcdir + "/hosts.cfg", 'r')
         except:
             self.error("ERROR: cannot open hosts.cfg")
             return False
@@ -486,9 +514,29 @@ class xythonsrv:
         f.write("%s %d %d %d %s %s %d\n" % (column, ts, ots, duration, color[0:2], ocolor[0:2], 1))
         f.close()
 
+    # return all cname for a host in a list
+    def get_columns(self, hostname):
+        print(f"DEBUG: get_columns {hostname}")
+        res = self.sqc.execute(f'SELECT column FROM columns WHERE hostname == "{hostname}"')
+        results = self.sqc.fetchall()
+        if len(results) >= 1:
+            allc = []
+            for r in results:
+                allc.append(r[0])
+            return allc
+        return None
+
+    def get_column_state(self, hostname, cname):
+        res = self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
+        results = self.sqc.fetchall()
+        if len(results) == 1:
+            return results[0]
+        return None
+
     def column_update(self, hostname, cname, color, ts, data, expire, updater):
         color = gcolor(color)
         ts_start = time.time()
+        expiretime = ts_start + expire
         H = self.find_host(hostname)
         if not H:
             #self.debug("DEBUG: %s not exists" % hostname)
@@ -512,6 +560,23 @@ class xythonsrv:
             result = results[0]
             ocolor = result[4]
             ots = result[2]
+        if ocolor == 'blue' and color != 'purple' and color != 'blue':
+            # keep it blue
+            color = 'blue'
+            # keep old expire
+            self.debug(f"DEBUG: BLUE {cname} expire={expiretime} {xytime(expiretime)} oexpire={result[3]} {xytime(result[3])}")
+            expiretime = result[3]
+            # get reason
+            rdata = self.get_histlogs(hostname, cname, ots)
+            if rdata is None:
+                self.error("ERROR: keeping blue without status")
+                return
+            odata = ''.join(rdata["raw"])
+            lodata = odata.split("\n\n")
+            firsts = lodata[0].split(" ", 1)[1]
+            # remove the first colour
+            blue_header = firsts + "\n\n" + lodata[1] + "\n\n"
+            data = blue_header + data
         if color == 'purple':
             if ocolor == 'purple':
                 self.error("ERROR: cannot go from purple to purple")
@@ -523,10 +588,34 @@ class xythonsrv:
             duration = ts - ots
             self.save_hist(hostname, cname, color, ocolor, ts, ots, duration)
             self.history_update(hostname, cname, ts, duration, color, ocolor)
+        if color == 'purple':
+            if data is not None:
+                print("ERROR")
+            #duplicate
+            rdata = self.get_histlogs(hostname, cname, ots)
+            if rdata is None:
+                self.error("ERROR: cannot purple without status")
+                return
+            data = ''.join(rdata["raw"])
+        # @@status#62503/karnov|1684156989.403184|172.16.1.22||karnov|lr|1684243389|red||red|1682515389|0||0||1684156916|linux||0|
+        # see xymond/new-daemon.txt
+        # status hostname = 4
+        # status testname = 5 expire=6 logtime=1 color=7 sender=2 origin=3
+        # testflags=8 prevcolor=9 changetime=10
+        # acktime=11 ackmsg=12
+        # disabletime=13 dismg=14
+        # flapping=16
+        if self.has_pika:
+            status = f"@@status#{self.msgn}/{hostname}|{ts}|{updater}||{hostname}|{cname}|{ts}|{color}||{ocolor}|{ts}|0||0||{ts}|linux||0|\n"
+            status += data
+            status += '\n@@'
+            self.msgn += 1
+            properties = pika.BasicProperties(expiration=str(10000))
+            self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
 
         #req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
         now = time.time()
-        res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES (?, ?, ?, ?, ?)', (hostname, cname, ts, time.time() + expire, color))
+        res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES (?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color))
         #self.sqconn.commit()
         if color == 'purple':
             #duplicate
@@ -534,9 +623,6 @@ class xythonsrv:
             if rdata is None:
                 return
             data = ''.join(rdata["data"])
-            fdata = rdata["first"] + '\n' + data + '\n' + rdata["clientid"] + '\n' + rdata["sender"] + '\n' + rdata["changed"]
-            self.save_histlogs(hostname, cname, data, ts, "purple", "xython")
-            return
         self.save_histlogs(hostname, cname, data, ts, color, updater)
         ts_end = time.time()
         self.stat("COLUPDATE", ts_end - ts_start)
@@ -561,6 +647,7 @@ class xythonsrv:
             self.error("ERROR: get_histlogs: histlog is too small")
             return None
         ret = {}
+        ret["raw"] = data.copy()
         ret["first"] = data.pop(0)
         ret["clientid"] = data.pop(-1)
         ret["sender"] = data.pop(-1)
@@ -817,6 +904,8 @@ class xythonsrv:
             ts_end = time.time()
             self.stat("HTML", ts_end - ts_start)
             self.ts_page = now
+        if self.has_pika:
+            self.channel.basic_publish(exchange='xython-ping', routing_key='', body="PING")
         self.stat("SCHEDULER", time.time() - now)
 
     def read_analysis(self, hostname):
@@ -984,16 +1073,19 @@ class xythonsrv:
             return
         udisplay = re.sub(r"^.*up ", "up", buf)
         sbuf = f"{xytime(now)} {udisplay}\n"
+        # Check with global rules
         gret = self.rules["CPU"].cpucheck(buf)
+        # check gret not None
         if H.rules["CPU"] is not None:
+            # check with dedicated host rules
             ret = H.rules["CPU"].cpucheck(buf)
-        if H.rules["CPU"] is not None and H.rules["CPU"].loadset:
+        if H.rules["CPU"] is not None and H.rules["CPU"].loadset and ret is not None:
             color = setcolor(ret["LOAD"]["color"], color)
             sbuf += ret["LOAD"]["txt"]
         else:
             color = setcolor(gret["LOAD"]["color"], color)
             sbuf += gret["LOAD"]["txt"]
-        if H.rules["CPU"] is not None and H.rules["CPU"].upset:
+        if H.rules["CPU"] is not None and H.rules["CPU"].upset and ret is not None:
             color = setcolor(ret["UP"]["color"], color)
             sbuf += ret["UP"]["txt"]
         else:
@@ -1116,6 +1208,58 @@ class xythonsrv:
             self.column_update(hostname, column, color, time.time(), hdata, expire, msg["addr"])
         return False
 
+    def parse_disable(self, msg):
+        self.debug(f"DISABLE ACTION {msg}")
+        dstart = time.time()
+        lmsg = msg.split(" ")
+        if len(lmsg) < 4:
+            return False
+        t = lmsg.pop(0)
+        if t != "disable":
+            self.error(f"ERROR: I should found disable (got {t})")
+            return False
+        who = lmsg.pop(0)
+        # now find the hostname
+        lwho = who.split('.')
+        testname = lwho.pop()
+        hostname = '.'.join(lwho)
+        self.debug(f"DEBUG: I will disable {hostname} columns:{testname}")
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: unknow hostname (got {hostname})")
+            return False
+        howlong = lmsg.pop(0)
+        howlongs = xydelay(howlong)
+        # TODO the real expire in DB could be some secs after
+        expire = time.time() + howlongs
+        if howlongs is None:
+            self.error(f"ERROR: invalid duration {howlong}")
+            return False
+        why = " ".join(lmsg)
+        self.debug(f"DEBUG: I will disable {who} for {howlongs}s due to {why}")
+
+        columns = []
+        if testname == '*':
+            columns = self.get_columns(hostname)
+            if columns is None:
+                return False
+        else:
+            columns.append(testname)
+        for cname in columns:
+            blue_status = f"Disabled until {xytime(expire)}\n\n{why}\n\nStatus message when disabled follows:\n\n"
+            result = self.get_column_state(hostname, cname)
+            if result is None:
+                self.error(f"ERROR: cannot disable an empty column")
+                return False
+            ots = result[2]
+            rdata = self.get_histlogs(hostname, cname, ots)
+            if rdata is None:
+                return False
+            data = ''.join(rdata["raw"])
+            blue_status += data
+            self.column_update(hostname, cname, "blue", dstart, blue_status, howlongs, "bluter")
+        return True
+
     def parse_hostdata(self, msg):
         hdata = msg["buf"]
         hostname = None
@@ -1127,6 +1271,9 @@ class xythonsrv:
         #self.debug(firstchars)
         if firstchars == 'status':
             self.parse_status(msg)
+            return
+        if firstchars == 'disabl':
+            self.parse_disable(hdata)
             return
         #self.debug("THIS IS HISTDATA")
         for line in hdata.split("\n"):
@@ -1289,7 +1436,29 @@ class xythonsrv:
         self.xy_data = p
         self.vars["XYMONVAR"] = p
 
+    def init_pika(self):
+        self.debug("DEBUG: init pika")
+        pika_user = self.xython_getvar("PIKA_USER")
+        if pika_user is None:
+            self.error("ERROR: did not found PIKA_USER")
+            return False
+        pika_password = self.xython_getvar("PIKA_PASSWORD")
+        if pika_password is None:
+            self.error("ERROR: did not found PIKA_PASSWORD")
+            return False
+        credentials = pika.PlainCredentials(pika_user,pika_password)
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host='127.0.0.1', port=5672, credentials=credentials, heartbeat=5
+                )
+            )
+        self.channel = connection.channel()
+        self.channel.exchange_declare(exchange='xython-status', exchange_type='fanout')
+        self.channel.exchange_declare(exchange='xython-ping', exchange_type='fanout')
+        return True
+
     def init(self):
+        global has_pika
         ts_start = time.time()
         if self.xy_data is None:
             self.xy_data = self.xymon_replace("$XYMONVAR")
@@ -1342,6 +1511,10 @@ class xythonsrv:
         self.gen_tests()
         self.sqconn.commit()
         ts_end = time.time()
+        self.has_pika = has_pika
+        if self.has_pika:
+            if not self.init_pika():
+                self.has_pika = False
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
 
     def print(self):

@@ -82,6 +82,13 @@ All active tests are handled by celery workers.
 Celery is a distributed tasks manager, this will permit to be scalable and/or ran tests on another host.
 Probably handling client data will also be handled by celery.
 
+For clustering, I will work on using a rabbitMQ cluster to see if it is doable.
+
+# equivalence
+* xymonnet is replaced by xython_test on the celery cluster
+* xymon_channel: xymon_channel could be replace by either a simple tool which ask xythond for recent change or the use of a rabbitMQ cluster
+* xymongen: embedded in xythond for the moment
+
 # Feature matrix
 TODO
 <table>
@@ -248,6 +255,8 @@ In the same time, all BB and hobbit compatibility will be removed probably.
   Furthermore, using full localized date is bad when sorting directory output and lead to timezone problems.
   Xython will propose a new storage using only timestamp.
 * disk status show which rule matched the partition
+* TODO: permit to hide acked tests in nongreen page
+* Add more "standard" tests to xymon client (ntpd, smart, lvm, sensors for example)
 
 # client
 I dont work on changing the client for the moment.

@@ -140,4 +140,4 @@ def xydelay(s):
         return int(s)
     except ValueError:
         print(f"ERROR: invalid delay value {s}")
-        sys.exit(1)
+        return None
