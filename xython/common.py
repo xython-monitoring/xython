@@ -6,7 +6,6 @@
 
 import time
 import re
-import sys
 from datetime import datetime
 from pytz import timezone
 

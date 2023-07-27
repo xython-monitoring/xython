@@ -32,6 +32,8 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=16 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
+          pwd
+          ls -l
           pytest
       - name: Try to setup.py
         run: |

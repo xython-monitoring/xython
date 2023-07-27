@@ -1,0 +1,65 @@
+k10temp-pci-00c3
+Adapter: PCI adapter
+CPU Temperature:  +57.4°C  
+Tccd1:            +54.2°C  
+
+drivetemp_ATA_____HUS726060ALE610_T7MH_HUS726060ALE610_T7MH-scsi-10-0
+Adapter: SCSI adapter
+temp1:        +44.0°C  (low  =  +0.0°C, high = +60.0°C)
+                       (crit low = -40.0°C, crit = +70.0°C)
+                       (lowest = +32.0°C, highest = +47.0°C)
+
+drivetemp_ATA_____TS64GMTS800_____5CE__TS64GMTS800_____5CE_-scsi-4-0
+Adapter: SCSI adapter
+temp1:        +44.0°C  
+
+nct6798-isa-0290
+Adapter: ISA adapter
+in0:                        1.03 V  (min =  +0.00 V, max =  +1.74 V)
+in1:                        1.01 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in2:                        3.39 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in3:                        3.26 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in4:                      1000.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in5:                      656.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in6:                        1.01 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in7:                        3.39 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in8:                        3.33 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in9:                      896.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in10:                     208.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in11:                     504.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in12:                       1.02 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in13:                     1000.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in14:                     968.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+fan1:                        0 RPM  (min =    0 RPM)
+fan2:                     1254 RPM  (min =    0 RPM)
+fan3:                     1790 RPM  (min =    0 RPM)
+fan4:                        0 RPM  (min =    0 RPM)
+fan5:                     4066 RPM  (min =    0 RPM)
+fan6:                        0 RPM  (min =    0 RPM)
+fan7:                        0 RPM  (min =    0 RPM)
+SYSTIN:                    +45.0°C  (high = +80.0°C, hyst = +75.0°C)  sensor = thermistor
+CPUTIN:                    +49.0°C  (high = +80.0°C, hyst = +75.0°C)  sensor = thermistor
+AUXTIN0:                   +26.0°C    sensor = thermistor
+AUXTIN1:                   +66.0°C    sensor = thermistor
+AUXTIN2:                   +25.0°C    sensor = thermistor
+AUXTIN3:                   +27.0°C    sensor = thermistor
+PECI Agent 0 Calibration:  +48.5°C  
+SMBUSMASTER 1:             +75.5°C  
+PCH_CHIP_CPU_MAX_TEMP:      +0.0°C  
+PCH_CHIP_TEMP:              +0.0°C  
+TSI0_TEMP:                 +57.5°C  
+TSI1_TEMP:                 +75.9°C  
+intrusion0:               ALARM
+intrusion1:               ALARM
+beep_enable:              disabled
+
+drivetemp_ATA_____WDC_WDS240G2G0B_0400_WDC_WDS240G2G0B_0400-scsi-16-0
+Adapter: SCSI adapter
+temp1:        +50.0°C  
+
+drivetemp_ATA_____HUS726060ALE610_T7MH_HUS726060ALE610_T7MH-scsi-9-0
+Adapter: SCSI adapter
+temp1:        +45.0°C  (low  =  +0.0°C, high = +60.0°C)
+                       (crit low = -40.0°C, crit = +70.0°C)
+                       (lowest = +32.0°C, highest = +47.0°C)
+

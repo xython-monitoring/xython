@@ -12,14 +12,12 @@ import re
 import sys
 from random import randint
 import socket
-from datetime import datetime
 try:
     import pika
     has_pika = True
 except ImportError:
     has_pika = False
 import sqlite3
-import select
 from .xython_tests import ping
 from .xython_tests import dohttp
 from .xython_tests import dossh
@@ -39,6 +37,7 @@ from .rules import xy_rule_port
 from .rules import xy_rule_proc
 from .rules import xy_rule_mem
 from .rules import xy_rule_cpu
+from .rules import xy_rule_sensors
 
 
 class xy_host:
@@ -56,6 +55,7 @@ class xy_host:
         self.rules["MEMACT"] = None
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
+        self.rules["SENSOR"] = None
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -110,6 +110,7 @@ class xythonsrv:
         self.rules["MEMACT"] = None
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
+        self.rules["SENSOR"] = None
         self.autoreg = True
         self.celtasks = []
         self.celerytasks = {}
@@ -158,7 +159,7 @@ class xythonsrv:
         res = self.sqc.execute(req)
 
     # used only at start
-    def column_set(self, hostname, cname, color, ts, expire = 60):
+    def column_set(self, hostname, cname, color, ts, expire=60):
         color = gcolor(color)
         now = time.time()
         req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {now} + {expire}, "{color}")'
@@ -881,7 +882,7 @@ class xythonsrv:
         res = self.sqc.execute(f'SELECT count(hostname) FROM columns')
         results = self.sqc.fetchall()
         buf += f"Hosts: {results[0][0]}\n"
-        res = self.sqc.execute(f'SELECT count(next) FROM tests')
+        res = self.sqc.execute('SELECT count(next) FROM tests')
         results = self.sqc.fetchall()
         buf += f"Active tests: {results[0][0]}\n"
         self.column_update(socket.gethostname(), "xythond", "green", time.time(), buf, 1600, "xythond")
@@ -920,6 +921,7 @@ class xythonsrv:
         self.rules["MEMACT"] = None
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
+        self.rules["SENSOR"] = None
         for line in f:
             line = line.rstrip()
             line = re.sub(r"\s+", " ", line)
@@ -1022,6 +1024,19 @@ class xythonsrv:
                         H.rules["INODE"] = xy_rule_disks()
                     rxd = H.rules["INODE"]
                     rxd.add(line[6:])
+            elif line[0:6] == 'SENSOR':
+                self.debug(f"DEBUG: {line}")
+                if currhost == 'DEFAULT':
+                    # TODO
+                    self.rules["SENSOR"].add(line[7:])
+                if currhost == hostname:
+                    H = self.find_host(hostname)
+                    if H is None:
+                        self.error("ERROR: host is None")
+                        return
+                    if H.rules["SENSOR"] is None:
+                        H.rules["SENSOR"] = xy_rule_sensors()
+                    H.rules["SENSOR"].add(line[7:])
             else:
                 self.log("todo", line)
         # add default rules for DISK/INODE
@@ -1038,6 +1053,9 @@ class xythonsrv:
         if self.rules["MEMSWAP"] is None:
             self.rules["MEMSWAP"] = xy_rule_mem()
             self.rules["MEMSWAP"].init_from("50 80")
+        if self.rules["SENSOR"] is None:
+            self.rules["SENSOR"] = xy_rule_sensors()
+        self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
 
     def parse_free(self, hostname, buf, sender):
         H = self.find_host(hostname)
@@ -1138,6 +1156,43 @@ class xythonsrv:
             color = setcolor(ret["color"], color)
         sbuf += buf
         self.column_update(hostname, "ports", color, time.time(), sbuf, 4 * 60, sender)
+
+# TODO self detect high/crit min/max from output
+# like Core 0:        +46.0 C  (high = +82.0 C, crit = +102.0 C)
+# should detect a second warn=82 and red=102
+    def parse_sensors(self, hostname, buf, sender):
+        now = time.time()
+        color = 'green'
+        sbuf = f"{xytime(now)} - sensors Ok\n"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_sensors: host is None")
+            return
+        sline = buf.split("\n")
+        for line in sline:
+            if len(line) == 0:
+                continue
+            if line[0] == ' ':
+                continue
+            sbuf += line + '\n'
+            self.debug(f"DEBUG: check {line}XX")
+            if len(line) > 0 and ':' not in line:
+                self.debug(f"DEBUG: {hostname} adapter={line}")
+                adapter = line
+            else:
+                if "SENSOR" in H.rules and H.rules["SENSOR"] is not None:
+                    ret = H.rules["SENSOR"].check(adapter, line)
+                else:
+                    ret = None
+                if ret is None:
+                    self.debug("DEBUG: use global rules")
+                    ret = self.rules["SENSOR"].check(adapter, line)
+                if ret is not None:
+                    sbuf += ret["txt"] + '\n'
+                    color = setcolor(ret["color"], color)
+        ts_end = time.time()
+        self.stat("parsesensor", ts_end - now)
+        self.column_update(hostname, "sensor", color, time.time(), sbuf, 4 * 60, sender)
 
     def parse_df(self, hostname, buf, inode, sender):
         now = time.time()
@@ -1249,7 +1304,7 @@ class xythonsrv:
             blue_status = f"Disabled until {xytime(expire)}\n\n{why}\n\nStatus message when disabled follows:\n\n"
             result = self.get_column_state(hostname, cname)
             if result is None:
-                self.error(f"ERROR: cannot disable an empty column")
+                self.error("ERROR: cannot disable an empty column")
                 return False
             ots = result[2]
             rdata = self.get_histlogs(hostname, cname, ots)
@@ -1282,7 +1337,9 @@ class xythonsrv:
                 continue
             if line[0] == '[' and line[len(line) - 1] == ']':
                 if section is not None:
+                    handled = False
                     if section == '[collector:]':
+                        handled = True
                         for cline in buf.split("\n"):
                             if len(cline) == 0:
                                 continue
@@ -1295,21 +1352,32 @@ class xythonsrv:
                             self.error("ERROR: no hostname in collector")
                             return
                     if section == '[free]':
+                        handled = True
                         self.parse_free(hostname, buf, msg["addr"])
                     if section == '[uptime]':
+                        handled = True
                         self.parse_uptime(hostname, buf, msg["addr"])
                     if section == '[df]':
+                        handled = True
                         self.parse_df(hostname, buf, False, msg["addr"])
                     if section == '[inode]':
+                        handled = True
                         self.parse_df(hostname, buf, True, msg["addr"])
                     if section == '[ports]':
+                        handled = True
                         self.parse_ports(hostname, buf, msg["addr"])
                     if section == '[ps]':
+                        handled = True
                         self.parse_ps(hostname, buf, msg["addr"])
+                    if section == '[lmsensors]':
+                        handled = True
+                        self.parse_sensors(hostname, buf, msg["addr"])
+                    if not handled:
+                        self.debug(f"DEBUG: section {section} not handled")
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
@@ -1446,7 +1514,7 @@ class xythonsrv:
         if pika_password is None:
             self.error("ERROR: did not found PIKA_PASSWORD")
             return False
-        credentials = pika.PlainCredentials(pika_user,pika_password)
+        credentials = pika.PlainCredentials(pika_user, pika_password)
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host='127.0.0.1', port=5672, credentials=credentials, heartbeat=5

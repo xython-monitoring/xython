@@ -17,11 +17,13 @@ def send(host, port, data):
     s.sendall(data.encode("UTF8"))
     s.close()
 
+
 def usage():
     print("xython version vTODO")
     print("Usage: /usr/xymon/client/bin/xymon [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA")
     print("\tRECIPIENT: IP-address, hostname or URL")
     print('\tDATA: Message to send, or "-" to read from stdin')
+
 
 def main():
     X_HOST = None
@@ -52,5 +54,6 @@ def main():
         sys.exit(1)
     usage()
     sys.exit(0)
+
 
 main()

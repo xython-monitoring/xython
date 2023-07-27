@@ -10,6 +10,7 @@ from xython.common import xydelay
     SPDX-License-Identifier: GPL-2.0
 """
 
+
 class xy_rule_disk():
     def __init__(self, fs, warn, panic):
         self.fs = fs
@@ -93,6 +94,191 @@ class xy_rule_disks():
             if ret:
                 return pr.check(pc)
         return None
+
+
+# cannot use -1 since it is possible value
+SENSOR_DISABLE = -400
+
+
+class xy_rule_sensor():
+    def __init__(self, warn, panic, mwarn, mpanic):
+        self.warn = warn
+        self.panic = panic
+        self.mwarn = mwarn
+        self.mpanic = mpanic
+
+    def check(self, sname, pc):
+        color = 'green'
+        print(f"DEBUG: check {self.mpanic} {self.mwarn} {self.warn} {self.panic} vs {pc}")
+        ret = {}
+        if pc < self.warn:
+            if self.mwarn != SENSOR_DISABLE:
+                txt = f"&green {sname} {self.mwarn} < {pc} < {self.warn}"
+            else:
+                txt = f"&green {sname} {pc} < {self.warn}"
+        elif pc >= self.warn and pc < self.panic:
+            txt = f"&yellow {sname} {pc} => {self.warn}"
+            color = 'yellow'
+        if pc >= self.panic:
+            txt = f"&red {sname} {pc} => {self.panic}"
+            color = 'red'
+        if self.mwarn != SENSOR_DISABLE and pc <= self.mwarn:
+            txt = f"&yellow {sname} {pc} <= MINWARN={self.mwarn}"
+            color = 'yellow'
+        if self.mpanic != SENSOR_DISABLE and pc <= self.mpanic:
+            txt = f"&red {sname} {pc} <= MINPANIC={self.mpanic}"
+            color = 'red'
+        ret["txt"] = txt
+        ret["color"] = color
+        return ret
+
+
+# SENSOR adaptername sensorname warn panic
+class xy_rule_sensors():
+    def __init__(self):
+        self.rules = {}
+
+    def dump(self):
+        print(f"SENSORS RULE {self.name} warn={self.warn} panic={self.panic}")
+
+    def add(self, sensorruleline):
+        print("===========================================================")
+        print(f"DEBUG: add {sensorruleline}")
+        sensorruleline = re.sub(r"\s+", ' ', sensorruleline)
+        tokens = tokenize(sensorruleline)
+        adapter = tokens.pop(0)
+        sname = tokens.pop(0)
+        regex = False
+        if adapter[0] == '%':
+            adapter = adapter[1:]
+            regex = True
+        print(f"DEBUG: adapter is {adapter}, sname is {sname}")
+        if adapter not in self.rules:
+            self.rules[adapter] = {}
+            self.rules[adapter]["rules"] = {}
+            self.rules[adapter]["regex"] = regex
+        if len(tokens) == 0:
+            print("ERROR: sensor:")
+            return False
+        if tokens[0] == 'IGNORE':
+            self.rules[adapter]["ignore"] = True
+            return True
+        if len(tokens) < 2:
+            print(f"ERROR: sensor: not enough tokens got {tokens}")
+            return False
+        warn = int(tokens.pop(0))
+        panic = int(tokens.pop(0))
+        if len(tokens) > 0:
+            mwarn = int(tokens.pop(0))
+        else:
+            mwarn = SENSOR_DISABLE
+        if len(tokens) > 0:
+            mpanic = int(tokens.pop(0))
+        else:
+            mpanic = SENSOR_DISABLE
+        xrd = xy_rule_sensor(warn, panic, mwarn, mpanic)
+        regex = False
+        if sname[0] == '%':
+            sname = sname.lstrip('%')
+            regex = True
+        print(f"DEBUG: sname is {sname}")
+        self.rules[adapter]["rules"][sname] = {}
+        self.rules[adapter]["rules"][sname]["rule"] = xrd
+        self.rules[adapter]["rules"][sname]["regex"] = regex
+        return True
+
+# return name of sensor, or None
+    def is_sensor(self, line):
+        #print(f"DEBUG: is {line} sensor ?")
+        if len(line) < 4:
+            return None
+        sline = line.split(":")
+        if len(sline) != 2:
+            return None
+        sname = sline[0]
+        if sname == 'Adapter':
+            return None
+        line = sline[1]
+        line = re.sub(r"^^\s+", '', line)
+        #line = re.sub(r"\s+", ' ', line)
+        line = line.replace("°C", " °C")
+        sline = line.split(' ')
+        #print(sline)
+        if len(sline) < 2:
+            #print("DEBUG: not enough token")
+            return None
+        if sline[1] == 'RPM':
+            return [sname, sline[0], 'RPM']
+        if sline[1] == 'V':
+            return [sname, sline[0], 'V']
+        if sline[1] == 'mV':
+            return [sname, sline[0], 'V']
+        if sline[1] == 'W':
+            return [sname, sline[0], 'W']
+        # °C and C related to locale
+        if sline[1] == '°C' or sline[1] == 'C':
+            return [sname, sline[0].lstrip("+"), 'C']
+        #TODO joule J ?
+        print("DEBUG: did not found a known unit")
+        return None
+
+    def find_rule_for_adapter(self, rule, sname):
+        #print(f"DEBUG: find_rule_for_adapter {sname}")
+        if sname in rule["rules"]:
+            #print(f"DEBUG: exact match for {sname}")
+            return rule["rules"][sname]["rule"]
+        for srul in rule["rules"]:
+            #print(f"TRY {srul}")
+            if "regex" not in rule["rules"][srul] or not rule["rules"][srul]["regex"]:
+                continue
+            #print(f"DEBUG: search for {sname} with regex={srul}")
+            ret = re.search(srul, sname)
+            if ret:
+                return rule["rules"][srul]["rule"]
+        return None
+
+    def check(self, adapter, line):
+        #print("DEBUG: ======================================")
+        #print(f"DEBUG: adapter={adapter} line={line}")
+        #print(self.rules)
+        ret = self.is_sensor(line)
+        if ret is None:
+            return None
+        sname = ret[0]
+        rawv = ret[1]
+        sunit = ret[2]
+
+        print(f"DEBUG: {sname} has value {rawv}")
+        if adapter in self.rules:
+            #print(f"DEBUG: adapter direct match for {adapter}")
+            rule = self.rules[adapter]
+            rs = self.find_rule_for_adapter(rule, sname)
+            if rs is not None:
+                return rs.check(sname, float(rawv))
+        #print(f"DEBUG: check {adapter} via regex")
+        # now check for regex
+        for adapt in self.rules:
+            if "regex" not in self.rules[adapt]:
+                continue
+            #print(f"DEBUG: regex is {adapt}")
+            ret = re.search(adapt, adapter)
+            if ret:
+                #print(f"DEBUG: regex is {adapt} and match {self.rules[adapt]}")
+                rs = self.find_rule_for_adapter(self.rules[adapt], sname)
+                if rs is not None:
+                    return rs.check(sname, float(rawv))
+
+        #print("DEBUG: default search")
+        # no rule matched, so we need to go back to default rule
+        if "DEFAULT" not in self.rules:
+            # no default
+            print("DEBUG: no default")
+            return None
+        if sunit not in self.rules["DEFAULT"]["rules"]:
+            print(f"DEBUG: no {sunit} in DEFAULT")
+            return None
+        rule = self.rules["DEFAULT"]["rules"][sunit]["rule"]
+        return rule.check(sname, float(rawv))
 
 
 class xy_rule_cpu():

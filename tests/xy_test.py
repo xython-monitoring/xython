@@ -17,6 +17,7 @@ from xython.rules import xy_rule_port
 from xython.rules import xy_rule_proc
 from xython.rules import xy_rule_mem
 from xython.rules import xy_rule_cpu
+from xython.rules import xy_rule_sensors
 from xython.xython import xythonsrv
 
 
@@ -265,12 +266,10 @@ def test_xydelay():
     assert xydelay('1d') == 3600 * 24
     assert xydelay('1w') == 3600 * 24 * 7
     assert xydelay('-1') == -1
-    with pytest.raises(SystemExit):
-        xydelay('60x')
-    with pytest.raises(SystemExit):
-        xydelay('test')
-    with pytest.raises(SystemExit):
-        xydelay('tesh')
+    #with pytest.raises(SystemExit):
+    assert xydelay('60x') == None
+    assert xydelay('test') == None
+    assert xydelay('tesh') == None
 
 
 DAY_M = 60 * 24
@@ -336,3 +335,62 @@ def test_replace():
     assert buf == '/bin/sh'
     buf = X.xymon_replace("$DONOTEXIST")
     assert buf == ''
+
+def test_lmsensors():
+    f = open("./tests/sensors/sensors1")
+    data = f.read()
+    f.close()
+    xs = xy_rule_sensors()
+    xs.add("%.* %.*  20 30")
+    #assert xs.warn == 30
+    #assert xs.panic == 30
+    print(xs.rules)
+    assert xs.is_sensor("") == None
+    assert xs.is_sensor("Adapter: fake") == None
+    assert xs.is_sensor("Adapter: 40 RPM") == None
+    assert xs.is_sensor("in0 30") == None
+    assert xs.is_sensor("in0: 30") == None
+    assert xs.is_sensor("in0: 30 V") is not None
+    assert xs.is_sensor("in0: 30 mV") is not None
+    assert xs.is_sensor("in0: 30 RPM") is not None
+    ret = xs.is_sensor("in0: +30°C")
+    assert ret is not None
+    assert len(ret) == 3
+    assert ret[0] == 'in0'
+    assert ret[1] == '30'
+    assert ret[2] == 'C'
+    ret = xs.is_sensor("fan7: 4500 RPM")
+    assert ret is not None
+    assert len(ret) == 3
+    assert ret[0] == 'fan7'
+    assert ret[1] == '4500'
+    assert ret[2] == 'RPM'
+
+
+    ret = xs.is_sensor("CPU temperature: +30°C")
+    assert ret is not None
+    assert len(ret) == 3
+    assert ret[0] == 'CPU temperature'
+    assert ret[1] == '30'
+    assert ret[2] == 'C'
+
+    ret = xs.check("fake", "in0: +40.7°C")
+    assert ret["color"] == 'red'
+    xs.add("%.* in0 50 60")
+    ret = xs.check("fake", "in0: +40.7°C")
+    assert ret["color"] == 'green'
+    ret = xs.check("fake", "temp0: +40.7°C")
+    assert ret["color"] == 'red'
+
+    xs = xy_rule_sensors()
+    xs.add("DEFAULT C 20 30 0 -10")
+    ret = xs.check("fake2", "temp0: -40.7°C")
+    assert ret["color"] == 'red'
+    ret = xs.check("fake2", "temp0: -5.7°C")
+    assert ret["color"] == 'yellow'
+    xs.add('%.* "SENSOR SPACE"  20 30')
+    ret = xs.check("fake2", "SENSOR SPACE: 40°C")
+    assert ret["color"] == 'red'
+    xs.add('%.* AUXTIN -29 -28 -30 -31')
+    ret = xs.check("fake2", "AUXTIN:         -29.5 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor")
+    assert ret["color"] == 'green'

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-import pika, sys, os
 
-credentials = pika.PlainCredentials('xython','password')
+import os
+import pika
+import sys
+
+credentials = pika.PlainCredentials('xython', 'password')
+
 
 def main():
     print("toto")
@@ -18,6 +22,7 @@ def main():
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
+
 
 print("start")
 main()

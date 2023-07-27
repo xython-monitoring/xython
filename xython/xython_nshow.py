@@ -3,10 +3,9 @@
 # ncurses xython overview
 
 import pika
-import sys, os
+import sys
 import curses
 from curses import wrapper
-import time
 import threading
 
 L_RED = 1
@@ -18,10 +17,10 @@ L_YELLOW = 6
 
 mall = []
 hosts = {}
-HOSTMAX=0
+HOSTMAX = 0
 columns = []
 
-credentials = pika.PlainCredentials('xython','password')
+credentials = pika.PlainCredentials('xython', 'password')
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='127.0.0.1', port=5672, credentials=credentials))
 channel = connection.channel()
 
@@ -29,6 +28,8 @@ channel.exchange_declare(exchange='xython-status', exchange_type='fanout')
 result = channel.queue_declare(queue='', exclusive=True)
 queue_name = result.method.queue
 channel.queue_bind(exchange='xython-status', queue=queue_name)
+
+
 def callback(ch, method, properties, body):
     #print(body.decode("UTF8"))
     msg = body.decode("UTF8")
@@ -56,12 +57,15 @@ def callback(ch, method, properties, body):
     #mall.append(body.decode("UTF8"))
     #sys.stdout.flush()
 
+
 def pikathread():
     channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
     channel.start_consuming()
 
+
 ct = threading.Thread(target=pikathread)
 ct.start()
+
 
 def xmain(stdscr):
     needexit = False
@@ -88,7 +92,7 @@ def xmain(stdscr):
             mwin = curses.newwin(rows, cols)
         mwin.erase()
         mwin.addstr(0, 0, f"Test {cols}x{rows} Y={sy}/{len(hosts)}")
-        HOSTMAX=0
+        HOSTMAX = 0
         for host in hosts:
             if len(host) > HOSTMAX:
                 HOSTMAX = len(host)
@@ -136,7 +140,7 @@ def xmain(stdscr):
             if scol in hosts[shost]:
                 if "data" in hosts[shost][scol]:
                     data = hosts[shost][scol]["data"]
-                    dwin = curses.newwin(rows - 1, cols -1, y, 0)
+                    dwin = curses.newwin(rows - 1, cols - 1, y, 0)
                     dwin.box("|", "-")
                     dwin.noutrefresh()
                     pad.erase()
@@ -170,23 +174,9 @@ def xmain(stdscr):
             sx = len(columns) - 1
         if sx >= len(columns):
             sx = 0
-        #time.sleep(1)
+
 
 wrapper(xmain)
 
+
 sys.exit(0)
-
-def main():
-    sys.exit(0)
-
-#print("start")
-main()
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('Interrupted')
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)
