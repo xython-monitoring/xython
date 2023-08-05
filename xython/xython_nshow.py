@@ -52,6 +52,7 @@ def callback(ch, method, properties, body):
     if col not in hosts[host]:
         hosts[host][col] = {}
     hosts[host][col]["color"] = rr[7]
+    hosts[host][col]["acked"] = rr[11]
     data.replace('<br>', '\n')
     hosts[host][col]["data"] = data
     #mall.append(body.decode("UTF8"))
@@ -120,8 +121,11 @@ def xmain(stdscr):
             for col in columns:
                 if col in hosts[host]:
                     color = hosts[host][col]["color"]
+                    acked = hosts[host][col]["acked"]
                     if color == "red":
                         overpad.addstr(y, x, 'R', curses.color_pair(L_RED))
+                        if acked != "0":
+                            overpad.addstr(y, x + 1, 'a', curses.color_pair(L_RED))
                     elif color == "green":
                         overpad.addstr(y, x, 'G', curses.color_pair(L_GREEN))
                     elif color == "yellow":

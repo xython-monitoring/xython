@@ -93,8 +93,10 @@ def setcolor(colortry, oldcolor):
 
 
 # return gif from color
-def gif(color, ts):
+def gif(color, ts, isack=False):
     now = time.time()
+    if isack:
+        return f"{color}-ack.gif"
     if ts + 60 > now:
         return "%s-recent.gif" % color
     return "%s.gif" % color

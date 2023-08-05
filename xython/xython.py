@@ -117,6 +117,7 @@ class xythonsrv:
         self.celery_workers = None
         self.ts_page = time.time()
         self.ts_tests = time.time()
+        self.ts_check = time.time()
         self.expires = []
         self.stats = {}
         self.uptime_start = time.time()
@@ -203,6 +204,16 @@ class xythonsrv:
         self.debugdev('vars', "DEBUG: did not found %s" % varname)
         return None
 
+    def xython_is_ack(self, hostname, column):
+        req = f'SELECT ackend, ackcause FROM columns WHERE hostname="{hostname}" AND column="{column}"'
+        res = self.sqc.execute(req)
+        results = self.sqc.fetchall()
+        if len(results) == 0:
+            return None
+        if results[0][0] == None:
+            return None
+        return results
+
     # get variables from /etc/xymon
     def xymon_getvar(self, varname):
         if varname in self.vars:
@@ -262,7 +273,7 @@ class xythonsrv:
 
             # TODO handle all green column
             if kind == 'nongreen':
-                res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green'")
+                res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' ORDER BY column")
                 # TODO
                 gcolor = 'red'
             else:
@@ -277,7 +288,7 @@ class xythonsrv:
             html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
 
             if kind == 'nongreen':
-                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green")')
+                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green") ORDER by ackend, hostname')
             else:
                 res = self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
             hostlist = self.sqc.fetchall()
@@ -307,10 +318,15 @@ class xythonsrv:
                         lcolor = hcols[Cname]
                         lts = hts[Cname]
                         dhm = xydhm(lts, now)
-                        if self.xythonmode > 0:
-                            html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts), Cname, lcolor, Cname, lcolor)
+                        acki = self.xython_is_ack(H.name, Cname)
+                        if acki == None or lcolor == 'green':
+                            isack = False
                         else:
-                            html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts), Cname, lcolor, Cname, lcolor)
+                            isack = True
+                        if self.xythonmode > 0:
+                            html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
+                        else:
+                            html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
                 html += '</TR>\n'
 
             html += '</TABLE></CENTER><BR>'
@@ -343,6 +359,28 @@ class xythonsrv:
                 html += '<a href="$XYMONSERVERCGIURL/svcstatus.sh?CLIENT={hostname}">Client data</a> available<br>'
             html += '</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n'
             history_extra = f'AND hostname="{hostname}" AND column="{column}"'
+
+            res = self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
+            ackinfos = self.sqc.fetchall()
+            if len(ackinfos) == 1:
+                print(ackinfos)
+                ackinfo = ackinfos[0]
+                ackend = ackinfo[0]
+                if ackend is not None:
+                    ackmsg = ackinfo[1]
+                    html += f'<CENTER>Current acknowledgement: {ackmsg}<br>Next update at: {xytime(int(ackend))}</CENTER>\n'
+            else:
+                print(f"ackinfo is len={len(ackinfo)}")
+            # TODO acknowledge is only for non-history and non-green
+            html += f'<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
+            html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
+            html += '<input type="text" name="cause" required>\n'
+            html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
+            html += f'<input type="hidden" name="service" value="{column}">\n'
+            html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            html += '<button type="submit">Send</button></form>\n'
+            html += '</CENTER>\n'
+
 
         # history
         res = self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
@@ -545,6 +583,9 @@ class xythonsrv:
             H = xy_host(hostname)
             H.hostip = hostname
             self.xy_hosts.append(H)
+        ackend = None
+        acktime = None
+        ackcause = None
         ocolor = "-"
         ots = ts
         res = self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
@@ -561,6 +602,13 @@ class xythonsrv:
             result = results[0]
             ocolor = result[4]
             ots = result[2]
+            acktime = result[5]
+            ackend = result[5]
+            ackcause = result[6]
+            ackmsg = result[6]
+        if acktime is None:
+            acktime = 0
+            ackmsg = ""
         if ocolor == 'blue' and color != 'purple' and color != 'blue':
             # keep it blue
             color = 'blue'
@@ -598,6 +646,7 @@ class xythonsrv:
                 self.error("ERROR: cannot purple without status")
                 return
             data = ''.join(rdata["raw"])
+        # TODO not @@XYMONDCHK-V1
         # @@status#62503/karnov|1684156989.403184|172.16.1.22||karnov|lr|1684243389|red||red|1682515389|0||0||1684156916|linux||0|
         # see xymond/new-daemon.txt
         # status hostname = 4
@@ -607,7 +656,7 @@ class xythonsrv:
         # disabletime=13 dismg=14
         # flapping=16
         if self.has_pika:
-            status = f"@@status#{self.msgn}/{hostname}|{ts}|{updater}||{hostname}|{cname}|{ts}|{color}||{ocolor}|{ts}|0||0||{ts}|linux||0|\n"
+            status = f"@@status#{self.msgn}/{hostname}|{ts}|{updater}||{hostname}|{cname}|{ts}|{color}||{ocolor}|{ts}|{acktime}|{ackmsg}|0||{ts}|linux||0|\n"
             status += data
             status += '\n@@'
             self.msgn += 1
@@ -616,7 +665,7 @@ class xythonsrv:
 
         #req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
         now = time.time()
-        res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES (?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color))
+        res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color, ackend, ackcause) VALUES (?, ?, ?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color, ackend, ackcause))
         #self.sqconn.commit()
         if color == 'purple':
             #duplicate
@@ -751,9 +800,20 @@ class xythonsrv:
                 self.error(f"ERROR: remains of {name} {column}")
         return True
 
-    def check_purples(self):
-        ts_start = time.time()
+    def check_acks(self):
         now = time.time()
+        req = f'UPDATE columns SET ackend = null WHERE ackend <= {now}'
+        self.sqc.execute(req)
+
+    def acks_dump(self):
+        req = f"SELECT hostname, column, ackend, ackcause FROM columns"
+        res = self.sqc.execute(req)
+        results = self.sqc.fetchall()
+        #for col in results:
+
+    def check_purples(self):
+        now = time.time()
+        ts_start = now
         req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple"'
         res = self.sqc.execute(req)
         results = self.sqc.fetchall()
@@ -893,7 +953,10 @@ class xythonsrv:
         if now > self.ts_tests + 5:
             self.do_tests()
             self.ts_tests = now
-        self.check_purples()
+        if now > self.ts_check + 1:
+            self.check_purples()
+            self.check_acks()
+            self.ts_check = now
         if now > self.ts_page + 30:
             xythond_start = time.time()
             self.do_xythond()
@@ -1263,6 +1326,49 @@ class xythonsrv:
             self.column_update(hostname, column, color, time.time(), hdata, expire, msg["addr"])
         return False
 
+# format acknowledge hostname column duration cause
+    def parse_acknowledge(self, msg):
+        self.debug(f"ACK ACTION {msg}")
+        lmsg = msg.split(" ")
+        if len(lmsg) < 4:
+            return False
+        t = lmsg.pop(0)
+        if t != "acknowledge":
+            self.error(f"ERROR: I should found acknowledge (got {t})")
+            return False
+        who = lmsg.pop(0)
+        # now find the hostname
+        lwho = who.split('.')
+        testname = lwho.pop()
+        hostname = '.'.join(lwho)
+        self.debug(f"DEBUG: I will acknowledge {hostname} columns:{testname}")
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: unknow hostname (got {hostname})")
+            return False
+        howlong = lmsg.pop(0)
+        howlongs = xydelay(howlong)
+        # TODO the real expire in DB could be some secs after
+        expire = time.time() + howlongs
+        if howlongs is None:
+            self.error(f"ERROR: invalid duration {howlong}")
+            return False
+        why = " ".join(lmsg)
+        self.debug(f"DEBUG: I will acknowledge {who} for {howlongs}s due to {why}")
+
+        columns = []
+        if testname == '*':
+            columns = self.get_columns(hostname)
+            if columns is None:
+                return False
+        else:
+            columns.append(testname)
+        for cname in columns:
+            now = time.time()
+            req = f'UPDATE columns SET ackcause="{why}", ackend={now + howlongs} WHERE hostname="{hostname}" AND column="{cname}" AND color != "green"'
+            self.sqc.execute(req)
+        return True
+
     def parse_disable(self, msg):
         self.debug(f"DISABLE ACTION {msg}")
         dstart = time.time()
@@ -1327,6 +1433,9 @@ class xythonsrv:
         if firstchars == 'status':
             self.parse_status(msg)
             return
+        if firstchars == 'acknow':
+            self.parse_acknowledge(hdata)
+            return
         if firstchars == 'disabl':
             self.parse_disable(hdata)
             return
@@ -1377,7 +1486,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
@@ -1435,6 +1544,10 @@ class xythonsrv:
                 except BrokenPipeError as error:
                     self.error("Client get away")
                     pass
+            elif cmd == "acknowledge":
+                self.parse_acknowledge(buf)
+            else:
+                self.error(f"Unkownw cmd {cmd}")
             C.close()
 
     def set_netport(self, port):
@@ -1562,7 +1675,7 @@ class xythonsrv:
         self.sqconn = sqlite3.connect(self.db)
         self.sqc = self.sqconn.cursor()
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS columns
-            (hostname text, column text, ts date, expire date, color text, UNIQUE(hostname, column))''')
+            (hostname text, column text, ts date, expire date, color text, ackend date, ackcause text, UNIQUE(hostname, column))''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS history
             (hostname text, column text, ts date, duration int, color text, ocolor text)''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
