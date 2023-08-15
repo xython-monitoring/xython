@@ -1546,8 +1546,19 @@ class xythonsrv:
                     pass
             elif cmd == "acknowledge":
                 self.parse_acknowledge(buf)
+            elif cmd == "TLSproxy":
+                lines = buf.split("\n")
+                line = lines.pop(0)
+                addr = line.split(" ")[1]
+                buf = "\n".join(lines)
+                #print("DEBUG: addr is {addr}")
+                #print(buf)
+                msg = {}
+                msg["buf"] = buf
+                msg["addr"] = f"TLS proxy for {addr}"
+                self.parse_hostdata(msg)
             else:
-                self.error(f"Unkownw cmd {cmd}")
+                self.error(f"ERROR: Unkownw cmd {cmd}")
             C.close()
 
     def set_netport(self, port):
@@ -1558,9 +1569,11 @@ class xythonsrv:
 
     def net_start(self):
         self.s = socket.socket()
+        #self.s = socket.socket(socket.AF_INET6)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.log('network', f"DEBUG: listen on {self.netport}")
         self.s.bind(("0.0.0.0", self.netport))
+        #self.s.bind(("::", self.netport))
         self.s.setblocking(0)
         self.clients = []
         self.s.listen(1000)

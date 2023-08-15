@@ -36,7 +36,7 @@ if [ -e /etc/xymon-client/xymonclient.cfg ];then
 	echo "$XYMSERVERS"
 fi
 
-if [ -e /etc/xython/xxx ];then
+if [ -e /etc/xython/xython.cfg ];then
 	echo "TODO"
 fi
 
