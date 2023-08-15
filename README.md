@@ -40,10 +40,14 @@ Github pipelines generates a debian package, so you can download it and install 
 ### source install
 
 > git clone <https://github.com/xython-monitoring/xython.git>
+
 Create a virtualenv for xython
 > virtualenv xython
+
 > source xython/bin/activate
+
 > pip install celery[redis] requests
+
 > ./setup.py install
 
 Copy xymon configuration into /etc/xython
@@ -88,7 +92,7 @@ For clustering, I will work on using a rabbitMQ cluster to see if it is doable.
 * xymonnet is replaced by xython_test on the celery cluster
 * xymon_channel: xymon_channel could be replace by either a simple tool which ask xythond for recent change or the use of a rabbitMQ cluster
 * xymongen: embedded in xythond for the moment
-
+<!--
 # Feature matrix
 TODO
 <table>
@@ -243,6 +247,7 @@ TODO
 
 </table>
 TODO: fill all hosts.cfg manpage in this table
+-->
 
 # difference/improvment over xymon
 The goal is to be 100% compatible with old Xymon storage BUT via an option, I will support some possible change.
@@ -259,9 +264,17 @@ In the same time, all BB and hobbit compatibility will be removed probably.
 * Add more "standard" tests to xymon client (ntpd, smart, lvm, sensors for example)
 
 # client
-I dont work on changing the client for the moment.
 My goal is to keep the client simple as it can be already now. (a simple sh | nc)
-But having a version of it with TLS is planned in the future.
+But having a version of it with TLS is currently worked.
+
+## lm-sensors
+The xymon client provided by xython support now reporting lm-sensors
+
+## planned
+smart
+megacli
+ntpd + rtc
+kernel log / dmesg
 
 # Contact
 You can contact me on IRC libera channel #xython
