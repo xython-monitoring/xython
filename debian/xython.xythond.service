@@ -1,0 +1,13 @@
+[Unit]
+Description=xython celery worker
+After=network.target
+
+[Service]
+ExecStart=xythond --etcdir /etc/xython/ -D --wwwdir /var/lib/xython/www
+WorkingDirectory=/var/lib/xython
+Restart=always
+User=xython
+Group=xython
+
+[Install]
+WantedBy=multi-user.target

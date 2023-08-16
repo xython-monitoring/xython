@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", "-d", help="increase debug level", action="store_true")
     parser.add_argument("--daemon", "-D", help="start daemon", action="store_true")
+    parser.add_argument("--ipv6", "-6", help="Enable IPV6", action="store_true")
     parser.add_argument("--xython", "-x", help="Load files from xython", type=int, default=2)
     parser.add_argument("--tload", "-T", help="test reading configuration and data", action="store_true")
     parser.add_argument("--dump", help="test reading configuration and data", action="store_true")
@@ -35,6 +36,8 @@ def main():
     X.edebug = args.debug
     X.readonly = args.readonly
     X.xythonmode = args.xython
+    if args.ipv6:
+        X.ipv6 = True
     if X.xythonmode == 0 and not X.readonly:
         X.error("ERROR: xython mode 0 is dangerous")
         sys.exit(1)

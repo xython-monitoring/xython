@@ -36,8 +36,22 @@ The goal is to have the minimum in non-core modules and only modules availlable 
 **STRONG WARNING: do not run xython against xymon data files, this is not tested enough.**
 
 ### package install
+#### using the APT repository
+First you need to addi xython repository (bookworm only for the moment)
+Add in /etc/apt/sources.list.d/xython.list
+> deb https://www.xython.fr/xython-mirror /
+
+And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
+> apt-key add pgp-key.public
+
+#### manual debian setup
 Github pipelines generates a debian package, so you can download it and install it via:
 > dpkg -i xython-0-1.deb
+
+TIPS: you can find the zip of the package in the bottom of a github actions summary
+
+#### other distro
+I plan to support RPM in the future
 
 ### source install
 
@@ -83,9 +97,9 @@ Start xythond with:
 Start the celery workers with:
 > python3 -m celery -A xython worker --loglevel=INFO
 
-## webserver
-Cmake should install some web directory but some manual hack could be still needed
-I plan to fix that soon.
+
+## docker
+An example of mini install via docker could be found in the docker directory.
 
 ## xython client
 xython has a xymon compatible client done in pure shell script.
@@ -96,12 +110,35 @@ The fake_client.sh use fake_client output and send it to a server via either net
 
 The current client is not finished, I need a bit of work to finish it ( adding some command parameter and autoguess server/port)
 
+## TLS server
+TLS communication with the client is handled by xyhton-tlsd.
+You need to have a working PKI (CA + key + cert).
+The key and cert used by xython-tlsd could be configured by:
+* setting XYTHON_TLS_KEY=path and XYTHON_TLS_CRT=path in $etcdir/xython.cfg
+* giving path directly to xyhton-tlsd arguments (--tlskey/--tlscrt)
+
+TODO: TLS server is still a PoC which simply works, I need to bench it.
+
+TODO: authentification of client will be done later
+
 # Architecture
 All active tests are handled by celery workers.
 Celery is a distributed tasks manager, this will permit to be scalable and/or ran tests on another host.
 Probably handling client data will also be handled by celery.
 
 For clustering, I will work on using a rabbitMQ cluster to see if it is doable.
+
+# clustering
+For replacing the shared memory of xymon, a rabbitmq message queuing is used.
+The usage of it is for the moment optionnal.
+
+xython-nshow is an example of using it for displaying a ncurses overview.
+
+Example of setupping the rabbitMQ xython user:
+> rabbitmqctl add_user xython "password"
+
+> rabbitmqctl set_permissions -p "/" "xython" ".*" ".*" ".*"
+
 
 # equivalence
 * xymonnet is replaced by xython_test on the celery cluster
@@ -269,7 +306,6 @@ The goal is to be 100% compatible with old Xymon storage BUT via an option, I wi
 Probably all options stated as deprecated in xymon will be not supported.
 In the same time, all BB and hobbit compatibility will be removed probably.
 
-* TLS client <-> server: I plan to add support to communicate over TLS between server and client
 * compression of data files: all histlogs could be compressed saving disk space
 * There are some inconsistency in xymon between timestamp (like used in storing hostdata) and full date (like histlogs).
   Furthermore, using full localized date is bad when sorting directory output and lead to timezone problems.
@@ -277,6 +313,8 @@ In the same time, all BB and hobbit compatibility will be removed probably.
 * disk status show which rule matched the partition
 * TODO: permit to hide acked tests in nongreen page
 * Add more "standard" tests to xymon client (ntpd, smart, lvm, sensors for example)
+* TLS communication between client and server is supported as a PoC (until I finish deploy client)
+* IPV6 communication between client and server is supported
 
 # GUI
 ## acks
@@ -306,4 +344,4 @@ This is a uncomplete
 * github/test: test TLS
 
 # Contact
-You can contact me on IRC libera channel #xython
+You can contact me (nick montjoie) on IRC libera channel #xython

@@ -6,7 +6,7 @@ from codecs import open
 from setuptools import setup
 
 CURRENT_PYTHON = sys.version_info[:2]
-REQUIRED_PYTHON = (3, 7)
+REQUIRED_PYTHON = (3, 8)
 
 if CURRENT_PYTHON < REQUIRED_PYTHON:
     sys.stderr.write(
@@ -39,22 +39,22 @@ with open("README.md", "r", "utf-8") as f:
 
 setup(
     name="xython",
-    version="0",
+    version="0.1.1",
     description="xython is a rewrite in python of xymon",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Corentin Labbe",
     author_email="clabbe.montjoie@gmail.com",
     url="https://github.com/xython-monitoring/xython",
-    packages=["xython", "xython-tlsd", "xython-ncurses"],
+    packages=["xython", "xython_tlsd", "xython_ncurses"],
     package_data={"": ["LICENSE", "NOTICE"]},
-    package_dir={"xython": "xython", "xython-tlsd": "xython-tlsd", "xython-ncurses": "xython-ncurses"},
+    package_dir={"xython": "xython", "xython_tlsd": "xython-tlsd", "xython_ncurses": "xython-ncurses"},
     entry_points={
         'console_scripts': [
             "xythond = xython:main",
-            "xython-tlsd = xythontlsd:main",
-            #"xythonc = xython_client:main",
-            "xython-nshow = xython_ncurses:main",
+            "xython-tlsd = xython_tlsd.xython_tlsd:main",
+            "xythonc = xython.xython_client:main",
+            "xython-nshow = xython_ncurses.xython_nshow:main",
         ],
     },
     include_package_data=True,
