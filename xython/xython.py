@@ -12,6 +12,7 @@ import re
 import sys
 from random import randint
 import socket
+from importlib.metadata import version
 try:
     import pika
     has_pika = True
@@ -99,6 +100,7 @@ class xythonsrv:
         self.s = None
         self.us = None
         self.netport = 1984
+        self.ipv6 = False
         self.edebug = False
         self.readonly = False
         self.rules = {}
@@ -418,12 +420,12 @@ class xythonsrv:
         html += fh.read()
         fh.close()
 
-        fh = open(self.etcdir + "xymonmenu.cfg")
+        fh = open(self.etcdir + "/xymonmenu.cfg")
         body_header = fh.read()
         fh.close()
         html = re.sub("&XYMONBODYHEADER", body_header, html)
         html = re.sub("&XYMONBODYFOOTER", "", html)
-        html = re.sub("&XYMONDREL", "xython 0", html)
+        html = re.sub("&XYMONDREL", f'{version("xython")}', html)
         html = re.sub("&XYMWEBREFRESH", "60", html)
         html = re.sub("&XYMWEBBACKGROUND", gcolor, html)
         html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
@@ -1568,12 +1570,16 @@ class xythonsrv:
         return True
 
     def net_start(self):
-        self.s = socket.socket()
-        #self.s = socket.socket(socket.AF_INET6)
+        if self.ipv6:
+            self.s = socket.socket(socket.AF_INET6)
+        else:
+            self.s = socket.socket()
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.log('network', f"DEBUG: listen on {self.netport}")
-        self.s.bind(("0.0.0.0", self.netport))
-        #self.s.bind(("::", self.netport))
+        if self.ipv6:
+            self.s.bind(("::", self.netport))
+        else:
+            self.s.bind(("0.0.0.0", self.netport))
         self.s.setblocking(0)
         self.clients = []
         self.s.listen(1000)

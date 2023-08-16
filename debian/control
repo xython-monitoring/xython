@@ -21,13 +21,15 @@ Package: xython
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: lsb-base (>= 3.0-6),
+	 adduser,
 	 python3,
 	 python3-celery,
+	 python3-redis,
 	 python3-requests,
 	 ${python3:Depends},
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: apache2 | httpd-cgi
+Recommends: apache2 | httpd-cgi, redis-server
 Description: monitoring system for systems, networks and applications
  Xymon (previously called Hobbit) is a network- and applications-
  monitoring system designed for use in large-scale networks. But it will

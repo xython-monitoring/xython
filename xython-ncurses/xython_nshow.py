@@ -2,11 +2,13 @@
 
 # ncurses xython overview
 
+import argparse
 import pika
 import sys
 import curses
 from curses import wrapper
 import threading
+from importlib.metadata import version
 
 L_RED = 1
 L_GREEN = 2
@@ -20,6 +22,17 @@ hosts = {}
 HOSTMAX = 0
 columns = []
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--debug", "-d", help="increase debug level", action="store_true")
+parser.add_argument("--etcdir", help="Override xymon etc directory", default="/etc/xymon/")
+parser.add_argument("--version", "-V", help="Show version", action="store_true")
+args = parser.parse_args()
+
+if args.version:
+    print(f"Xython ncurses overview {version('xython')}")
+    sys.exit(0)
+
+#TODO hardcoded
 credentials = pika.PlainCredentials('xython', 'password')
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='127.0.0.1', port=5672, credentials=credentials))
 channel = connection.channel()

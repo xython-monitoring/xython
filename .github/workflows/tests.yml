@@ -7,11 +7,11 @@ on:  # yamllint disable-line rule:truthy
   pull_request:
 
 jobs:
-  build:
+  build-without-pika:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7.16", 3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.8, 3.9, "3.10.11", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -53,9 +53,75 @@ jobs:
       - name: Run tload
         run: |
           xythond --tload -d --logdir log -x 0 -R --wwwdir www --vardir data
-      - name: Run for 10 s
+      - name: Run xythond for 10 s
         run: |
           xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data
+      - name: Run xython-tlsd for 10 s
+        run: |
+          xython-tlsd --quit 10 --tlskey tests/xython.key --tlscrt tests/xython.crt --etcdir etc/
+
+  build-with-pika:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10.11", "3.11"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e "."
+          pip install pika
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=16 --max-line-length=127 --statistics
+      - name: Test with pytest
+        run: |
+          pwd
+          ls -l
+          pytest
+      - name: Try to setup.py
+        run: |
+          python setup.py install
+      - name: install xymon and rabbitmq-server
+        run: |
+          sudo apt-get -y install xymon rabbitmq-server
+      - name: start rabbitMQ
+        run: |
+          sudo systemctl start rabbitmq-server
+          sudo rabbitmqctl add_user xython "password"
+          sudo rabbitmqctl set_permissions -p "/" "xython" ".*" ".*" ".*"
+      - name: create root directories
+        run: |
+          sudo mkdir /var/log/xython
+      - name: create directories
+        run: |
+          mkdir log www data
+      - name: check XYMONVAR
+        run: |
+          grep -r XYMONVAR /etc/xymon
+      - name: Run tload
+        run: |
+          sudo cp etc/xython.cfg /etc/xymon/
+          xythond --tload -d --logdir log -x 0 -R --wwwdir www --vardir data
+      - name: Run xythond for 10 s
+        run: |
+          xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data
+      - name: Run xython-tlsd for 10 s
+        run: |
+          xython-tlsd --quit 10 --tlskey tests/xython.key --tlscrt tests/xython.crt --etcdir etc/
+      - name: Run xython-nshow
+        run: |
+          xython-nshow -V
 
   build-debian:
     strategy:
@@ -71,7 +137,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install python packages
-        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery python3-setuptools python3-virtualenv
+        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery python3-setuptools python3-virtualenv redis-server
       - name: Try to setup.py
         run: |
           virtualenv xython
@@ -101,6 +167,16 @@ jobs:
           find www
           find log
           find data
+#      - name: start xython-tlsd service via systemd
+#        run: |
+#          sudo systemctl start xython-tlsd
+#          ps aux |grep xythont-lsdd
+#          sudo systemctl stop xython-tlsd
+#      - name: start xythond service via systemd
+#        run: |
+#          sudo systemctl start xythond
+#          ps aux |grep xythond
+#          sudo systemctl stop xythond
 
   build-debian-alone:
     strategy:
@@ -116,7 +192,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install python packages
-        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-virtualenv
+        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-virtualenv redis-server
       - name: Try to setup.py
         run: |
           virtualenv xython
@@ -141,6 +217,26 @@ jobs:
           find www
           find log
           find data
+#      - name: start xython-tlsd service via init
+#        run: |
+#          sudo /etc/init.d/xythond-tlsd start
+#          ps aux |grep xython-tlsd
+#          sudo /etc/init.d/xythond-tlsd stop
+#      - name: start xythond service via init
+#        run: |
+#          sudo /etc/init.d/xythond start
+#          ps aux |grep xythond
+#          sudo /etc/init.d/xythond stop
+#      - name: start xython-tlsd service via systemd
+#        run: |
+#          sudo /usr/bin/systemctl start xython-tlsd
+#          ps aux |grep xython-tlsd
+#          sudo /usr/bin/systemctl stop xython-tlsd
+#      - name: start xythond service via systemd
+#        run: |
+#          sudo /usr/bin/systemctl start xythond
+#          ps aux |grep xythond
+#          sudo /usr/bin/systemctl stop xythond
 
   build-ubuntu-alone:
     runs-on: ubuntu-latest
@@ -202,7 +298,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery
+        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery python3-redis redis-server
       - name: create orig targz
         run: cd .. && tar czf xython_0-1.orig.tar.gz xython
       - name: Run ls
@@ -220,17 +316,17 @@ jobs:
       - name: Keep generated deb
         uses: actions/upload-artifact@v3
         with:
-          name: debianpkg
+          name: xython-${{ matrix.os }}_deb
           path: xython*deb
   ubuntu-pkg:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     name: build ubuntu package
     steps:
       - uses: actions/checkout@v3
       - name: update pkglist
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery
+        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery python3-redis redis-server
       - name: create orig targz
         run: cd .. && tar czf xython_0-1.orig.tar.gz xython
       - name: Run ls
@@ -248,5 +344,5 @@ jobs:
       - name: Keep generated deb
         uses: actions/upload-artifact@v3
         with:
-          name: debianpkg
+          name: xython-ubuntu-${{ env.GIT_BUILD_ID }}_deb
           path: xython*deb

@@ -1,0 +1,13 @@
+[Unit]
+Description=xython celery worker
+After=network.target
+
+[Service]
+ExecStart=python3 -m celery -A xython worker
+WorkingDirectory=/var/lib/xython
+Restart=always
+User=xython
+Group=xython
+
+[Install]
+WantedBy=multi-user.target

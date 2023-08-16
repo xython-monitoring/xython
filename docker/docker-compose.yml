@@ -1,0 +1,7 @@
+services:
+  xythond:
+    build:
+      context: xythond
+    ports:
+      - 10080:80
+version: '3'
