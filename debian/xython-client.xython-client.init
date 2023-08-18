@@ -1,25 +1,25 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:		xython-celery
+# Provides:		xython-client
 # Required-Start:	$syslog $remote_fs
 # Required-Stop:	$syslog $remote_fs
 # Should-Start:		$local_fs
 # Should-Stop:		$local_fs
 # Default-Start:	2 3 4 5
 # Default-Stop:		0 1 6
-# Short-Description:	xython-celery - task
-# Description:		xython-celery - task
+# Short-Description:	xython-client - xython client
+# Description:		xython-client - xython client
 ### END INIT INFO
 
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/bin/python3
-DAEMON_ARGS="-m celery -A xython worker"
-NAME=xython-celery
-DESC=xython-celery
+DAEMON=/usr/bin/xython-client-looper.sh
+DAEMON_ARGS=""
+NAME=xython-client
+DESC=xython-client
 
-RUNDIR=/run/xython-celery
-PIDFILE=$RUNDIR/xython-celery.pid
+RUNDIR=/run/xython-client
+PIDFILE=$RUNDIR/xython-client.pid
 
 test -x $DAEMON || exit 0
 
@@ -43,7 +43,6 @@ case "$1" in
 	echo -n "Starting $DESC: "
 	mkdir -p $RUNDIR
 	touch $PIDFILE
-	chown xython:xython $RUNDIR $PIDFILE
 	chmod 755 $RUNDIR
 
 	if [ -n "$ULIMIT" ]
@@ -51,7 +50,7 @@ case "$1" in
 		ulimit -n $ULIMIT || true
 	fi
 
-	if start-stop-daemon --start --quiet --oknodo --umask 007 --pidfile $PIDFILE --background --chuid xython:xython --exec $DAEMON -- $DAEMON_ARGS
+	if start-stop-daemon --start --quiet --oknodo --umask 007 --pidfile $PIDFILE --background --exec $DAEMON -- $DAEMON_ARGS
 	then
 		echo "$NAME."
 	else

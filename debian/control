@@ -47,3 +47,12 @@ Description: monitoring system for systems, networks and applications
  Xymon has a great deal of inspiration from the non-free Big Brother
  package, but does not include any Big Brother code.
 
+Package: xython-client
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: lsb-base (>= 3.0-6),
+         netcat-openbsd | netcat-traditional,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: lm-sensors, iproute2, procps, openssl
+Description: client for the Xython network monitor

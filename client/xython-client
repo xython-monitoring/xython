@@ -51,17 +51,34 @@ echo "[mount]"
 mount
 echo "[free]"
 free
+
+# TODO detect if ifconfig is present
 echo "[ifconfig]"
 /bin/ifconfig 2>/dev/null
-echo "[route]"
-netstat -rn
-echo "[netstat]"
-netstat -s
-echo "[ports]"
-# Bug in RedHat's netstat spews annoying error messages. 
-netstat -antu 2>/dev/null
+# TODO detect if netstat is present
+if [ -x /bin/netstat ];then
+	echo "[route]"
+	netstat -rn
+	echo "[netstat]"
+	netstat -s
+	echo "[ports]"
+	# Bug in RedHat's netstat spews annoying error messages. 
+	netstat -antu 2>/dev/null
+fi
+
 echo "[ifstat]"
 /bin/ifconfig 2>/dev/null
+
+if [ -x /sbin/ss ];then
+	echo "[ss]"
+	ss -tlpn
+fi
+if [ -x /bin/ip ];then
+	echo '[iproute2_route]'
+	ip route
+	echo '[iproute2_stat]'
+	ip -s link show
+fi
 # Report mdstat data if it exists
 if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 if test -x /usr/bin/sensors

@@ -326,7 +326,7 @@ class xythonsrv:
                         else:
                             isack = True
                         if self.xythonmode > 0:
-                            html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
+                            html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xython/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
                         else:
                             html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
                 html += '</TR>\n'
@@ -447,11 +447,15 @@ class xythonsrv:
             fhtml = open(self.wwwdir + '/nongreen.html', 'w')
             fhtml.write(html)
             fhtml.close()
+            # TODO find a better solution
+            os.chmod(self.wwwdir + "/nongreen.html", 644)
             return
         if kind == 'all':
             fhtml = open(self.wwwdir + '/xython.html', 'w')
             fhtml.write(html)
             fhtml.close()
+            # TODO find a better solution
+            os.chmod(self.wwwdir + "/xython.html", 644)
             return
         return html
 
