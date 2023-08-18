@@ -49,6 +49,7 @@ Github pipelines generates a debian package, so you can download it and install 
 > dpkg -i xython-0-1.deb
 
 TIPS: you can find the zip of the package in the bottom of a github actions summary
+or in <https://www.xython.fr/xython-mirror/amd64/>
 
 #### other distro
 I plan to support RPM in the future
@@ -332,6 +333,8 @@ smart
 megacli
 ntpd + rtc
 kernel log / dmesg
+ip route (to replace obsolete netstat), already reported by client, but xythond need to check them
+ss (to replace obsolete netstat), already reported by client, but xythond need to check them
 
 # TODO
 This is a uncomplete
@@ -342,6 +345,13 @@ This is a uncomplete
 * github/test: client + server in docker
 * github/test: test IPV6
 * github/test: test TLS
+
+# List of xython install path
+
+TODO
+
+* /etc/xython: xython specific configuration (mostly xython.cfg)
+* /usr/share/xython/:   webpage graphic
 
 # Contact
 You can contact me (nick montjoie) on IRC libera channel #xython

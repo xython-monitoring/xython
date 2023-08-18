@@ -13,21 +13,30 @@ py3sdo = set -e; $(foreach py, $(PYTHON3_VERSIONS), $(py) $(1);)
 pyalldo = set -e; $(foreach py, $(PYTHON3_VERSIONS), $(py) $(1);)
 
 S=$(CURDIR)/debian/xython
+C=$(CURDIR)/debian/xython-client
 
 %:
-	#dh $@ --with apache2,python3 --buildsystem=pybuild
 	dh $@ --with apache2,python3,cmake --buildsystem=cmake
 
 override_dh_auto_build:
-	dh $@ --with apache2,python3,cmake --buildsystem=cmake
+	#dh $@ --with apache2,python3,cmake --buildsystem=cmake
 	$(call py3sdo, setup.py build)
 
 override_dh_install:
-	dh $@ --with apache2,python3,cmake,systemd --buildsystem=cmake
+	#dh $@ --with apache2,python3,cmake,systemd --buildsystem=cmake
 	$(call py3sdo, setup.py install --root=$(CURDIR)/debian/$(DEB_SOURCE) --install-layout=deb)
 	mkdir -p debian/tmp
-	find |grep apache
 	mv etc/apache2/xython.conf debian/tmp/xython.conf
+	# cmake install in debian/tmp
+	mkdir $S/etc $S/var
+	mv debian/tmp/etc/* $S/etc/
+	cp -av debian/tmp/usr/* $S/usr/
+	mv debian/tmp/var/* $S/var/
+	# client only need shell script in client directory
+	mkdir -p $C/etc/xython
+	cp etc/xython-client.cfg $C/etc/xython/
+	mkdir -p $C/usr/bin
+	cp client/xython-client* $C/usr/bin/
 
 override_dh_installsystemd:
 	dh_installsystemd --name xython-celery
@@ -38,3 +47,4 @@ override_dh_installinit:
 	dh_installinit --name=xython-celery
 	dh_installinit --name=xython-tlsd
 	dh_installinit --name=xythond
+	dh_installinit --name=xython-client
