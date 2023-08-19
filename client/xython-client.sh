@@ -1,5 +1,6 @@
 #!/bin/sh
 
+NOACT=0
 DEBUG=0
 XYTHON_SRV=127.0.0.1
 XYTHON_PORT=1984
@@ -34,6 +35,10 @@ case $1 in
 -d)
 	shift
 	DEBUG=1
+;;
+-n)
+	shift
+	NOACT=1
 ;;
 --tls)
 	shift
@@ -77,6 +82,7 @@ if [ -e /etc/xymon-client/xymonclient.cfg ];then
 		exit 1
 	fi
 	debug "DEBUG: from $F got XYMSRV=$XYMSRV"
+	XYTHON_SRV=$XYMSRV
 	debug "DEBUG: from $F got XYMSERVERS=$XYMSERVERS"
 fi
 
@@ -86,12 +92,17 @@ get_value XYTHON_SRV etc/xython/xython-client.cfg && XYTHON_SRV=$V
 get_value XYTHON_PORT etc/xython/xython-client.cfg && XYTHON_PORT=$V
 get_value CAFILE etc/xython/xython-client.cfg && CAFILE="-CAfile $V"
 
+if [ $NOACT -ge 1 ];then
+	echo "FINAL: $XYTHON_SRV $XYTHON_PORT"
+	exit 0
+fi
+
 case $USE_TLS in
 0)
 	debug "DEBUG: NO TLS"
 	# TODO there a re multiple version of netcat
 	if [ -x /usr/bin/nc ];then
-		debug "DEBUG: nc on $XYTHON_SRV  $XYTHON_PORT"
+		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT"
 		xython-client | nc -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT
 		exit $?
 	fi

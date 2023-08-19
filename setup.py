@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 from codecs import open
@@ -39,7 +39,7 @@ with open("README.md", "r", "utf-8") as f:
 
 setup(
     name="xython",
-    version="0.1.2",
+    version="0.1.3",
     description="xython is a rewrite in python of xymon",
     long_description=readme,
     long_description_content_type="text/markdown",

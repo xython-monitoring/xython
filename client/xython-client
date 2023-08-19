@@ -55,24 +55,32 @@ free
 # TODO detect if ifconfig is present
 echo "[ifconfig]"
 /bin/ifconfig 2>/dev/null
+
+PORTS_DONE=0
+# /sbin/ss on gentoo
+# /usr/bin/ss on bookworm
+if [ -x /sbin/ss -o -x /usr/bin/ss ];then
+	echo "[ss]"
+	ss -tlpn
+	PORTS_DONE=1
+fi
+
 # TODO detect if netstat is present
 if [ -x /bin/netstat ];then
 	echo "[route]"
 	netstat -rn
 	echo "[netstat]"
 	netstat -s
-	echo "[ports]"
-	# Bug in RedHat's netstat spews annoying error messages. 
-	netstat -antu 2>/dev/null
+	if [ $PORTS_DONE -eq 0 ];then
+		echo "[ports]"
+		# Bug in RedHat's netstat spews annoying error messages. 
+		netstat -antu 2>/dev/null
+	fi
 fi
 
 echo "[ifstat]"
 /bin/ifconfig 2>/dev/null
 
-if [ -x /sbin/ss ];then
-	echo "[ss]"
-	ss -tlpn
-fi
 if [ -x /bin/ip ];then
 	echo '[iproute2_route]'
 	ip route

@@ -1,0 +1,6 @@
+xython-client: initial-upload-closes-no-bugs
+xython-client: no-manual-page usr/bin/xython-client
+xython-client: no-manual-page usr/bin/xython-client-looper.sh
+xython-client: no-manual-page usr/bin/xython-client.sh
+xython-client: script-with-language-extension usr/bin/xython-client-looper.sh
+xython-client: script-with-language-extension usr/bin/xython-client.sh

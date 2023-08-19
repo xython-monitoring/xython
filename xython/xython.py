@@ -1023,7 +1023,7 @@ class xythonsrv:
                 else:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     H.rules[memoryrule] = rm
             elif line[0:4] == 'LOAD' or line[0:2] == 'UP':
@@ -1037,7 +1037,7 @@ class xythonsrv:
                 if currhost == hostname:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     if H.rules["CPU"] is None:
                         rc = xy_rule_cpu()
@@ -1053,7 +1053,7 @@ class xythonsrv:
                 if currhost == hostname:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     H.rules["PORT"].append(rp)
             elif line[0:4] == 'PROC':
@@ -1064,7 +1064,7 @@ class xythonsrv:
                 if currhost == hostname:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     H.rules["PROC"].append(rp)
             elif line[0:4] == 'DISK':
@@ -1074,7 +1074,7 @@ class xythonsrv:
                 if currhost == hostname:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     if H.rules["DISK"] is None:
                         H.rules["DISK"] = xy_rule_disks()
@@ -1087,7 +1087,7 @@ class xythonsrv:
                 if currhost == hostname:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     if H.rules["INODE"] is None:
                         H.rules["INODE"] = xy_rule_disks()
@@ -1101,7 +1101,7 @@ class xythonsrv:
                 if currhost == hostname:
                     H = self.find_host(hostname)
                     if H is None:
-                        self.error("ERROR: host is None")
+                        self.error(f"ERROR: host is None for {hostname}")
                         return
                     if H.rules["SENSOR"] is None:
                         H.rules["SENSOR"] = xy_rule_sensors()
@@ -1129,7 +1129,7 @@ class xythonsrv:
     def parse_free(self, hostname, buf, sender):
         H = self.find_host(hostname)
         if H is None:
-            self.error("ERROR: parse_free: host is None")
+            self.error(f"ERROR: parse_free: host is None for {hostname}")
             return False
         now = time.time()
         # TODO handle other OS case
@@ -1156,7 +1156,7 @@ class xythonsrv:
         color = 'green'
         H = self.find_host(hostname)
         if H is None:
-            self.error("ERROR: parse_uptime: host is None")
+            self.error(f"ERROR: parse_uptime: host is None for {hostname}")
             return
         udisplay = re.sub(r"^.*up ", "up", buf)
         sbuf = f"{xytime(now)} {udisplay}\n"
@@ -1187,7 +1187,7 @@ class xythonsrv:
         sbuf = f"{xytime(now)} - procs Ok\n"
         H = self.find_host(hostname)
         if H is None:
-            self.error("ERROR: parse_ports: host is None")
+            self.error(f"ERROR: parse_ps: host is None for {hostname}")
             return
         sline = buf.split("\n")
         for procrule in self.rules["PROC"]:
@@ -1212,7 +1212,7 @@ class xythonsrv:
         sbuf = f"{xytime(now)} - ports Ok\n"
         H = self.find_host(hostname)
         if H is None:
-            self.error("ERROR: parse_ports: host is None")
+            self.error(f"ERROR: parse_ports: host is None for {hostname}")
             return
         sline = buf.split("\n")
         for port in self.rules["PORT"]:
@@ -1481,6 +1481,9 @@ class xythonsrv:
                     if section == '[ports]':
                         handled = True
                         self.parse_ports(hostname, buf, msg["addr"])
+                    if section == '[ss]':
+                        handled = True
+                        self.parse_ports(hostname, buf, msg["addr"])
                     if section == '[ps]':
                         handled = True
                         self.parse_ps(hostname, buf, msg["addr"])
@@ -1492,7 +1495,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
@@ -1505,6 +1508,7 @@ class xythonsrv:
             os.unlink(self.unixsock)
         self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.us.bind(self.unixsock)
+        # TODO does it is necessary ?, check setup with apache
         os.chmod(self.unixsock, 666)
         self.us.listen(10)
         self.us.setblocking(0)
@@ -1683,7 +1687,6 @@ class xythonsrv:
         self.xt_hostdata = f"{self.xt_data}/hostdata"
         self.xt_histlogs = f"{self.xt_data}/histlogs"
         self.xt_histdir = f"{self.xt_data}/hist/"
-        self.unixsock = '/tmp/xython.sock'
         if self.xythonmode > 0:
             if not os.path.exists(self.xt_histlogs):
                 os.mkdir(self.xt_histlogs)

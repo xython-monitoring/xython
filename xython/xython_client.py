@@ -6,6 +6,7 @@
     SPDX-License-Identifier: GPL-2.0
 """
 
+from importlib.metadata import version
 import socket
 import sys
 
@@ -19,7 +20,7 @@ def send(host, port, data):
 
 
 def usage():
-    print("xython version vTODO")
+    print(f'xython v{version("xython")}')
     print("Usage: /usr/xymon/client/bin/xymon [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA")
     print("\tRECIPIENT: IP-address, hostname or URL")
     print('\tDATA: Message to send, or "-" to read from stdin')

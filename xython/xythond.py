@@ -10,10 +10,11 @@ import argparse
 import time
 from xython import xythonsrv
 import sys
+from importlib.metadata import version
 
 
 def main():
-    print("xythond vTODO")
+    print(f'xythond v{version("xython")}')
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", "-d", help="increase debug level", action="store_true")
     parser.add_argument("--daemon", "-D", help="start daemon", action="store_true")
@@ -25,6 +26,7 @@ def main():
     parser.add_argument("--netport", help="Network port", default=1984)
     parser.add_argument("--logdir", help="Override xython log directory", default="/var/log/xython/")
     parser.add_argument("--etcdir", help="Override xymon etc directory", default="/etc/xymon/")
+    parser.add_argument("--xythonsock", help="Override xython socker patch", default="/run/xython/xython.sock")
     parser.add_argument("--wwwdir", help="Override xython www directory")
     parser.add_argument("--xymonvardir", help="Override xymon var directory")
     parser.add_argument("--vardir", help="Override xython var directory")
@@ -32,6 +34,7 @@ def main():
     args = parser.parse_args()
 
     X = xythonsrv()
+    X.unixsock = args.xythonsock
     X.set_netport(int(args.netport))
     X.edebug = args.debug
     X.readonly = args.readonly

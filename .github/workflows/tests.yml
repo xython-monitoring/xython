@@ -341,6 +341,26 @@ jobs:
         run: grep xython /etc/passwd
       - name: Move package deb
         run: mv ../*deb .
+      - name: Test systemd service file
+        run: |
+          sudo systemctl start xython-celery
+          sudo systemctl start xython-tlsd
+          sudo systemctl start xythond
+          sudo systemctl start xython-client
+          sleep 2
+          ps aux |grep celery
+          ps aux |grep xython-tlsd
+          ps aux |grep xythond
+          ps aux |grep xython-client
+          sudo systemctl stop xython-celery
+          sudo systemctl stop xython-tlsd
+          sudo systemctl stop xythond
+          sudo systemctl stop xython-client
+          sleep 2
+          ps aux |grep celery
+          ps aux |grep xython-tlsd
+          ps aux |grep xythond
+          ps aux |grep xython-client
 #      - name: Test package in a docker
 #        run: |
 #          zip docker/xythond/xython_deb.zip *deb

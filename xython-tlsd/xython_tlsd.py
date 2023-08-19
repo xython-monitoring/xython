@@ -29,9 +29,10 @@ parser.add_argument("--etcdir", help="Override xython etc directory", default="/
 parser.add_argument("--tlskey", help="Override xython TLS key")
 parser.add_argument("--tlscrt", help="Override xython TLS certificate")
 parser.add_argument("--quit", help="Quit after x seconds", type=int, default=0)
+parser.add_argument("--xythonsock", help="Override xython socker patch", default="/run/xython/xython.sock")
 args = parser.parse_args()
 
-XYTHON_SOCK='/tmp/xython.sock'
+XYTHON_SOCK=args.xythonsock
 TLS_KEY = None
 TLS_CRT = None
 HOST = "0.0.0.0"

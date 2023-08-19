@@ -1,0 +1,13 @@
+[Unit]
+Description=xython client
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/xython-client-looper.sh
+WorkingDirectory=/tmp
+Restart=always
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
