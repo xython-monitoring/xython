@@ -37,9 +37,11 @@ override_dh_install:
 	cp etc/xython-client.cfg $C/etc/xython/
 	mkdir -p $C/usr/bin
 	cp client/xython-client* $C/usr/bin/
+	dh_installman
 
 override_dh_installsystemd:
 	dh_installsystemd --name xython-celery
+	dh_installsystemd --name xython-tlsd
 	dh_installsystemd --name xythond
 
 override_dh_installinit:

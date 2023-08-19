@@ -69,12 +69,13 @@ else:
 if cause is not None and duration is not None:
     buf = "acknowledge %s.%s %s %s\n" % (hostname, svc, duration, cause)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect("/tmp/xython.sock")
+    # TODO this must be not hardcoded
+    sock.connect('/run/xython/xython.sock')
     sock.send(buf.encode("UTF8"))
     sock.close()
 
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-sock.connect("/tmp/xython.sock")
+sock.connect('/run/xython/xython.sock')
 if timebuf is None:
     buf = "GETSTATUS %s %s" % (hostname, svc)
 else:

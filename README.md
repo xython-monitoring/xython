@@ -39,9 +39,13 @@ The goal is to have the minimum in non-core modules and only modules availlable 
 #### using the APT repository
 First you need to addi xython repository (bookworm only for the moment)
 Add in /etc/apt/sources.list.d/xython.list
-> deb https://www.xython.fr/xython-mirror /
+> deb https://www.xython.fr/mirror/bookworm /
+
+For bullseye simply replace bookworm by bullseye in the URL.
 
 And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
+> apt-get install gnupg
+
 > apt-key add pgp-key.public
 
 #### manual debian setup
@@ -52,7 +56,18 @@ TIPS: you can find the zip of the package in the bottom of a github actions summ
 or in <https://www.xython.fr/xython-mirror/amd64/>
 
 #### other distro
-I plan to support RPM in the future
+Packaging for RPM is near done, I target fedora(38 and 39) and rockylinux.
+
+For xython server, python3-celery is missing in thoses OS and also in EPEL:9, so the situation is blocked for the moment.
+We need to wait on <https://bugzilla.redhat.com/show_bug.cgi?id=2032543>
+
+But xython-client could be already used.
+
+> Add <https://www.xython.fr/mirror/xython.repo> in /etc/yum.repos.d/
+You need to edit it and replace __OSNAME__ by either fedora38, fedora39 or rockylinux9
+
+Then you just have to
+> yum install xython-client
 
 ### source install
 
@@ -87,17 +102,19 @@ This is the only case were you could safely point XYMONVAR to xymon files.
 
 ## You want to run a standalone xython
 
-**You still need a xymon install for html/gifs files**
+Simply ran xython-celery, xythond and xython client either via their init files or their systemd unit.
 
-You need to create directories for xython (and ensure xython can write to them)
-> mkdir /usr/xython /var/log/xython
+> /etc/init.d/xython-celery start
 
-Start xythond with:
-> xythond --etcdir /etc/xython/ -D
+> /etc/init.d/xythond start
 
-Start the celery workers with:
-> python3 -m celery -A xython worker --loglevel=INFO
+> /etc/init.d/xython-client start
 
+> systemctl start xython-celery
+
+> systemctl start xythond
+
+> systemctl start xython-client
 
 ## docker
 An example of mini install via docker could be found in the docker directory.
@@ -106,19 +123,29 @@ An example of mini install via docker could be found in the docker directory.
 xython has a xymon compatible client done in pure shell script.
 You can find it in the client directory.
 
-The fake_client generate output.
-The fake_client.sh use fake_client output and send it to a server via either netcat or openssl s_client.
+The xython-client generate output.
+The xython-client.sh use xython-client output and send it to a server via either netcat or openssl s_client.
 
-The current client is not finished, I need a bit of work to finish it ( adding some command parameter and autoguess server/port)
+The configuration for xython-client is done in /etc/xython/xython-client.cfg
+By default xython-client will try to find server according to xymon configuration.
+The configuration directive in /etc/xython/xython-client.cfg take priority against xymon configuration.
+
+You can change the xymon fqdn and port via XYMSRV and XYTHON_PORT.
+
+You can enable TLS for client by setting USE_TLS=1, you will need to change port to the one used by xython-tlsd.
+You will need also so set the CAfile path.
 
 ## TLS server
-TLS communication with the client is handled by xyhton-tlsd.
+TLS communication with the client is handled by xython-tlsd.
 You need to have a working PKI (CA + key + cert).
 The key and cert used by xython-tlsd could be configured by:
 * setting XYTHON_TLS_KEY=path and XYTHON_TLS_CRT=path in $etcdir/xython.cfg
-* giving path directly to xyhton-tlsd arguments (--tlskey/--tlscrt)
+* giving path directly to xython-tlsd arguments (--tlskey/--tlscrt)
 
 TODO: TLS server is still a PoC which simply works, I need to bench it.
+
+You can generate a self signed certificate with:
+> openssl req -x509 -newkey rsa:4096 -keyout /etc/xython/xython.key -out /etc/xython/xython.crt -sha256 -days 3650 -nodes -subj "/C=FR/ST=France/L=Paris/O=xython/OU=tests/CN=xython"
 
 TODO: authentification of client will be done later
 
@@ -345,8 +372,16 @@ This is a uncomplete
 * github/test: client + server in docker
 * github/test: test IPV6
 * github/test: test TLS
+* RPM packages (near done, see comment on other distro)
+* setup yum repo (this is done, but I need working RPM packages)
+* github/test: rpm
+* Add manpage
+* Add html manpage
+* RRD / graph
+* SNMP
+* compression (gzip/zstd?) of all hostdata
 
-# List of xython install path
+# List of xython install path (FHS)
 
 TODO
 

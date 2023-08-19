@@ -13,6 +13,7 @@ import time
 import re
 import requests
 import socket
+from importlib.metadata import version
 from xython.common import xytime
 
 # TODO permit to configure localhost
@@ -43,7 +44,7 @@ def dohttp(hostname, urls):
     httpstate = ""
     httpcount = 0
     headers = {}
-    headers["User-Agent"] = 'xython xythonnet/0'
+    headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
     for url in urls:
         if httpcount > 0:
             httpstate += "; "

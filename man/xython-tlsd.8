@@ -1,0 +1,69 @@
+.TH xython-tlsd 8 "22 August 2023" "0.1.3" "xython 0.1.3"
+
+
+.SH "NAME"
+\fB
+\fB
+\fB
+xython-tlsd \fP\- TLS wrapper for xython
+\fB
+.SH "SYNOPSIS"
+
+\fBxython-tlsd
+.RB [\-\-debug(\-d)]
+.RB [\-\-help(\-h)]
+.RB [\-\-netport
+.IR netport ]
+.RB [\-\-etcdir
+.IR PATH ]
+.RB [\-\-logdir
+.IR PATH ]
+.RB [\-\-tlsdkey
+.IR PATH ]
+.RB [\-\-tlscrt
+.IR PATH ]
+
+.SH "DESCRIPTION"
+
+\fBxython-tlsd\fP is the TLS wrapper for xython
+
+.SH "OPTIONS"
+
+.TP
+.B \-\-debug
+Enable more debugging
+
+.TP
+.B \-\-netport port
+Listen on port "port" instead of the default (which is 1985).
+
+.TP
+.B \-\-etcdir PATH
+Use PATH for search xython config directory
+
+.TP
+.B \-\-logdir PATH
+Use PATH for storing log instead of default (TODO)
+
+.TP
+.B \-\-tlscrt PATH
+Use PATH for finding certificate to use
+
+.TP
+.B \-\-tlskey PATH
+Use PATH for finding key to use
+
+.SH "EXAMPLES"
+.B xython-tlsd --netport 2023 --etcdir /etc/tests --tlskey /etc/tests/ca.key --tlscrt /etc/tests/ca.pem
+
+This command will ran xython-tlsd with a config set in /etc/tests/xython.cfg.
+It will listen on port 2023 and use /etc/tests/ca.key as a private key for the /etc/tests/ca.pem certificate.
+
+
+.SH "LICENSING"
+xython is licensed under the GPL v2 license and under development by LABBE Corentin.
+
+.SH "CONTACT INFORMATION"
+
+All contacts informations could be found at https://github.fr/xython-monitoring/xython/
+

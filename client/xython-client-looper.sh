@@ -3,5 +3,5 @@
 while [ true ];
 do
 	/usr/bin/xython-client.sh
-	sleep 60
+	sleep 50
 done
