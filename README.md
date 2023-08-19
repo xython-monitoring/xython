@@ -87,17 +87,19 @@ This is the only case were you could safely point XYMONVAR to xymon files.
 
 ## You want to run a standalone xython
 
-**You still need a xymon install for html/gifs files**
+Simply ran xython-celery, xythond and xython client either via their init files or their systemd unit.
 
-You need to create directories for xython (and ensure xython can write to them)
-> mkdir /usr/xython /var/log/xython
+> /etc/init.d/xython-celery start
 
-Start xythond with:
-> xythond --etcdir /etc/xython/ -D
+> /etc/init.d/xythond start
 
-Start the celery workers with:
-> python3 -m celery -A xython worker --loglevel=INFO
+> /etc/init.d/xython-client start
 
+> systemctl start xython-celery
+
+> systemctl start xythond
+
+> systemctl start xython-client
 
 ## docker
 An example of mini install via docker could be found in the docker directory.
@@ -106,10 +108,8 @@ An example of mini install via docker could be found in the docker directory.
 xython has a xymon compatible client done in pure shell script.
 You can find it in the client directory.
 
-The fake_client generate output.
-The fake_client.sh use fake_client output and send it to a server via either netcat or openssl s_client.
-
-The current client is not finished, I need a bit of work to finish it ( adding some command parameter and autoguess server/port)
+The xython-client generate output.
+The xython-client.sh use xython-client output and send it to a server via either netcat or openssl s_client.
 
 ## TLS server
 TLS communication with the client is handled by xyhton-tlsd.
@@ -345,6 +345,11 @@ This is a uncomplete
 * github/test: client + server in docker
 * github/test: test IPV6
 * github/test: test TLS
+* generate RPM
+* setup yum repo
+* github/test: rpm
+* Add manpage
+* Add html manpage
 
 # List of xython install path
 
