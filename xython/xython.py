@@ -48,6 +48,9 @@ class xy_host:
         self.tests = []
         self.hostip = ""
         self.rules = {}
+        self.hist_read = False
+        # last time we read analysis
+        self.time_read_analysis = 0
         self.rules["DISK"] = None
         self.rules["INODE"] = None
         self.rules["PORT"] = []
@@ -120,6 +123,7 @@ class xythonsrv:
         self.ts_page = time.time()
         self.ts_tests = time.time()
         self.ts_check = time.time()
+        self.ts_read_configs = time.time()
         self.expires = []
         self.stats = {}
         self.uptime_start = time.time()
@@ -131,6 +135,11 @@ class xythonsrv:
         self.vars = {}
         self.debugs = []
         self.msgn = 0
+        # to be compared with mtime of hosts.cfg
+        self.time_read_hosts = 0
+        # each time read_hosts is called, read_hosts_cnt is ++ abd all hosts found are set to this value
+        # so all hosts with a lower value need to be removed
+        self.read_hosts_cnt = 0
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -311,7 +320,7 @@ class xythonsrv:
                     hts[col[0]] = col[1]
                 html += '<TR class=line>\n'
                 html += '<TD NOWRAP ALIGN=LEFT><A NAME="%s">&nbsp;</A>\n' % H.name
-                html += '<A HREF="/xymon/xymon.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">%s</FONT></A>' % H.name
+                html += '<A HREF="/xython/xython.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">%s</FONT></A>' % H.name
                 for Cname in cols:
                     if Cname not in hcols:
                         html += '<TD ALIGN=CENTER>-</TD>\n'
@@ -448,14 +457,14 @@ class xythonsrv:
             fhtml.write(html)
             fhtml.close()
             # TODO find a better solution
-            os.chmod(self.wwwdir + "/nongreen.html", 644)
+            os.chmod(self.wwwdir + "/nongreen.html", 0o644)
             return
         if kind == 'all':
             fhtml = open(self.wwwdir + '/xython.html', 'w')
             fhtml.write(html)
             fhtml.close()
             # TODO find a better solution
-            os.chmod(self.wwwdir + "/xython.html", 644)
+            os.chmod(self.wwwdir + "/xython.html", 0o644)
             return
         return html
 
@@ -475,7 +484,13 @@ class xythonsrv:
         print(H.rules)
 
     def read_hosts(self):
+        mtime = os.path.getmtime(self.etcdir + "/hosts.cfg")
+        if self.time_read_hosts < mtime:
+            self.time_read_hosts = mtime
+        else:
+            return True
         self.debug(f"DEBUG: read_hosts in {self.etcdir}")
+        self.read_hosts_cnt += 1
         try:
             fhosts = open(self.etcdir + "/hosts.cfg", 'r')
         except:
@@ -486,29 +501,36 @@ class xythonsrv:
             line = re.sub(r"\s+", " ", line)
             if len(line) == 0:
                 continue
-            sline = line.split(" ")
             if line[0] == '#':
                 continue
+            sline = line.split(" ")
             if len(sline) < 2:
+                self.error(f"ERROR: hosts line is too short {line}")
                 continue
-            i = 0
-            host_ip = sline[i]
-            i += 1
-            while sline[i] == ' ':
-                i += 1
-            host_name = sline[i]
-            i += 1
-            self.debug("DEBUG: %s %s" % (host_ip, host_name))
+            host_ip = sline.pop(0)
+            host_name = sline.pop(0)
+            self.debug("DEBUG: ip=%s host=%s" % (host_ip, host_name))
+            # conn is enabled by default
+            need_conn = True
+            H = self.find_host(host_name)
+            if H is not None:
+                self.xy_hosts.remove(H)
             H = xy_host(host_name)
+            H.rhcnt = self.read_hosts_cnt
             H.hostip = host_ip
-            while i < len(sline):
-                test = sline[i]
+            while len(sline) > 0:
+                test = sline.pop(0)
                 if len(test) == 0:
+                    continue
+                if test == '#':
                     continue
                 if test[0] == '#':
                     test = test[1:]
+                if test[0:6] == 'noconn':
+                    need_conn = False
                 if test[0:4] == 'conn':
                     H.add_test("conn", test, None)
+                    need_conn = False
                 elif test[0:3] == 'ssh':
                     #self.debug(f"\tDEBUG: ssh tests {test}")
                     port = 22
@@ -525,10 +547,15 @@ class xythonsrv:
                     self.debug("\tDEBUG: HTTP tests %s" % test)
                     H.add_test("http", test, None)
                 else:
-                    self.log("todo", f"TODO hosts: {test}")
-                    self.debug("\tDEBUG: test=%s" % test)
-                i += 1
+                    self.log("todo", f"TODO hosts: test={test}")
+                    self.debug(f"\tDEBUG: test={test}xxx")
+            if need_conn:
+                H.add_test("conn", test, None)
             self.xy_hosts.append(H)
+        for H in self.xy_hosts:
+            if H.rhcnt < self.read_hosts_cnt:
+                self.debug(f"DEBUG: read_hosts: purge {H.name}")
+                self.xy_hosts.remove(H)
         return True
 
     def find_host(self, hostname):
@@ -746,6 +773,9 @@ class xythonsrv:
         if H is None:
             self.error(f"ERROR: read_hist: {name} not found")
             return False
+        if H.hist_read:
+            return True
+        H.hist_read = True
         histdir = self.histdir
         if self.xythonmode > 0:
             histdir = self.xt_histdir
@@ -838,6 +868,7 @@ class xythonsrv:
     def gen_tests(self):
         now = time.time()
         self.debug("DEBUG: GEN TESTS")
+        self.sqc.execute('DELETE FROM tests')
         for H in self.xy_hosts:
             for T in H.tests:
                 self.debug("DEBUG: %s %s\n" % (H.name, T.type))
@@ -908,6 +939,12 @@ class xythonsrv:
         now = time.time()
         for ctask in self.celtasks:
             if ctask.ready():
+                status = ctask.status
+                if status == 'FAILURE':
+                    self.celtasks.remove(ctask)
+                    self.error("ERROR: celery task error")
+                    # TODO better handle this problem, easy to generate by removing ping
+                    continue
                 ret = ctask.get()
                 self.debug(f'DEBUG: result for {ret["hostname"]} {ret["type"]}')
                 self.column_update(ret["hostname"], ret["type"], ret["color"], time.time(), ret["txt"], 180, "xython-tests")
@@ -945,7 +982,7 @@ class xythonsrv:
                 buf += f'UPDATE/m: {int(self.stats["COLUPDATE"]["count"]/uptimem)}\n'
         #for worker in self.celery_workers:
         #    print(worker)
-        res = self.sqc.execute(f'SELECT count(hostname) FROM columns')
+        res = self.sqc.execute(f'SELECT count(DISTINCT hostname) FROM columns')
         results = self.sqc.fetchall()
         buf += f"Hosts: {results[0][0]}\n"
         res = self.sqc.execute('SELECT count(next) FROM tests')
@@ -974,11 +1011,20 @@ class xythonsrv:
             ts_end = time.time()
             self.stat("HTML", ts_end - ts_start)
             self.ts_page = now
+        if now > self.ts_read_configs + 60:
+            self.read_configs()
+            self.ts_read_configs = now
         if self.has_pika:
             self.channel.basic_publish(exchange='xython-ping', routing_key='', body="PING")
         self.stat("SCHEDULER", time.time() - now)
 
     def read_analysis(self, hostname):
+        H = self.find_host(hostname)
+        mtime = os.path.getmtime(f"{self.etcdir}/analysis.cfg")
+        if H.time_read_analysis < mtime:
+            self.time_read_analysis = mtime
+        else:
+            return True
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         currhost = None
         self.rules = {}
@@ -1502,6 +1548,8 @@ class xythonsrv:
             self.save_hostdata(hostname, hdata, time.time())
         else:
             self.error("ERROR: invalid client data without hostname")
+            if self.debug:
+                print(msg)
 
     def unet_start(self):
         if os.path.exists(self.unixsock):
@@ -1509,7 +1557,7 @@ class xythonsrv:
         self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.us.bind(self.unixsock)
         # TODO does it is necessary ?, check setup with apache
-        os.chmod(self.unixsock, 666)
+        os.chmod(self.unixsock, 0o666)
         self.us.listen(10)
         self.us.setblocking(0)
         self.uclients = []
@@ -1707,15 +1755,7 @@ class xythonsrv:
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
             (hostname text, column text, next date, UNIQUE(hostname, column))''')
         self.sqc.execute('DELETE FROM tests')
-        if not self.read_hosts():
-            self.error("ERROR: failed to read hosts")
-            sys.exit(1)
-        for H in self.xy_hosts:
-            self.debug(f"DEBUG: init FOUND: {H.name}")
-            if not self.read_hist(H.name):
-                self.error(f"ERROR: failed to read hist for {H.name}")
-            self.read_analysis(H.name)
-        self.gen_tests()
+        self.read_configs()
         self.sqconn.commit()
         ts_end = time.time()
         self.has_pika = has_pika
@@ -1723,6 +1763,20 @@ class xythonsrv:
             if not self.init_pika():
                 self.has_pika = False
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
+
+# read hosts.cfg and analysis.cfg
+# check if thoses files need to be reread
+    def read_configs(self):
+        if not self.read_hosts():
+            self.error("ERROR: failed to read hosts")
+            return False
+        for H in self.xy_hosts:
+            self.debug(f"DEBUG: init FOUND: {H.name}")
+            if not self.read_hist(H.name):
+                self.error(f"ERROR: failed to read hist for {H.name}")
+            self.read_analysis(H.name)
+        self.gen_tests()
+        return True
 
     def print(self):
         print(f"VAR is {self.xy_data}")

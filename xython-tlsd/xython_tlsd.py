@@ -66,8 +66,9 @@ context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain(TLS_CRT, TLS_KEY)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
-    sock.bind(('0.0.0.0', args.netport))
-    sock.listen(5)
+    # TODO ipv6
+    sock.bind(('0.0.0.0', int(args.netport)))
+    sock.listen(100)
     if args.quit > 0:
         sys.exit(0)
     with context.wrap_socket(sock, server_side=True) as ssock:
@@ -77,10 +78,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
             debug(f"Got connection from {ipaddr}")
             data = conn.recv(64384)
             conn.close()
+            debug(f"DEBUG: Received {len(data)} bytes")
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             sock.connect(XYTHON_SOCK)
             sock.send(f"TLSproxy {ipaddr}\n".encode("UTF8"))
             sock.send(data)
             sock.close()
+            debug("DEBUG: proxyfied!")
 
 sys.exit(0)

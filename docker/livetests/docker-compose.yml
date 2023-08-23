@@ -1,0 +1,5 @@
+services:
+  xythond:
+    build:
+      context: xythond
+version: '3'
