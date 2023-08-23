@@ -45,6 +45,7 @@ def test_color():
     assert gcolor("bl") == 'blue'
     assert gcolor("cl") == 'clear'
     assert gcolor("plop") == 'purple'
+    assert gcolor("-") == 'unknown'
 
 
 def test_tokenize1():
@@ -394,3 +395,54 @@ def test_lmsensors():
     xs.add('%.* AUXTIN -29 -28 -30 -31')
     ret = xs.check("fake2", "AUXTIN:         -29.5 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor")
     assert ret["color"] == 'green'
+
+def test_reload():
+    # we should have 2 hosts with conn on each
+    # test that conn is added by default
+    with open("./tests/etc/xython-load/hosts.cfg", 'w') as f:
+        f.write("192.168.1.40	test01		#conn\n\
+2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc  ipv6\n")
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-load/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    X.init()
+    X.read_configs()
+    H = X.find_host("donotexists")
+    assert H is None
+    H = X.find_host("ipv6")
+    assert H is not None
+    assert len(X.xy_hosts) == 2
+    res = X.sqc.execute(f'SELECT * FROM tests')
+    results = X.sqc.fetchall()
+    #print(results)
+    assert len(results) == 2
+
+    # we should have 3 hosts with conn on each except for ipv6
+    # test that conn is removed from ipv6
+    #time.sleep(1)
+    with open("./tests/etc/xython-load/hosts.cfg", 'w') as f:
+        f.write("192.168.1.40	test01		#conn\n\
+192.168.1.45	test02		#conn\n\
+2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc	ipv6 # noconn\n")
+    X.read_configs()
+    assert len(X.xy_hosts) == 3
+    res = X.sqc.execute(f'SELECT * FROM tests')
+    results = X.sqc.fetchall()
+    #print(results)
+    assert len(results) == 2
+    assert len(X.xy_hosts) == 3
+
+    # we should have 2 hosts with conn on each except for ipv6
+    # test that test02 is removed
+    with open("./tests/etc/xython-load/hosts.cfg", 'w') as f:
+        f.write("192.168.1.40	test01		#conn\n\
+2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc	ipv6 # noconn\n")
+    X.read_configs()
+    assert len(X.xy_hosts) == 2
+    res = X.sqc.execute(f'SELECT * FROM tests')
+    results = X.sqc.fetchall()
+    #print(results)
+    assert len(results) == 1
+    assert len(X.xy_hosts) == 2
+

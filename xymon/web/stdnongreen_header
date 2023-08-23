@@ -4,7 +4,7 @@
 <META HTTP-EQUIV="Content-Type" CONTENT="&HTMLCONTENTTYPE">
 <META HTTP-EQUIV="REFRESH" CONTENT="&XYMWEBREFRESH">
 <META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
-<TITLE>&XYMWEBBACKGROUND : Xymon - Status @ &XYMWEBDATE</TITLE>
+<TITLE>&XYMWEBBACKGROUND : Xython - Status @ &XYMWEBDATE</TITLE>
 
 <!-- Styles for the Xymon body  -->
 <link rel="stylesheet" type="text/css" href="&XYMONBODYCSS">

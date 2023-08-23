@@ -29,7 +29,7 @@ case "$1" in
 	getent passwd xython > /dev/null || adduser --system \
 		--home /var/lib/xython --no-create-home \
 		--ingroup xython --disabled-password --disabled-login \
-		--gecos "Xymon System Monitor" xython
+		--gecos "Xython System Monitor" xython
 
 	# Setup permissions for the newly created "xython" user to write
 	# data where he needs to.
@@ -60,18 +60,18 @@ case "$1" in
 		fi
 		cat > /etc/xython/hosts.cfg <<EOF
 #
-# Master configuration file for Xymon
+# Master configuration file for Xython
 #
 # This file defines several things:
 #
-# 1) By adding hosts to this file, you define hosts that are monitored by Xymon
+# 1) By adding hosts to this file, you define hosts that are monitored by Xython
 # 2) By adding "page", "subpage", "group" definitions, you define the layout
-#    of the Xymon webpages, and how hosts are divided among the various webpages
-#    that Xymon generates.
+#    of the Xython webpages, and how hosts are divided among the various webpages
+#    that Xython generates.
 # 3) Several other definitions can be done for each host, see the hosts.cfg(5)
 #    man-page.
 #
-# You need to define at least the Xymon server itself here.
+# You need to define at least the Xython server itself here.
 
 #0.0.0.0	.default.	# NOPROPRED:+apt,+libs
 

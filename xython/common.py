@@ -80,6 +80,8 @@ def gcolor(color):
         return 'blue'
     if color in ['pu', 'purple']:
         return 'purple'
+    if color == '-':
+        return 'unknown'
     print("ERROR: gcolor: unknow color %s" % color)
     return 'purple'
 

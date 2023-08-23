@@ -4,9 +4,11 @@ NOACT=0
 DEBUG=0
 XYTHON_SRV=127.0.0.1
 XYTHON_PORT=1984
+XYTHON_TLS_PORT=1985
 USE_TLS=0
 FORCE_TLS=0
 CAFILE=""
+NC_OPTS=""
 
 debug()
 {
@@ -21,7 +23,7 @@ get_value() {
 		return 1
 	fi
 	debug "DEBUG: seek $1 in $2"
-	V=$(grep -o "^$1=[\"a-z0-9A-Z_\.-]*" "$2" | cut -d= -f2 | sed 's,",,g')
+	V=$(grep -o "^$1=[\"a-z0-9A-Z_: \.-]*" "$2" | cut -d= -f2 | sed 's,",,g')
 	if [ -z "$V" ];then
 		return 1
 	fi
@@ -87,10 +89,18 @@ if [ -e /etc/xymon-client/xymonclient.cfg ];then
 fi
 
 # xython conf has mor priority than xymon
-get_value USE_TLS etc/xython/xython-client.cfg && USE_TLS=$V
-get_value XYTHON_SRV etc/xython/xython-client.cfg && XYTHON_SRV=$V
-get_value XYTHON_PORT etc/xython/xython-client.cfg && XYTHON_PORT=$V
-get_value CAFILE etc/xython/xython-client.cfg && CAFILE="-CAfile $V"
+get_value USE_TLS /etc/xython/xython-client.cfg && USE_TLS=$V
+get_value XYTHON_SRV /etc/xython/xython-client.cfg && XYTHON_SRV=$V
+get_value XYTHON_PORT /etc/xython/xython-client.cfg && XYTHON_PORT=$V
+get_value XYTHON_TLS_PORT /etc/xython/xython-client.cfg && XYTHON_TLS_PORT=$V
+get_value CAFILE /etc/xython/xython-client.cfg && CAFILE="-CAfile $V"
+
+# check if the address is IPV6
+# TODO do not handle yet a DNS resolving to ipv6
+echo "$XYTHON_SRV" |grep -q ':'
+if [ $? -eq 0 ];then
+	NC_OPTS="-6"
+fi
 
 if [ $NOACT -ge 1 ];then
 	echo "FINAL: $XYTHON_SRV $XYTHON_PORT"
@@ -103,14 +113,14 @@ case $USE_TLS in
 	# TODO there a re multiple version of netcat
 	if [ -x /usr/bin/nc ];then
 		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT"
-		xython-client | nc -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT
+		xython-client | nc $NC_OPTS -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT
 		exit $?
 	fi
 ;;
 1)
 	# TODO if no openssl, fall back to something else
 	# TODO -servername
-	xython-client | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_PORT
+	xython-client | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT
 	exit $?
 ;;
 *)

@@ -55,6 +55,12 @@ Github pipelines generates a debian package, so you can download it and install 
 TIPS: you can find the zip of the package in the bottom of a github actions summary
 or in <https://www.xython.fr/xython-mirror/amd64/>
 
+#### Gentoo
+The ebuild for gentoo could be found at <https://github.com/montjoie/montjoiegentooportage.git>
+
+#### BSD
+I plan to support freeBSD, openBSD and netBSD
+
 #### other distro
 Packaging for RPM is near done, I target fedora(38 and 39) and rockylinux.
 
@@ -380,6 +386,11 @@ This is a uncomplete
 * RRD / graph
 * SNMP
 * compression (gzip/zstd?) of all hostdata
+* re-read hosts.cfg
+* use PINGCOLUMN
+* add conn by default on hosts
+* apt-key warn about deprecated
+* rename pgp public key
 
 # List of xython install path (FHS)
 

@@ -17,16 +17,16 @@ class xy_rule_disk():
         self.warn = warn
         self.panic = panic
 
-    def check(self, pc):
+    def check(self, mnt, pc):
         color = 'green'
         ret = {}
         if pc < self.warn:
-            txt = f"&green {self.fs} {pc} < {self.warn}"
+            txt = f"&green {mnt} {pc} < {self.warn} matchrule={self.fs}"
         elif pc >= self.warn and pc < self.panic:
-            txt = f"&yellow {self.fs} {pc} > {self.warn}"
+            txt = f"&yellow {mnt} {pc} > {self.warn} matchrule={self.fs}"
             color = 'yellow'
         if pc >= self.panic:
-            txt = f"&red {self.fs} {pc} > {self.panic}"
+            txt = f"&red {mnt} {pc} > {self.panic} matchrule={self.fs}"
             color = 'red'
         ret["txt"] = txt
         ret["color"] = color
@@ -88,11 +88,11 @@ class xy_rule_disks():
             return None
         if part in self.rules:
             xrd = self.rules[part]
-            return xrd.check(pc)
+            return xrd.check(part, pc)
         for pr in self.rrules:
             ret = re.search(pr.fs, part)
             if ret:
-                return pr.check(pc)
+                return pr.check(part, pc)
         return None
 
 
@@ -424,7 +424,7 @@ class xy_rule_mem():
             elif memusedpct >= self.warn:
                 color = 'yellow'
             ret["color"] = color
-            ret["txt"] = f"&{color} {T:16}{memused:11}M{memtotal:11}M{memusedpct:11}%{self.warn:4} {self.panic:4}\n"
+            ret["txt"] = f"&{color} {T:16}{memused:11}M{memtotal:11}M{memusedpct:11}% WARN={self.warn:4} PANIC={self.panic:4}\n"
         if what == "MEMSWAP":
             T = 'Swap/Page'
             if swappct >= self.panic:
@@ -432,7 +432,7 @@ class xy_rule_mem():
             elif swappct >= self.warn:
                 color = 'yellow'
             ret["color"] = color
-            ret["txt"] = f"&{color} {T:16}{swapused:11}M{swaptotal:11}M{swappct:11}%{self.warn:4} {self.panic:4}\n"
+            ret["txt"] = f"&{color} {T:16}{swapused:11}M{swaptotal:11}M{swappct:11}% WARN={self.warn:4} PANIC={self.panic:4}\n"
         if what == "MEMACT":
             T = 'Actual/Virtual'
             if memactpct >= self.panic:
@@ -440,7 +440,7 @@ class xy_rule_mem():
             elif memactpct >= self.warn:
                 color = 'yellow'
             ret["color"] = color
-            ret["txt"] = f"&{color} {T:16}{memact:11}M{memtotal:11}M{memactpct:11}%{self.warn:4} {self.panic:4}\n"
+            ret["txt"] = f"&{color} {T:16}{memact:11}M{memtotal:11}M{memactpct:11}% WARN={self.warn:4} PANIC={self.panic:4}\n"
         return ret
 
 
