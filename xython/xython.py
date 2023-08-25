@@ -13,11 +13,17 @@ import sys
 from random import randint
 import socket
 from importlib.metadata import version
+from pathlib import Path
 try:
     import pika
     has_pika = True
 except ImportError:
     has_pika = False
+try:
+    import rrdtool
+    has_rrdtool = True
+except ImportError:
+    has_rrdtool = False
 import sqlite3
 from .xython_tests import ping
 from .xython_tests import dohttp
@@ -132,6 +138,7 @@ class xythonsrv:
         self.wwwdir = None
         self.xy_data = None
         self.xt_data = None
+        self.xt_rrd = None
         self.vars = {}
         self.debugs = []
         self.msgn = 0
@@ -391,6 +398,10 @@ class xythonsrv:
             html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
             html += '<button type="submit">Send</button></form>\n'
             html += '</CENTER>\n'
+
+            if has_rrdtool:
+                if column in ['disk', 'inode', 'sensor']:
+                    html += f'<CENTER><img src="/xython/{hostname}/{column}.png"></CENTER>'
 
 
         # history
@@ -996,6 +1007,7 @@ class xythonsrv:
         if now > self.ts_tests + 5:
             self.do_tests()
             self.ts_tests = now
+            self.gen_rrds()
         if now > self.ts_check + 1:
             self.check_purples()
             self.check_acks()
@@ -1172,6 +1184,134 @@ class xythonsrv:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
 
+    def rrd_pathname(self, path):
+        if path == '/':
+            return ',root'
+        return path.replace('/', ',').replace(' ', '_')
+
+    def rrd_label(self, path, column):
+        if path == f'{column},root':
+            return '/'
+        return path.replace(column, '').replace(',', '/').replace('.rrd', '')
+
+    def gen_rrds(self):
+        if not has_rrdtool:
+            return True
+        #self.debug("GEN RRDS")
+        hosts = os.listdir(f"{self.xt_rrd}")
+        for hostname in hosts:
+            for column in ["disk", 'inode', 'sensor']:
+                self.gen_rrd(hostname, column)
+
+    def get_ds_name(self, l):
+        r = []
+        for k in l.keys():
+            if len(k) > 4:
+                if k[-4:] == 'type':
+                    ds = k.split('[')[1].split(']')[0]
+                    r.append(ds)
+        return r
+
+
+    def gen_rrd(self, hostname, column):
+        #self.debug(f"DEBUG: scan RRD for {hostname} for {column}")
+        if column == 'sensor':
+            rrds = list(Path(f"{self.xt_rrd}/{hostname}/sensor").rglob("*.rrd"))
+        else:
+            rrds = list(Path(f"{self.xt_rrd}/{hostname}/").rglob(f"{column}*.rrd"))
+        #rrds = [f for f in os.listdir(f"{self.xt_rrd}/{hostname}") if re.match(r'%s.*\.rrd' % column, f)]
+        if len(rrds) == 0:
+            return
+        rrds.sort()
+        pngpath = f"{self.wwwdir}/{hostname}/{column}.png"
+        base = [pngpath,
+            f'--title={column} on {hostname}',
+            '--width=576', '--height=140',
+            '--vertical-label="% Full"',
+            '--start=end-4h'
+            ]
+        i = 0
+        sensor_adapter = None
+        for rrd in rrds:
+            fname = str(os.path.basename(rrd)).replace(".rrd", "")
+            rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
+            rrdfpath = str(rrd)
+            label = self.rrd_label(fname, column)
+            info = rrdtool.info(rrdfpath)
+            adapter = os.path.dirname(rrd).split('/')[-1]
+            for dsname in self.get_ds_name(info):
+                if column == 'sensor':
+                    label = dsname
+                label = label.ljust(20)
+                i += 1
+                if i == 1:
+                    color = '#0000FF'
+                elif i == 2:
+                    color = '#FF0000'
+                elif i == 3:
+                    color = '#00FF00'
+                elif i == 4:
+                    color = '#F0F000'
+                else:
+                    color = '#F000F0'
+                #self.debug(f"DEBUG add DS{i} {dsname} for {label}")
+                base.append(f'DEF:pct{i}={rrdfpath}:{dsname}:AVERAGE')
+                base.append(f'LINE1:pct{i}{color}')
+                if column == 'sensor' and sensor_adapter != adapter:
+                    sensor_adapter = adapter
+                    base.append(f'COMMENT:{adapter}\\n')
+                base.append(f'GPRINT:pct{i}:LAST:{label} \: %5.1lf (cur)')
+                base.append(f'GPRINT:pct{i}:MIN: \: %5.1lf (min)')
+                base.append(f'GPRINT:pct{i}:MAX: \: %5.1lf (max)')
+                base.append(f'GPRINT:pct{i}:AVERAGE: \: %5.1lf (avg)\l')
+        rrdup = xytime(time.time()).replace(':', '\\:')
+        base.append(f'COMMENT:Updated\: {rrdup}')
+        rrdtool.graph(base)
+        os.chmod(pngpath, 0o644)
+
+    def do_rrd(self, hostname, rrdname, ds, value):
+        #self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {ds} {value}")
+        if not has_rrdtool:
+            return
+        fname = f"{rrdname}{self.rrd_pathname(ds)}"
+        rrdpath = f"{self.xt_rrd}/{hostname}"
+        if not os.path.exists(rrdpath):
+            os.mkdir(rrdpath)
+        rrdfpath = f"{self.xt_rrd}/{hostname}/{fname}.rrd"
+        if not os.path.exists(rrdfpath):
+            rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
+                "RRA:AVERAGE:0.5:1:1200",
+                "DS:pct:GAUGE:600:0:100")
+        rrdtool.update(rrdfpath, f"N:{value}")
+
+    def do_sensor_rrd(self, hostname, adapter, sname, value):
+        #self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
+        if not has_rrdtool:
+            return
+        fname = f"sensor{self.rrd_pathname(sname)}"
+        rrdpath = f"{self.xt_rrd}/{hostname}"
+        if not os.path.exists(rrdpath):
+            os.mkdir(rrdpath)
+        rrd_dpath = f"{self.xt_rrd}/{hostname}/sensor"
+        if not os.path.exists(rrd_dpath):
+            os.mkdir(rrd_dpath)
+        rrd_dpath = f"{self.xt_rrd}/{hostname}/sensor/{adapter}"
+        if not os.path.exists(rrd_dpath):
+            os.mkdir(rrd_dpath)
+        rrdfpath = f"{rrd_dpath}/{fname}.rrd"
+        dsname = sname.replace(" ", '_')
+        if not os.path.exists(rrdfpath):
+            rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
+                "RRA:AVERAGE:0.5:1:1200",
+                f"DS:{dsname}:GAUGE:600:-280:5000")
+        else:
+            info = rrdtool.info(rrdfpath)
+            allds = self.get_ds_name(info)
+            #print(f"DEBUG: already exists with {allds} we have {dsname}")
+            if dsname not in allds:
+                rrdtool.tune(rrdfpath, f"DS:{dsname}:GAUGE:600:-280:5000")
+        rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
+
     def parse_free(self, hostname, buf, sender):
         H = self.find_host(hostname)
         if H is None:
@@ -1300,11 +1440,13 @@ class xythonsrv:
                 else:
                     ret = None
                 if ret is None:
-                    self.debug("DEBUG: use global rules")
+                    #self.debug("DEBUG: use global rules")
                     ret = self.rules["SENSOR"].check(adapter, line)
                 if ret is not None:
                     sbuf += ret["txt"] + '\n'
                     color = setcolor(ret["color"], color)
+                if ret is not None and 'v' in ret:
+                    self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
         ts_end = time.time()
         self.stat("parsesensor", ts_end - now)
         self.column_update(hostname, "sensor", color, time.time(), sbuf, 4 * 60, sender)
@@ -1326,6 +1468,8 @@ class xythonsrv:
             return
         sline = buf.split("\n")
         for line in sline:
+            pct = None
+            mnt = None
             if len(line) == 0:
                 continue
             if line[0] != '/':
@@ -1337,11 +1481,19 @@ class xythonsrv:
             if ret is not None:
                 sbuf += ret["txt"] + '\n'
                 color = ret["color"]
+                if "pct" in ret:
+                    pct = ret["pct"]
+                    mnt = ret["mnt"]
             else:
                 ret = self.rules[S].check(line)
                 if ret is not None:
                     sbuf += ret["txt"] + '\n'
                     color = ret["color"]
+                    if "pct" in ret:
+                        pct = ret["pct"]
+                        mnt = ret["mnt"]
+            if pct is not None:
+                self.do_rrd(hostname, column, mnt, pct)
         sbuf += buf
         self.column_update(hostname, column, color, time.time(), sbuf, 4 * 60, sender)
         return
@@ -1735,6 +1887,7 @@ class xythonsrv:
         self.xt_hostdata = f"{self.xt_data}/hostdata"
         self.xt_histlogs = f"{self.xt_data}/histlogs"
         self.xt_histdir = f"{self.xt_data}/hist/"
+        self.xt_rrd = f"{self.xt_data}/rrd/"
         if self.xythonmode > 0:
             if not os.path.exists(self.xt_histlogs):
                 os.mkdir(self.xt_histlogs)
@@ -1744,6 +1897,8 @@ class xythonsrv:
                 os.mkdir(self.xt_hostdata)
             if not os.path.exists(self.xt_logdir):
                 os.mkdir(self.xt_logdir)
+            if not os.path.exists(self.xt_rrd):
+                os.mkdir(self.xt_rrd)
         self.db = self.xt_data + '/xython.db'
         self.debug(f"DEBUG: DB is {self.db}")
         self.sqconn = sqlite3.connect(self.db)

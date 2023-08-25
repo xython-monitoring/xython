@@ -21,7 +21,7 @@ Handling client hostdata (cpu disk inode memory ports procs) and related hosts.c
 Handling some active tests (conn, smtp, imap, http, ssh)
 
 - 0.2: the version 0.2 will be when everything I use in my work setup will be handled.
-This include acking, rrd, page, group
+This include acking, RRD, page, group
 
 - 0.3 Probably finishing handling remaing hostdata section (files, msgs)
 
