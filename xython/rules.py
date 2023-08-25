@@ -29,6 +29,8 @@ class xy_rule_disk():
             txt = f"&red {mnt} {pc} > {self.panic} matchrule={self.fs}"
             color = 'red'
         ret["txt"] = txt
+        ret["pct"] = pc
+        ret["mnt"] = mnt
         ret["color"] = color
         return ret
 
@@ -130,6 +132,8 @@ class xy_rule_sensor():
             color = 'red'
         ret["txt"] = txt
         ret["color"] = color
+        ret['v'] = pc
+        ret['sname'] = sname
         return ret
 
 
@@ -248,7 +252,7 @@ class xy_rule_sensors():
         rawv = ret[1]
         sunit = ret[2]
 
-        print(f"DEBUG: {sname} has value {rawv}")
+        #print(f"DEBUG: {sname} has value {rawv}")
         if adapter in self.rules:
             #print(f"DEBUG: adapter direct match for {adapter}")
             rule = self.rules[adapter]
@@ -272,10 +276,10 @@ class xy_rule_sensors():
         # no rule matched, so we need to go back to default rule
         if "DEFAULT" not in self.rules:
             # no default
-            print("DEBUG: no default")
+            #print("DEBUG: no default")
             return None
         if sunit not in self.rules["DEFAULT"]["rules"]:
-            print(f"DEBUG: no {sunit} in DEFAULT")
+            #print(f"DEBUG: no {sunit} in DEFAULT")
             return None
         rule = self.rules["DEFAULT"]["rules"][sunit]["rule"]
         return rule.check(sname, float(rawv))

@@ -12,6 +12,7 @@ Build-Depends: debhelper,
 	       python3-dev,
 	       python3-celery,
 	       python3-requests,
+	       python3-rrdtool,
                procps
 Standards-Version: 4.4.0
 Homepage: http://github.com/xython-monitoring/xython/
@@ -27,6 +28,7 @@ Depends: lsb-base (>= 3.0-6),
 	 python3-celery,
 	 python3-redis,
 	 python3-requests,
+	 python3-rrdtool,
 	 ${python3:Depends},
          ${misc:Depends},
          ${shlibs:Depends}

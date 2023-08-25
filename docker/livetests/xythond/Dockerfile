@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install python3-tz python3-celery python3-requests adduser redis-server sudo python3-redis procps apache2 rabbitmq-server wget iputils-ping netcat-openbsd
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install python3-tz python3-celery python3-requests adduser redis-server sudo python3-redis procps apache2 rabbitmq-server wget iputils-ping netcat-openbsd python3-rrdtool
 
 RUN echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
