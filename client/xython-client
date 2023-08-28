@@ -123,4 +123,12 @@ fi
 echo "[vmstat]"
 vmstat
 
+[clientversion]
+# to be changed by package manager
+CLIENTVERSION=""
+if [ -z "$CLIENTVERSION" ];then
+	echo "xython-client"
+else
+	echo "xython-client-$CLIENTVERSION"
+fi
 # vgs --units=k
