@@ -37,6 +37,8 @@ override_dh_install:
 	cp etc/xython-client.cfg $C/etc/xython/
 	mkdir -p $C/usr/bin
 	cp client/xython-client* $C/usr/bin/
+	DEB_VERSION=$(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' ')
+	sed -i "s,^CLIENTVERSION=.*,CLIENTVERSION=$(DEB_VERSION)," $C/usr/bin/xython-client
 	dh_installman
 
 override_dh_installsystemd:
