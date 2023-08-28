@@ -54,6 +54,7 @@ class xy_host:
         self.tests = []
         self.hostip = ""
         self.rules = {}
+        self.rhcnt = 0
         self.hist_read = False
         # last time we read analysis
         self.time_read_analysis = 0
@@ -99,6 +100,9 @@ class xytest:
         self.urls.append(url)
 
 
+RET_OK = 0
+RET_ERR = 1
+RET_NEW = 2
 class xythonsrv:
     def __init__(self):
         self.xy_hosts = []
@@ -494,19 +498,24 @@ class xythonsrv:
                 print("\tTEST: %s %s" % (T.type, url))
         print(H.rules)
 
+# read hosts.cfg
+# return RET_OK if nothing new was read
+# return RET_ERR on error
+# return RET_NEW if hosts.cfg was read
     def read_hosts(self):
         mtime = os.path.getmtime(self.etcdir + "/hosts.cfg")
+        self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
         else:
-            return True
+            return RET_OK
         self.debug(f"DEBUG: read_hosts in {self.etcdir}")
         self.read_hosts_cnt += 1
         try:
             fhosts = open(self.etcdir + "/hosts.cfg", 'r')
         except:
             self.error("ERROR: cannot open hosts.cfg")
-            return False
+            return RET_ERR
         for line in fhosts:
             line = line.rstrip()
             line = re.sub(r"\s+", " ", line)
@@ -550,7 +559,7 @@ class xythonsrv:
                         self.debug(f"REMAIN: {remain}")
                         if remain[0] != ':':
                             self.error(f"Config error, missing : at {sline}")
-                            return False
+                            return RET_ERR
                         words = remain.split(":")
                         port = int(words[1])
                     H.add_test("ssh", test, port)
@@ -567,7 +576,7 @@ class xythonsrv:
             if H.rhcnt < self.read_hosts_cnt:
                 self.debug(f"DEBUG: read_hosts: purge {H.name}")
                 self.xy_hosts.remove(H)
-        return True
+        return RET_NEW
 
     def find_host(self, hostname):
         for H in self.xy_hosts:
@@ -779,13 +788,13 @@ class xythonsrv:
     # we could speed up reading by only checking last line of host.col BUT I want to validate
     # that I perfectly understood format of all file
     def read_hist(self, name):
-        self.debug(f"DEBUG: read_hist {name}")
         H = self.find_host(name)
         if H is None:
             self.error(f"ERROR: read_hist: {name} not found")
             return False
         if H.hist_read:
             return True
+        self.debug(f"DEBUG: read_hist {name}")
         H.hist_read = True
         histdir = self.histdir
         if self.xythonmode > 0:
@@ -1030,13 +1039,15 @@ class xythonsrv:
             self.channel.basic_publish(exchange='xython-ping', routing_key='', body="PING")
         self.stat("SCHEDULER", time.time() - now)
 
+    # read analysis.cfg
     def read_analysis(self, hostname):
         H = self.find_host(hostname)
         mtime = os.path.getmtime(f"{self.etcdir}/analysis.cfg")
+        #self.debug(f"DEBUG: read_analysis: compare mtime={mtime} and {H.time_read_analysis}")
         if H.time_read_analysis < mtime:
-            self.time_read_analysis = mtime
+            H.time_read_analysis = mtime
         else:
-            return True
+            return RET_OK
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         currhost = None
         self.rules = {}
@@ -1082,7 +1093,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     H.rules[memoryrule] = rm
             elif line[0:4] == 'LOAD' or line[0:2] == 'UP':
                 if self.rules["CPU"] is None:
@@ -1096,7 +1107,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     if H.rules["CPU"] is None:
                         rc = xy_rule_cpu()
                     else:
@@ -1112,7 +1123,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     H.rules["PORT"].append(rp)
             elif line[0:4] == 'PROC':
                 rp = xy_rule_proc()
@@ -1123,7 +1134,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     H.rules["PROC"].append(rp)
             elif line[0:4] == 'DISK':
                 if currhost == 'DEFAULT':
@@ -1133,7 +1144,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     if H.rules["DISK"] is None:
                         H.rules["DISK"] = xy_rule_disks()
                     rxd = H.rules["DISK"]
@@ -1146,7 +1157,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     if H.rules["INODE"] is None:
                         H.rules["INODE"] = xy_rule_disks()
                     rxd = H.rules["INODE"]
@@ -1160,7 +1171,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return
+                        return RET_ERR
                     if H.rules["SENSOR"] is None:
                         H.rules["SENSOR"] = xy_rule_sensors()
                     H.rules["SENSOR"].add(line[7:])
@@ -1183,6 +1194,7 @@ class xythonsrv:
         if self.rules["SENSOR"] is None:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
+        return RET_NEW
 
     def rrd_pathname(self, path):
         if path == '/':
@@ -1430,9 +1442,9 @@ class xythonsrv:
             if line[0] == ' ':
                 continue
             sbuf += line + '\n'
-            self.debug(f"DEBUG: check {line}XX")
+            #self.debug(f"DEBUG: check {line}XX")
             if len(line) > 0 and ':' not in line:
-                self.debug(f"DEBUG: {hostname} adapter={line}")
+                #self.debug(f"DEBUG: {hostname} adapter={line}")
                 adapter = line
             else:
                 if "SENSOR" in H.rules and H.rules["SENSOR"] is not None:
@@ -1922,7 +1934,8 @@ class xythonsrv:
 # read hosts.cfg and analysis.cfg
 # check if thoses files need to be reread
     def read_configs(self):
-        if not self.read_hosts():
+        ret = self.read_hosts()
+        if ret == RET_ERR:
             self.error("ERROR: failed to read hosts")
             return False
         for H in self.xy_hosts:
@@ -1930,7 +1943,8 @@ class xythonsrv:
             if not self.read_hist(H.name):
                 self.error(f"ERROR: failed to read hist for {H.name}")
             self.read_analysis(H.name)
-        self.gen_tests()
+        if ret == RET_NEW:
+            self.gen_tests()
         return True
 
     def print(self):
