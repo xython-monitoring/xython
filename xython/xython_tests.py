@@ -40,22 +40,44 @@ def ping(hostname, t):
 
 @app.task
 def dohttp(hostname, urls):
+    verify = True
     hdata = ""
     httpstate = ""
     httpcount = 0
+    options = ""
+    need_httpcode = 200
     headers = {}
     headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
     for url in urls:
+        tokens = url.split(';')
+        url = tokens.pop(0)
+        for token in tokens:
+            cmds = token.split('=')
+            cmd = cmds[0]
+            if cmd == 'verify':
+                v = cmds[1]
+                if v == '0':
+                    verify=False
+                elif v == '1':
+                    verify=True
+                else:
+                    verify=cmds[1]
+                options += f"verify={cmds[1]}"
+            else:
+                options += f"unknow={token}"
         if httpcount > 0:
             httpstate += "; "
         httpcount += 1
         # self.debug("\tDEBUG: http %s" % url)
         ts_http_start = time.time()
         try:
-            r = requests.get(url, headers=headers)
+            r = requests.get(url, headers=headers, verify=verify)
             color = "green"
             hdata += f"&green {url} - OK\n\n"
-            hdata += f"TODO {r.status_code} {r.reason}\n"
+            if r.status_code == need_httpcode:
+                hdata += f"{r.status_code} {r.reason}\n"
+            else:
+                hdata += f"&red {r.status_code} {r.reason}\n"
             for header in r.headers:
                 hdata += "%s: %s\n" % (header, r.headers[header])
             httpstate += "OK"
@@ -70,7 +92,9 @@ def dohttp(hostname, urls):
                 httpstate += 'Connection refused'
                 hdata += f"&red {url} - Connection refused\n"
             else:
-                hdata += f"&red {url} - REQERROR\n"
+                # TODO find something better to put readble error message
+                emsg = str(e).replace(": ", ":<br>")
+                hdata += f"&red {url} - KO<br>\n{emsg}\n"
                 httpstate += "KO"
         except requests.exceptions.ConnectionError as e:
             color = "red"
@@ -82,6 +106,8 @@ def dohttp(hostname, urls):
                 httpstate += "KO"
         ts_http_end = time.time()
         hdata += f"\nSeconds: {ts_http_end-ts_http_start}\n\n"
+        if options != "":
+            hdata += f"xython options: {options}\n"
     now = time.time()
     fdata = f"{xytime(now)}: {httpstate}\n"
     dret = {}
