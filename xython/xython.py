@@ -1879,6 +1879,10 @@ class xythonsrv:
 
     def init(self):
         global has_pika
+        self.has_pika = has_pika
+        if self.has_pika:
+            if not self.init_pika():
+                self.has_pika = False
         ts_start = time.time()
         if self.xy_data is None:
             self.xy_data = self.xymon_replace("$XYMONVAR")
@@ -1925,10 +1929,6 @@ class xythonsrv:
         self.read_configs()
         self.sqconn.commit()
         ts_end = time.time()
-        self.has_pika = has_pika
-        if self.has_pika:
-            if not self.init_pika():
-                self.has_pika = False
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
 
 # read hosts.cfg and analysis.cfg
