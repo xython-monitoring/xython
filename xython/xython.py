@@ -56,6 +56,11 @@ class xy_host:
         self.rules = {}
         self.rhcnt = 0
         self.hist_read = False
+        self.tags_read = False
+        # string reported by client
+        self.client_version = None
+        self.osversion = None
+        self.uname = None
         # last time we read analysis
         self.time_read_analysis = 0
         self.rules["DISK"] = None
@@ -605,6 +610,22 @@ class xythonsrv:
         f = open(histfile, "a+")
         f.write("%s %d %d %d %s %s %d\n" % (column, ts, ots, duration, color[0:2], ocolor[0:2], 1))
         f.close()
+
+    def gen_column_info(self, hostname):
+        H = self.find_host(hostname)
+        if H is None:
+            return
+        cdata = f"{xytime(time.time())} - info\n"
+        cdata += f"Hostname: {hostname}\n"
+        if H.osversion:
+            cdata += f"OS: {H.osversion}\n"
+        if H.uname:
+            cdata += f"OS: {H.uname}\n"
+        cdata += f"IP: TODO\n"
+        if H.client_version:
+            cdata += f"Client S/W: {H.client_version}\n"
+        # TODO infinite time
+        self.column_update(hostname, "info", "green", time.time(), cdata, 365 * 24 * 3600, "xythond")
 
     # return all cname for a host in a list
     def get_columns(self, hostname):
@@ -1700,12 +1721,27 @@ class xythonsrv:
                     if section == '[lmsensors]':
                         handled = True
                         self.parse_sensors(hostname, buf, msg["addr"])
+                    if section == '[clientversion]':
+                        handled = True
+                        H = self.find_host(hostname)
+                        H.client_version = buf
+                        self.gen_column_info(hostname)
+                    if section == '[uname]':
+                        handled = True
+                        H = self.find_host(hostname)
+                        H.uname = buf
+                        self.gen_column_info(hostname)
+                    if section == '[osversion]':
+                        handled = True
+                        H = self.find_host(hostname)
+                        H.osversion = buf
+                        self.gen_column_info(hostname)
                     if not handled:
                         self.debug(f"DEBUG: section {section} not handled")
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
