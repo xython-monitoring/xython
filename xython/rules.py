@@ -401,16 +401,25 @@ class xy_rule_mem():
         return True
 
     def memcheck(self, buf, what):
+        ret = {}
         mem = re.search(r"Mem:\s*([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)", buf)
         swap = re.search(r"Swap:\s*([0-9]+)\s+([0-9]+)\s+([0-9]+)", buf)
+        if mem is None:
+            ret["color"] = 'red'
+            ret['txt'] = 'invalid data'
+            return ret
         memtotal = int(int(mem.group(1)) / 1024)
         memused = int(int(mem.group(2)) / 1024)
         memusedpct = int(int(memused / memtotal * 100))
         memactfree = int(int(mem.group(6)) / 1024)
         memact = memtotal - memactfree
         memactpct = int(int(memact / memtotal * 100))
-        swaptotal = int(int(swap.group(1)) / 1024)
-        swapused = int(int(swap.group(2)) / 1024)
+        if swap is None:
+            swaptotal = 0
+            swapused = 0
+        else:
+            swaptotal = int(int(swap.group(1)) / 1024)
+            swapused = int(int(swap.group(2)) / 1024)
         if swaptotal == 0:
             swappct = 0
         else:
@@ -419,7 +428,6 @@ class xy_rule_mem():
         self.memusedpct = memusedpct
         self.swaptotal = swaptotal
         self.swappct = swappct
-        ret = {}
         color = 'green'
         if what == "MEMPHYS":
             T = 'Real/Physical'
