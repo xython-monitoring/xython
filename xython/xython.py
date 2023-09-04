@@ -1428,6 +1428,26 @@ class xythonsrv:
         self.stat("parseps", ts_end - now)
         self.column_update(hostname, "procs", color, time.time(), sbuf, 4 * 60, sender)
 
+    # TODO
+    def parse_mdstat(self, hostname, buf, sender):
+        now = time.time()
+        devices = []
+        color = 'green'
+        sbuf = f"{xytime(now)} - RAID Ok\n"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: parse_mdstat: host is None for {hostname}")
+            return
+        sline = buf.split("\n")
+        for line in sline:
+            mdname = re.search("^[a-zA-Z0-9]\s:", line)
+            if mdname is None:
+                continue
+        if len(devices) == 0:
+            return
+        sbuf += buf
+        self.column_update(hostname, "raid", color, time.time(), sbuf, 4 * 60, sender)
+
     #TODO
     def parse_ports(self, hostname, buf, sender):
         now = time.time()
@@ -1725,6 +1745,9 @@ class xythonsrv:
                     if section == '[lmsensors]':
                         handled = True
                         self.parse_sensors(hostname, buf, msg["addr"])
+                    if section == '[mdstat]':
+                        handled = True
+                        self.parse_mdstat(hostname, buf, msg["addr"])
                     if section == '[clientversion]':
                         handled = True
                         H = self.find_host(hostname)
