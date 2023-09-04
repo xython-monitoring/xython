@@ -36,7 +36,7 @@ def main():
     X = xythonsrv()
     X.unixsock = args.xythonsock
     X.set_netport(int(args.netport))
-    X.edebug = args.debug
+    X.lldebug = args.debug
     X.readonly = args.readonly
     X.xythonmode = args.xython
     if args.ipv6:

@@ -119,7 +119,7 @@ class xythonsrv:
         self.us = None
         self.netport = 1984
         self.ipv6 = False
-        self.edebug = False
+        self.lldebug = False
         self.readonly = False
         self.rules = {}
         self.rules["DISK"] = None
@@ -194,11 +194,11 @@ class xythonsrv:
         res = self.sqc.execute(req)
 
     def debug(self, buf):
-        if self.debug:
+        if self.lldebug:
             print(buf)
 
     def debugdev(self, facility, buf):
-        if self.debug and facility in self.debugs:
+        if self.lldebug and facility in self.debugs:
             print(buf)
 
     def log(self, facility, buf):
