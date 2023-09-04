@@ -1256,6 +1256,10 @@ class xythonsrv:
         if len(rrds) == 0:
             return
         rrds.sort()
+        basedir = f"{self.wwwdir}/{hostname}"
+        if not os.path.exists(basedir):
+            os.mkdir(basedir)
+            os.chmod(basedir, 0o755)
         pngpath = f"{self.wwwdir}/{hostname}/{column}.png"
         base = [pngpath,
             f'--title={column} on {hostname}',
