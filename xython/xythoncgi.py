@@ -34,19 +34,20 @@ if "QUERY_STRING" in os.environ:
             POST[k] = v
 
 
-#hostname = arguments.getvalue("HOST")
+hostname = None
 if "HOST" in POST:
     hostname = POST["HOST"]
-else:
+if "hostname" in POST:
     hostname = POST["hostname"]
 if hostname is None:
     print('Status: 400 Bad Request\n')
     print("\n")
     sys.exit(0)
 
+svc = None
 if "SERVICE" in POST:
     svc = POST["SERVICE"]
-else:
+if "service" in POST:
     svc = POST["service"]
 if svc is None:
     print('Status: 400 Bad Request\n')
@@ -75,7 +76,11 @@ if cause is not None and duration is not None:
     sock.close()
 
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-sock.connect('/run/xython/xython.sock')
+try:
+    sock.connect('/run/xython/xython.sock')
+except:
+    print("FAIL to connect to xythond")
+    sys.exit(0)
 if timebuf is None:
     buf = "GETSTATUS %s %s" % (hostname, svc)
 else:
