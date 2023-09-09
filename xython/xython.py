@@ -57,10 +57,18 @@ class xy_host:
         self.rhcnt = 0
         self.hist_read = False
         self.tags_read = False
+        self.tags_known = []
+        self.tags_unknown = []
         # string reported by client
         self.client_version = None
         self.osversion = None
         self.uname = None
+        # for SNMP
+        self.oidlist = []
+        self.snmp_disk_last = None
+        self.snmp_disk_oid = []
+        self.snmp_columns = []
+        self.snmp_community = 'public'
         # last time we read analysis
         self.time_read_analysis = 0
         self.rules["DISK"] = None
@@ -409,7 +417,7 @@ class xythonsrv:
             html += '</CENTER>\n'
 
             if has_rrdtool:
-                if column in ['disk', 'inode', 'sensor']:
+                if column in ['disk', 'inode', 'sensor', 'snmp']:
                     html += f'<CENTER><img src="/xython/{hostname}/{column}.png"></CENTER>'
 
 
@@ -503,6 +511,107 @@ class xythonsrv:
                 print("\tTEST: %s %s" % (T.type, url))
         print(H.rules)
 
+    def read_snmp_hosts(self, hostname):
+        H = self.find_host(hostname)
+        print("=============")
+        fname = f"{self.etcdir}/snmp.d/{hostname}"
+        try:
+            f = open(fname)
+        except FileNotFoundError:
+            self.error(f"Fail to open {fname}")
+            return False
+        except:
+            self.error(f"Fail to open {fname}")
+            return False
+        for line in f:
+            line = line.rstrip()
+            line = re.sub(r"\s+", " ", line)
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            self.debug(f"\tDEBUG: read {line}")
+            t = line.split(";")
+            #goid = oid(t[0], t[1], t[2])
+            goid = {}
+            goid["rrd"] = t[0]
+            goid["oid"] = t[1]
+            goid["name"] = t[2]
+            H.oidlist.append(goid)
+            print(H.oidlist)
+
+    def hosts_check_snmp_tags(self):
+        for H in self.xy_hosts:
+            if H.tags_read:
+                continue
+            need_conn = True
+            for test in H.tags:
+                if len(test) == 0:
+                    continue
+                if test == '#':
+                    continue
+                if test[0] == '#':
+                    test = test[1:]
+                if test[0:4] == 'snmp':
+                    snmp_tags = test.split(':')
+                    for stag in snmp_tags:
+                        self.debug(f"DEBUG: check SNMP TAG {stag}")
+                        if stag in ['memory', 'disk']:
+                            H.snmp_columns.append(stag)
+                            continue
+                        if stag[0:10] == 'community=':
+                            H.snmp_community = stag.split('=')[1]
+                            continue
+                    self.read_snmp_hosts(H.name)
+
+    def hosts_check_tags(self):
+        for H in self.xy_hosts:
+            if H.tags_read:
+                continue
+            need_conn = True
+            for test in H.tags:
+                if len(test) == 0:
+                    continue
+                self.debug(f"DEBUG: {H.name} {test}")
+                if test == '#':
+                    continue
+                if test[0] == '#':
+                    test = test[1:]
+                if test[0:6] == 'noconn':
+                    need_conn = False
+                    H.tags_known.append(test)
+                    continue
+                if test == 'conn':
+                    H.add_test("conn", test, None)
+                    need_conn = False
+                    H.tags_known.append(test)
+                    continue
+                if test[0:3] == 'ssh':
+                    #self.debug(f"\tDEBUG: ssh tests {test}")
+                    port = 22
+                    remain = test[3:]
+                    if len(remain) > 0:
+                        self.debug(f"REMAIN: {remain}")
+                        if remain[0] != ':':
+                            self.error(f"Config error, missing : at {sline}")
+                            return RET_ERR
+                        words = remain.split(":")
+                        port = int(words[1])
+                    H.add_test("ssh", test, port)
+                    H.tags_known.append(test)
+                    continue
+                if test[0:4] == 'http':
+                    self.debug("\tDEBUG: HTTP tests %s" % test)
+                    H.add_test("http", test, None)
+                    H.tags_known.append(test)
+                    continue
+                self.log("todo", f"TODO hosts: test={test}")
+                self.debug(f"\tDEBUG: test={test}xxx")
+                H.tags_unknown.append(test)
+            if need_conn:
+                H.add_test("conn", test, None)
+            self.gen_column_info(H.name)
+
 # read hosts.cfg
 # return RET_OK if nothing new was read
 # return RET_ERR on error
@@ -536,46 +645,14 @@ class xythonsrv:
             host_name = sline.pop(0)
             self.debug("DEBUG: ip=%s host=%s" % (host_ip, host_name))
             # conn is enabled by default
-            need_conn = True
+            # if host already exists, remove it
             H = self.find_host(host_name)
             if H is not None:
                 self.xy_hosts.remove(H)
             H = xy_host(host_name)
             H.rhcnt = self.read_hosts_cnt
             H.hostip = host_ip
-            while len(sline) > 0:
-                test = sline.pop(0)
-                if len(test) == 0:
-                    continue
-                if test == '#':
-                    continue
-                if test[0] == '#':
-                    test = test[1:]
-                if test[0:6] == 'noconn':
-                    need_conn = False
-                if test[0:4] == 'conn':
-                    H.add_test("conn", test, None)
-                    need_conn = False
-                elif test[0:3] == 'ssh':
-                    #self.debug(f"\tDEBUG: ssh tests {test}")
-                    port = 22
-                    remain = test[3:]
-                    if len(remain) > 0:
-                        self.debug(f"REMAIN: {remain}")
-                        if remain[0] != ':':
-                            self.error(f"Config error, missing : at {sline}")
-                            return RET_ERR
-                        words = remain.split(":")
-                        port = int(words[1])
-                    H.add_test("ssh", test, port)
-                elif test[0:4] == 'http':
-                    self.debug("\tDEBUG: HTTP tests %s" % test)
-                    H.add_test("http", test, None)
-                else:
-                    self.log("todo", f"TODO hosts: test={test}")
-                    self.debug(f"\tDEBUG: test={test}xxx")
-            if need_conn:
-                H.add_test("conn", test, None)
+            H.tags = sline
             self.xy_hosts.append(H)
         for H in self.xy_hosts:
             if H.rhcnt < self.read_hosts_cnt:
@@ -1233,7 +1310,7 @@ class xythonsrv:
         #self.debug("GEN RRDS")
         hosts = os.listdir(f"{self.xt_rrd}")
         for hostname in hosts:
-            for column in ["disk", 'inode', 'sensor']:
+            for column in ["disk", 'inode', 'sensor', 'snmp']:
                 self.gen_rrd(hostname, column)
 
     def get_ds_name(self, l):
@@ -1778,6 +1855,17 @@ class xythonsrv:
             if self.debug:
                 print(msg)
 
+    def unet_send(self, buf):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            sock.connect(self.unixsock)
+        except:
+            self.error(f"FAIL to connect to xythond sock {self.unixsock}")
+            return False
+        sock.send(buf.encode("UTF8"))
+        sock.close()
+        return True
+
     def unet_start(self):
         if os.path.exists(self.unixsock):
             os.unlink(self.unixsock)
@@ -1831,19 +1919,30 @@ class xythonsrv:
                     pass
             elif cmd == "acknowledge":
                 self.parse_acknowledge(buf)
+            elif cmd[0:6] == "proxy:":
+                lines = buf.split("\n")
+                line = lines.pop(0)
+                buf = "\n".join(lines)
+                msg = {}
+                msg["buf"] = buf
+                msg["addr"] = line.split(':')[1]
+                self.parse_hostdata(msg)
+            elif cmd[0:6] == "status":
+                msg = {}
+                msg["buf"] = buf
+                msg["addr"] = 'local'
+                self.parse_status(msg)
             elif cmd == "TLSproxy":
                 lines = buf.split("\n")
                 line = lines.pop(0)
                 addr = line.split(" ")[1]
                 buf = "\n".join(lines)
-                #print("DEBUG: addr is {addr}")
-                #print(buf)
                 msg = {}
                 msg["buf"] = buf
                 msg["addr"] = f"TLS proxy for {addr}"
                 self.parse_hostdata(msg)
             else:
-                self.error(f"ERROR: Unkownw cmd {cmd}")
+                self.error(f"ERROR: Unknow cmd {cmd}")
             C.close()
 
     def set_netport(self, port):
@@ -2001,6 +2100,8 @@ class xythonsrv:
         if ret == RET_ERR:
             self.error("ERROR: failed to read hosts")
             return False
+        if ret == RET_NEW:
+            self.hosts_check_tags()
         for H in self.xy_hosts:
             self.debug(f"DEBUG: init FOUND: {H.name}")
             if not self.read_hist(H.name):

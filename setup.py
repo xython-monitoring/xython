@@ -55,6 +55,7 @@ setup(
             "xython-tlsd = xython_tlsd.xython_tlsd:main",
             "xythonc = xython.xython_client:main",
             "xython-nshow = xython_ncurses.xython_nshow:main",
+            "xython-snmpd = xython.xythonsnmpd:main",
         ],
     },
     include_package_data=True,

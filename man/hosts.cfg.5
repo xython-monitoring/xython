@@ -884,6 +884,15 @@ test. It is only used if running traceroute is made the
 default via the \-\-trace option.
 .BR Xython: TODO
 
+.SH SNMP TESTS
+.IP snmp[:disk][:memory][:community=name]
+The snmp tag enable using SNMP for the host.
+The community could be set by community=xxx if different than public.
+Setting disk or memory enable gathering information via SNMP.
+If $ETCDIR/snmp.d/$HOSTNAME exists and has content with the following format:
+RRDNAME;OID;LINENAME
+TODO
+
 .SH SIMPLE NETWORK TESTS
 These tests perform a simple network test of a service by connecting
 to the port and possibly checking that a banner is shown by the
