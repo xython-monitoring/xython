@@ -1,6 +1,6 @@
-.TH HOSTS.CFG 5 "Version 4.3.30:  4 Sep 2019" "Xymon"
+.TH HOSTS.CFG 5 "Version 0.1.6:  10 Sep 2023" "Xython"
 .SH NAME
-hosts.cfg \- Main Xymon configuration file
+hosts.cfg \- Main Xython configuration file
 
 .SH SYNOPSIS
 .IP hosts.cfg
@@ -9,8 +9,8 @@ hosts.cfg \- Main Xymon configuration file
 The
 .I hosts.cfg(5)
 file is the most important configuration file for all of the
-Xymon programs.  This file contains the full list of 
-all the systems monitored by Xymon, including the set 
+Xython programs.  This file contains the full list of 
+all the systems monitored by Xython, including the set 
 of tests and other configuration items stored for each host.
 
 .SH FILE FORMAT
@@ -54,14 +54,17 @@ the main hosts.cfg file is located (usually $XYMONHOME/etc/).
 
 You can nest include tags, i.e. a file that is included 
 from the main hosts.cfg file can itself include other files.
+.BR Xython: TODO
 
 .IP "dispinclude filename"
 Acts like the "include" tag, but only for the xymongen tool.
 Can be used e.g. to put a group of hosts on multiple sub-pages,
 without having to repeat the host definitions.
+.BR Xython: TODO
 
 .IP "netinclude filename"
 Acts like the "include" tag, but only for the xymonnet tool.
+.BR Xython: TODO
 
 .IP "directory directoryname"
 This tag is used to include all files in the named directory.
@@ -72,11 +75,13 @@ with a tilde, RCS files that end with ",v", RPM package manager
 files ending in ".rpmsave" or ".rpmnew", DPKG package manager
 files ending in ".dpkg\-new" or ".dpkg\-orig", and all special
 files (devices, sockets, pipes etc).
+.BR Xython: TODO
 
 .IP "optional include/directory"
 Both "include" and "directory" can be prefixed with the tag
 "optional", which will preven an error message being logged if
 the file or directory is not present on a system.
+.BR Xython: TODO
 
 
 .SH GENERAL PER-HOST OPTIONS
@@ -92,6 +97,7 @@ you can use the "noclear" tag to override this behaviour.
 
 Note that "noclear" also affects the behaviour of network tests;
 see below.
+.BR Xython: TODO
 
 .IP prefer
 When a single host is defined multiple time in the hosts.cfg file,
@@ -106,6 +112,7 @@ should be used.
 Note: This only applies to hosts that are defined multiple
 times in the hosts.cfg file, although it will not hurt to add it
 on other hosts as well.
+.BR Xython: TODO
 
 .IP multihomed
 Tell Xymon that data from the host can arrive from multiple IP-addresses.
@@ -115,6 +122,7 @@ of the hostname on at least one of the servers involved. Some hosts
 with multiple IP-addresses may use different IP's for sending data to
 Xymon, however. This tag disables the check of source IP when receiving
 data.
+.BR Xython: TODO
 
 .IP delayred=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
 Usually, status changes happen immediately. This tag is used to defer
@@ -126,24 +134,29 @@ usually not make sense to set N to anything but a multiple of 5. The
 exception is network tests, since 
 .I xymonnet\-again.sh(1)
 will re-run failed network tests once a minute for up to 30 minutes.
+.BR Xython: TODO
 
 .IP delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
 Same as \fBdelayred\fR, but defers the change to a yellow status.
+.BR Xython: TODO
 
 
 .SH XYMONGEN DISPLAY OPTIONS
 These tags are processed by the 
 .I xymongen(1)
 tool when generating the Xymon webpages or reports.
+.BR Xython: TODO
 
 .IP "page NAME [Page-title]"
 This defines a page at the level below the entry page. All
 hosts following the "page" directive appear on this page, until 
 a new "page", "subpage" or "subparent" line is found.
+.BR Xython: TODO
 
 .IP "subpage NAME [Page-title]"
 This defines a sub-page in the second level below the entry page.
 You must have a previous "page" line to hook this sub-page to.
+.BR Xython: TODO
 
 .IP "subparent parentpage newpage [Page-title]"
 This is used to define sub-pages in whatever levels you may
@@ -180,6 +193,7 @@ script, and I am grateful to Craig for suggesting that
 I implement it in xymongen. The idea to explicitly list
 the parent page in the "subparent" tag was what made
 it easy to implement.
+.BR Xython: TODO
 
 .IP "vpage"
 .IP "vsubpage"
@@ -193,6 +207,7 @@ on a page that can be scrolled vertically.
 .br
 Note that the "group" directives have no effect on these types
 of pages.
+.BR Xython: TODO
 
 .IP "group [group-title]"
 .IP "group\-compress [group-title]"
@@ -202,20 +217,24 @@ following the "group" line appear inside the group, until a
 new "group" or page-line is found. The two group-directives
 are handled identically by Xymon and xymongen, but both forms
 are allowed for backwards compatibility.
+.BR Xython: TODO
 
 .IP "group\-sorted [group-title]"
 Same as the "group" line, but will sort the hosts inside the
 group so they appear in strict lexicographic order.
+.BR Xython: TODO
 
 .IP "group\-only COLUMN1|COLUMN2|COLUMN3 [group-title]"
 Same as the "group" and "group\-compress" lines, but includes
 only the columns explicitly listed in the group. Any columns
 not listed will be ignored for these hosts.
+.BR Xython: TODO
 
 .IP "group\-except COLUMN1|COLUMN2|COLUMN3 [group-title]"
 Same as the "group\-only" lines, but includes all columns EXCEPT
 those explicitly listed in the group. Any columns listed will 
 be ignored for these hosts - all other columns are shown.
+.BR Xython: TODO
 
 .IP "title Page, group or host title text"
 The "title" tag is used to put custom headings into the
@@ -241,11 +260,13 @@ not on the sub-page itself. To get a custom heading on
 the sub-page, you may want to use the "\-\-pagetext\-heading"
 when running
 .I xymongen(1)
+.BR Xython: TODO
 
 .IP NAME:hostname
 Overrides the default hostname used on the overview web pages.
 If "hostname" contains spaces, it must be enclosed in double
 quotes, e.g. NAME:"R&D Oracle Server"
+.BR Xython: TODO
 
 .IP CLIENT:hostname
 Defines an alias for a host, which will be used when identifying
@@ -258,6 +279,7 @@ to match status reports with the hosts you define in your
 hosts.cfg file. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
 hosts.cfg.
+.BR Xython: TODO
 
 .IP NOCOLUMNS:column[,column]
 Used to drop certain of the status columns generated by the
@@ -267,12 +289,14 @@ This setting stops these columns from being updated for the
 host. Note: If the columns already exist, you must use the
 .I xymon(1)
 utility to \fBdrop\fR them, or they will go purple.
+.BR Xython: TODO
 
 .IP "COMMENT:Host comment"
 Adds a small text after the hostname on the web page. This can
 be used to describe the host, without completely changing its
 display-name as the NAME: tag does. If the comment includes
 whitespace, it must be in double-quotes, e.g. COMMENT:"Sun web server"
+.BR Xython: TODO
 
 .IP "DESCR:Hosttype:Description"
 Define some informational text about the host. The "Hosttype"
@@ -282,6 +306,7 @@ text that will be shown on the "Info" column page; this can
 e.g. be used to store information about the physical location
 of the device, contact persons etc. If the text contain whitespace,
 you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing switch"
+.BR Xython: TODO
 
 .IP "CLASS:Classname"
 Force the host to belong to a specific class. Class-names are used
@@ -295,23 +320,27 @@ client by starting the Xymon client with the "\-\-class=Classname" option.
 If you specify it in the hosts.cfg file on the Xymon server, it overrides
 any class name that the client reports. If not set, then the host belongs
 to a class named by the operating system the Xymon client is running on.
+.BR Xython: TODO
 
 .IP dialup
 The keyword "dialup" for a host means that it is OK for it to be
 off-line - this should not trigger an alert. All network tests
 will go "clear" upon failure, and any missing reports from e.g.
 cpu- and disk-status will not go purple when they are not updated.
+.BR Xython: TODO
 
 .IP nonongreen
 Ignore this host on the "All non-green" page. Even if it has an active alert,
 it will not be included in the "All non-green" page. This also removes the
 host from the event-log display.
+.BR Xython: TODO
 
 .IP nodisp
 Ignore this host completely when generating the Xymon webpages.
 Can be useful for monitoring a host without having it show up on
 the webpages, e.g. because it is not yet in production use. Or for
 hiding a host that is shown only on a second pageset.
+.BR Xython: TODO
 
 .IP TRENDS:[*,][![graph,...]]
 Defines the RRD graphs to include in the "trends" column
@@ -338,10 +367,14 @@ netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
 the http, conn and smtp services.
 .br
+.BR Xython: TODO
+
 .IP "COMPACT:COLUMN=COLUMN1|COLUMN2|COLUMN3[,ditto]"
 Collapses a series of statuses into a single column on
 the overview web page.
 .br
+.BR Xython: TODO
+
 .IP "INTERFACES:REGEXP"
 On systems with multiple network interfaces, the operating
 system may report a number of network interface where the
@@ -349,6 +382,7 @@ statistics are of no interest. By default Xymon tracks and
 graphs the traffic on all network interfaces. This option
 defines a regular expression, and only those interfaces whose
 name matches the expression are tracked.
+.BR Xython: TODO
 
 .SH XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE
 \fBNOTE:\fR The "NK" set of tags is deprecated. They will
@@ -365,6 +399,7 @@ the all-non-green-statuses page (nongreen.html), and a specially
 reduced version of nongreen.html with only selected tests (critical.html).
 This page includes selected tests that currently have a red
 or yellow status.
+.BR Xython: TODO
 
 .IP NK:testname[,testname]
 NOTE: This has been deprecated, you should use
@@ -381,6 +416,7 @@ If you want multiple tests for a host to show up on the
 critical.html page, specify all the tests separated by commas.
 The test names correspond to the column names (e.g. 
 https tests are covered by an "NK:http" tag).
+.BR Xython: TODO
 
 .IP NKTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag limits the time when an active alert is presented
@@ -414,12 +450,14 @@ NKTIME=*:0000:1159,*:1300:2359
 
 The interval between start time and end time may cross midnight, e.g. \fB*:2330:0200\fR
 would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
+.BR Xython: TODO
 
 
 .SH XYMON TAGS FOR THE WML (WAP) CARDS
 If xymongen is run with the "\-\-wml" option, it will generate a
 set of WAP-format output "cards" that can be viewed with a
 WAP-capable device, e.g. a PDA or cell-phone.
+.BR Xython: TODO
 
 .IP WML:[+|\-]testname[,[+|\-]testname]
 This tag determines which tests for this hosts are included
@@ -428,6 +466,7 @@ in the WML (WAP) page. Syntax is identical to the NK: tag.
 The default set of WML tests are taken from the \-\-wml
 command line option.  If no "WML:" tag is specified, the 
 "NK:" tag is used if present.
+.BR Xython: TODO
 
 
 .SH XYMON STATUS PROPAGATION OPTIONS
@@ -435,6 +474,7 @@ These tags affect how a status propagates upwards from a single
 test to the page and higher. This can also be done with the 
 command-line options \-\-nopropyellow and \-\-nopropred, but the tags 
 apply to individual hosts, whereas the command line options are global.
+.BR Xython: TODO
 
 .IP NOPROPRED:[+|\-]testname[,[+|\-]testname]
 This tag is used to inhibit a yellow or red status from
@@ -461,18 +501,22 @@ the "+" and "\-" methods to add or remove from the wildcard
 setting. In that case, do not use the "+" or "\-" setting,
 but simply list the required tests that you want to keep
 from propagating.
+.BR Xython: TODO
 
 .IP NOPROPYELLOW:[+|\-]testname[,[+|\-]testname]
 Similar to NOPROPRED: tag, but applies to propagating a yellow
 status upwards.
+.BR Xython: TODO
 
 .IP NOPROPPURPLE:[+|\-]testname[,[+|\-]testname]
 Similar to NOPROPRED: tag, but applies to propagating a purple
 status upwards.
+.BR Xython: TODO
 
 .IP NOPROPACK:[+|\-]testname[,[+|\-]testname]
 Similar to NOPROPRED: tag, but applies to propagating an 
 acknowledged status upwards.
+.BR Xython: TODO
 
 
 .SH XYMON AVAILABILITY REPORT OPTIONS
@@ -480,6 +524,7 @@ These options affect the way the Xymon availability
 reports are processed (see
 .I report.cgi(1)
 for details about availability reports).
+.BR Xython: TODO
 
 .IP REPORTTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag defines the time interval where you measure uptime
@@ -527,6 +572,7 @@ The availability calculation correctly handles status changes
 that cross into/out of a REPORTTIME interval.
 
 If no REPORTTIME is given, the standard 24x7 calculation is used.
+.BR Xython: TODO
 
 .IP WARNPCT:percentage
 Xymon's reporting facility uses a computed availability threshold
@@ -538,12 +584,14 @@ basis, instead of using a global setting for all hosts. The
 threshold is defined as the percentage of the time that the host
 must be available, e.g. "WARNPCT:98.5" if you want the threshold to
 be at 98.5%
+.BR Xython: TODO
 
 .IP "noflap[=test1,test2,...]"
 Disable flap detection for this host, or for specific tests on this
 host. Flap detection is globally controlled by options given to 
 xymond on the command line, but, if enabled, it can be disabled 
 using this option. 
+.BR Xython: TODO
 
 
 .SH NETWORK TEST SETTINGS
@@ -552,6 +600,7 @@ using this option.
 By default, Xymon will perform a name lookup of the hostname
 to get the IP address it will use for network tests. This tag
 causes Xymon to use the IP listed in the hosts.cfg file.
+.BR Xython: TODO
 
 .IP NET:location
 This tag defines the host as being tested from a specific location.
@@ -565,6 +614,7 @@ systems.
 Note: The "\-\-test\-untagged" option modifies this behaviour,
 see
 .I xymonnet(1)
+.BR Xython: TODO
 
 .IP noclear
 Some network tests depend on others. E.g. if the host does not
@@ -584,6 +634,7 @@ Note that "noclear" also affects whether stale status messages
 from e.g. a client on the host go purple or clear when the
 host is down; see the "noclear" description in the
 "GENERAL PER-HOST OPTIONS" section above.
+.BR Xython: TODO
 
 .IP nosslcert
 Disables the standard check of any SSL certificates for
@@ -591,6 +642,7 @@ this host. By default, if an SSL-enabled service is tested,
 a second test result is generated with information about 
 the SSL certificate - this tag disables the SSL certificate
 checks for the host.
+.BR Xython: TODO
 
 .IP "ssldays=WARNDAYS:ALARMDAYS"
 Define the number of days before an SSL certificate expires,
@@ -600,6 +652,7 @@ alarm (red) status. These default to the values from the
 .I xymonnet(1)
 tool; the values specified in the "ssldays" tag overrides
 the default.
+.BR Xython: TODO
 
 .IP "sslbits=MINIMUMKEYBITS"
 Enable checking of the encryption strength of the SSL protocol
@@ -607,6 +660,7 @@ offered by the server. If the server offers encryption using
 a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
 test will go red. E.g. to check that your server only uses
 strong encryption (128 bits or better), use "sslbits=128".
+.BR Xython: TODO
 
 .IP sni
 .IP nosni
@@ -622,6 +676,7 @@ SNI support was added in Xymon 4.3.13, where the default was to
 use SNI. This was changed in 4.3.14 so SNI support is disabled by
 default, and the "sni" and "nosni" tags were introduced together
 with the "--sni" option for xymonnet.
+.BR Xython: TODO
 
 
 .IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
@@ -645,6 +700,7 @@ the system is down.
 
 The syntax for DOWNTIME is the same as the one used
 by the NKTIME parameter.
+.BR Xython: TODO
 
 .IP SLA=day:starttime:endtime[,day:starttime:endtime]
 This tag is now deprecated. Use the DOWNTIME tag instead.
@@ -652,6 +708,7 @@ This tag is now deprecated. Use the DOWNTIME tag instead.
 This tag works the opposite of the DOWNTIME tag - you use 
 it to specify the periods of the day that the service should be 
 green. Failures OUTSIDE the SLA interval are reported as blue.
+.BR Xython: TODO
 
 .IP depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]
 This tag allows you to define dependencies between tests.
@@ -681,6 +738,7 @@ is currently no way to use the e.g. the status of locally
 run tests (disk, cpu, msgs) or network tests from other
 servers in a dependency definition. Such dependencies are
 silently ignored.
+.BR Xython: TODO
 
 .IP badTEST[\-weekdays\-starttime\-endtime]:x:y:z
 NOTE: This has been deprecated, use the \fBdelayred\fR and
@@ -725,6 +783,7 @@ successive failures.
 
 For LDAP tests using URL's, use the option "badldapurl".
 For the other network tests, use "badftp", "badssh" etc.
+.BR Xython: TODO
 
 
 .SH CONNECTIVITY (PING) TEST
@@ -734,10 +793,12 @@ test.
 .IP noping
 Disables the ping-test, but will keep the "conn" column
 on the web display with a notice that it has been disabled.
+.BR Xython: TODO
 
 .IP noconn
 Disables the ping-test, and does not put a "conn" column
 on the web display.
+.BR Xython: OK
 
 .IP conn
 The "conn" test (which does a ping of the host) is enabled
@@ -752,6 +813,7 @@ the network.
 The actual name of the tag - "conn" by default - depends
 on the "\-\-ping=TESTNAME" option for xymonnet, as that
 decides the testname for the connectivity test.
+.BR Xython: OK (TODO: ! and TESTNAME)
 
 .IP "conn={best,|worst,}IP1[,IP2...]"
 This adds additional IP-addresses that are pinged during the
@@ -766,12 +828,14 @@ reported in a single "conn" status, whose color is determined
 from the result of pinging the IP's and the best/worst setting.
 The default method is "best" - so it will report green if 
 just one of the IP's respond to ping.
+.BR Xython: TODO
 
 .IP badconn[\-weekdays\-starttime\-endtime]:x:y:z
 This is taken directly from the "fping.sh" connectivity-
 testing script, and is used by xymonnet when it runs
 with ping testing enabled (the default). See the description
 of the "badTEST" tag.
+.BR Xython: TODO
 
 .IP route:router1,router2,....
 This tag is taken from the "fping.sh" script, and is used
@@ -792,6 +856,7 @@ tracking down which router is the root cause of the problem.
 Note: Internally, the ping test will still be handled as
 "failed", and therefore any other tests run for this host
 will report a status of "clear".
+.BR Xython: TODO
 
 .IP route_LOCATION:router1,router2,...
 If the XYMONNETWORK environment variable is defined, a tag
@@ -801,6 +866,7 @@ This allows you to have different route: tags for each
 server running xymonnet. The actual text for the tag then must
 match the value you have for the XYMONNETWORK setting.
 E.g. with XYMONNETWORK=dmz, the tag becomes "route_dmz:"
+.BR Xython: TODO
 
 .IP "trace"
 If the connectivity test fails, run a "traceroute"
@@ -809,12 +875,14 @@ from the failed connectivity test. Note: For this to
 work, you may have to define the TRACEROUTE environment
 variable, see 
 .I xymonserver.cfg(5)
+.BR Xython: TODO
 
 .IP "notrace"
 Similar to the "trace" option, this disables the running
 of a traceroute for the host after a failed connectivity
 test. It is only used if running traceroute is made the
 default via the \-\-trace option.
+.BR Xython: TODO
 
 .SH SIMPLE NETWORK TESTS
 These tests perform a simple network test of a service by connecting
@@ -857,11 +925,13 @@ By prefixing a test with "?" errors will be reported with a "clear"
 status instead of red. This is known as a test for a "dialup" service,
 and allows you to run tests of hosts that are not always online, 
 without getting alarms while they are off-line.
+.BR Xython: TODO
 
 .IP "ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp"
 These tags are for testing services offering the FTP, Secure Shell (ssh), 
 SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
 listener (oratns), qmail QMTP and QMQP protocols.
+.BR Xython: TODO
 
 .IP "ftps telnets smtps pop3s imaps nntps"
 These tags are for testing of the SSL-tunneled versions of
@@ -873,12 +943,14 @@ The server certificate is validated and information about
 it sent in the "sslcert" column. Note that smtps does not
 have a standard port number assignment, so you will need to enter
 this into the protocols.cfg file or your /etc/services file.
+.BR Xython: TODO
 
 .IP bbd
 Test that a Big Brother compatible daemon is running. This check
 works both for the Xymon
 .I xymond(8)
 daemon, and the original Big Brother bbd daemon.
+.BR Xython: TODO
 
 
 .SH DNS SERVER TESTS
@@ -887,12 +959,14 @@ These tags are used to setup monitoring of DNS servers.
 .IP dns
 Simple DNS test. It will attempt to lookup the A record for
 the hostname of the DNS server.
+.BR Xython: TODO
 
 .IP dig
 This is an alias for the "dns" test. In xymonnet, the "dns"
 and "dig" tests are handled identically, so all of the facilities
 for testing described for the "dns" test are also available for
 the "dig" test.
+.BR Xython: TODO
 
 .IP "dns=hostname"
 .IP "dns=TYPE:lookup[,TYPE:lookup...]
@@ -910,6 +984,7 @@ NS (Name Server) are among the more common ones used. The
 the nameservers for the "bar.org" domain, "dns=ns:bar.org". 
 You can list multiple lookups, separated by commas. For the
 test to end up with a green status, all lookups must succeed.
+.BR Xython: TODO
 
 
 .SH OTHER NETWORK TESTS
@@ -918,6 +993,7 @@ Check for a running NTP (Network Time Protocol) server on this
 host. This test uses the "ntpdate" utility to check for a
 NTP server - you should either have ntpdate in your PATH, or
 set the location of the ntpdate program in $XYMONHOME/etc/xymonserver.cfg
+.BR Xython: TODO
 
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect
@@ -935,6 +1011,7 @@ This test uses the rpcinfo tool for the actual test; if this tool
 is not available in the PATH of xymonnet, you must define the
 RPCINFO environment variable to point at this tool. See
 .I xymonserver.cfg(5)
+.BR Xython: TODO
 
 
 .SH HTTP TESTS
@@ -958,6 +1035,7 @@ or by putting the username and password into the ~/.netrc
 file (see
 .I ftp(1)
 for details).
+.BR Xython: TODO
 
 .IP "Authentication with SSL client certificates"
 An SSL client certificate can be used for authentication.
@@ -996,6 +1074,7 @@ if you have the PEM certificate in $XYMONHOME/certs/client.pem,
 you must put the pass phrase into the $XYMONHOME/certs/client.pass
 file. Make sure to protect this file with Unix permissions,
 so that only the user running Xymon can read it.
+.BR Xython: TODO
 
 .IP "Forcing an HTTP or SSL version"
 Some SSL sites will only allow you to connect, if you use
@@ -1031,6 +1110,7 @@ TLS1.2 and HTTP 1.0 you would use "httpsc10".
 
 Note that SSLv2 support is disabled in all current OpenSSL releases.
 TLS version-specific scheme testing requires OpenSSL 1.0.1 or higher.
+.BR Xython: TODO
 
 .IP "Testing sites by IP-address"
 xymonnet ignores the "testip" tag normally used to force a 
@@ -1055,6 +1135,7 @@ so if you need to combine this with e.g. an explicit port number,
 it should be done as
 
 	http://www.sample.com:3128=1.2.3.4/index.html
+.BR Xython: TODO
 
 .IP "HTTP Testing via proxy"
 \fBNOTE:\fR This is not enabled by default. You must
@@ -1165,10 +1246,12 @@ The content-check status by default includes the full URL
 that was requested, and the HTML data returned by the server.
 You can hide the HTML data on a per-host (not per-test) basis 
 by adding the \fBHIDEHTTP\fR tag to the host entry.
+.BR Xython: TODO
 
 .IP content=URL
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
+.BR Xython: TODO
 
 .IP post[=COLUMN];URL;form\-data;[expected_data_regexp|#digesttype:digest]
 This tag can be used to test web pages, that use an input
@@ -1217,6 +1300,7 @@ See the "cont;" tag above for details. If you are only interested
 in knowing if it is possible to submit the form (but don't care 
 about the data), this can be an empty string - but the ';' at the 
 end is required.
+.BR Xython: TODO
 
 .IP nocont[=COLUMN];URL;forbidden_data_regexp
 This tag works just like "cont" tag, but reverses the test. 
@@ -1224,6 +1308,7 @@ It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to 
 watch for data that should NOT be present in the response,
 e.g. a server error message.
+.BR Xython: TODO
 
 .IP nopost[=COLUMN];URL;form\-data;expected_data_regexp
 This tag works just like "post" tag, but reverses the test. 
@@ -1231,6 +1316,7 @@ It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to 
 watch for data that should NOT be present in the response,
 e.g. a server error message.
+.BR Xython: TODO
 
 .IP type[=COLUMN];URL;expected_content_type
 This is a variant of the content check - instead of checking
@@ -1238,6 +1324,7 @@ the content data, it checks the type of the data as given by
 the HTTP Content\-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
+.BR Xython: TODO
 
 .IP soap[=COLUMN];URL;SOAPMESSAGE;[expected_data_regexp|#digesttype:digest]
 Send SOAP message over HTTP. This is identical to the "cont"
@@ -1254,6 +1341,7 @@ and post it to the URL http://soap.foo.bar/bas?wsdl
 
 Note that SOAP XML documents usually must begin with the XML
 version line, \fB<?xml version="1.0">\fR
+.BR Xython: TODO
 
 .IP nosoap[=COLUMN];URL;SOAPMESSAGE;[forbidden_data_regexp|#digesttype:digest]
 This tag works just like "soap" tag, but reverses the test.
@@ -1261,9 +1349,11 @@ It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
+.BR Xython: TODO
 
 .IP httphead[=COLUMN];URL
 This is used to perform an HTTP HEAD request instead of a GET.
+.BR Xython: TODO
 
 .IP httpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr
 This is used to explicitly test for certain HTTP statuscodes
@@ -1272,6 +1362,7 @@ returned when the URL is requested. The \fBokstatusexpr\fR and
 expressions, e.g. "2..|302" will match all OK codes and the
 redirect (302) status code. If the URL cannot be retrieved,
 the status is "999".
+.BR Xython: TODO
 
 .IP HIDEHTTP
 The status display for HTTP checks usually includes the URL,
@@ -1279,11 +1370,13 @@ and for content checks also the actual data from the web page.
 If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
+.BR Xython: TODO
 
 .IP headermatch
 Content checks by default only search the HTML body returned by
 the webserver. This option causes it to also search the HTTP 
 headers for the string that must / must not be present.
+.BR Xython: TODO
 
 .IP browser=BROWSERNAME
 By default, Xymon sends an HTTP "User\-Agent" header identifying
@@ -1299,6 +1392,7 @@ the browser that works with this particular site, and open the
 URL "javascript:document.writeln(navigator.userAgent)" (just copy this
 into the "Open URL" dialog. The text that shows up is what the browser
 sends as the User\-Agent header.
+.BR Xython: TODO
 
 .IP httphdr=STRING
 Xymon can be send additional headers when performing HTTP checks, to
@@ -1310,6 +1404,7 @@ currently no way to have this occur only for specific URLs checked.
 The string should be encased in quotes, like \fBhttphdr="X-Requested-With: XMLHttpRequest"\fR.
 Newlines can be included, however the string MUST NOT end with a newline
 as that may cause premature ending of the headers sent.
+.BR Xython: TODO
 
 .SH LDAP (DIRECTORY SERVER) TESTS
 .IP ldap
@@ -1317,6 +1412,7 @@ as that may cause premature ending of the headers sent.
 Simple check for an LDAP service. This check merely looks for
 any service running on the ldap/ldaps service port, but does
 not perform any actual LDAP transaction.
+.BR Xython: TODO
 
 .IP ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]
 Check for an LDAP service by performing an LDAP request. This
@@ -1334,6 +1430,7 @@ The components of the LDAP URI are:
   \fIfilter\fP is filter
   \fIexts\fP are recognized set of LDAP and/or API extensions.
 .fi
+.BR Xython: TODO
 
 .IP ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]
 LDAP service check using LDAPv3 and STARTTLS for talking to
@@ -1341,17 +1438,20 @@ an LDAP server that requires TLS encryption. See
 .I xymonnet(1)
 for a discussion of the different ways of running LDAP servers
 with SSL/TLS, and which of these are supported by xymonnet.
+.BR Xython: TODO
 
 .IP ldaplogin=username:password
 Define a username and password to use when binding to the LDAP
 server for ldap URI tests. If not specified, xymonnet will
 attempt an anonymous bind.
+.BR Xython: TODO
 
 .IP ldapyellowfail
 Used with an LDAP URL test. If the LDAP query fails during the 
 search of the directory, the ldap status is normally reported
 as "red" (alarm). This tag reduces a search failure to a 
 "yellow" (warning) status.
+.BR Xython: TODO
 
 .SH PERFORMANCE MONITORING TESTS
 .IP apache[=URL]
@@ -1389,6 +1489,7 @@ Apache configuration. The following configuration is needed:
 .sp
 Change "127.0.0.1" to the IP-address of the server that runs your
 network tests.
+.BR Xython: TODO
 
 .SH DEFAULT HOST
 If you have certain tags that you want to apply to all hosts, you can
@@ -1446,6 +1547,7 @@ the status of the "sales" page on the Baltimore Xymon server.
 
 Note: Pages defined using alternate pageset definitions cannot be used,
 the URL must point to a web page from the default set of Xymon webpages.
+.BR Xython: TODO
 
 
 .SH OTHER TAGS
@@ -1456,11 +1558,12 @@ utility, and causes it to poll the host for client data. The optional
 IP-address and port-number can be used if the client-side
 .I msgcache(8)
 daemon is listening on a non-standard IP-address or port-number.
+.BR Xython: TODO
 
 
 .SH FILES
 .BR ~xymon/server/etc/hosts.cfg
 
 .SH "SEE ALSO"
-xymongen(1), xymonnet(1), xymondigest(1), xymonserver.cfg(5), xymon(7)
+xythond(8), xython-tlsd(8), xymonserver.cfg(5), xython.cfg(5)
 
