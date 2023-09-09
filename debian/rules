@@ -43,12 +43,14 @@ override_dh_install:
 
 override_dh_installsystemd:
 	dh_installsystemd --name xython-celery
+	dh_installsystemd --name xython-snmpdd
 	dh_installsystemd --name xython-tlsd
 	dh_installsystemd --name xythond
 
 override_dh_installinit:
 	#dh_installinit -a -- defaults 98 02
 	dh_installinit --name=xython-celery
+	dh_installinit --name=xython-snmpd
 	dh_installinit --name=xython-tlsd
 	dh_installinit --name=xythond
 	dh_installinit --name=xython-client
