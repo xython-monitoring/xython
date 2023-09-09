@@ -178,162 +178,6 @@ Example of setupping the rabbitMQ xython user:
 * xymonnet is replaced by xython_test on the celery cluster
 * xymon_channel: xymon_channel could be replace by either a simple tool which ask xythond for recent change or the use of a rabbitMQ cluster
 * xymongen: embedded in xythond for the moment
-<!--
-# Feature matrix
-TODO
-<table>
-<tr>
-<td>compoments</td>
-<td>what</td>
-<td>status</td>
-<td>milestone</td>
-<td>comment</td>
-</tr>
-
-<tr>
-<td>hostdata</td>
-<td>cpu</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-<td>Remains clock drift</td>
-</tr>
-
-<tr>
-<td>hostdata</td>
-<td>disk</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>hostdata</td>
-<td>memory</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>hostdata</td>
-<td>inode</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>hostdata</td>
-<td>msgs</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>hostdata</td>
-<td>procs</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>protocol</td>
-<td>status</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>protocol</td>
-<td>blue</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>protocol</td>
-<td>ack</td>
-<td>TODO</td>
-<td>0.2</td>
-</tr>
-
-<tr>
-<td>protocol</td>
-<td>drop</td>
-<td>TODO</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>status</td>
-<td>flapping</td>
-<td>TODO</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>status</td>
-<td>class</td>
-<td>TODO</td>
-<td>0.2</td>
-</tr>
-
-<tr>
-<td>net tests</td>
-<td>conn</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>net tests</td>
-<td>smtp</td>
-<td>TODO</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>net tests</td>
-<td>imap</td>
-<td>TODO</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>net tests</td>
-<td>http</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>net tests</td>
-<td>ssh</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>gen page</td>
-<td>main view</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>gen page</td>
-<td>nongreen</td>
-<td>IN PROGRESS</td>
-<td>0.1</td>
-</tr>
-
-<tr>
-<td>gen page</td>
-<td>group</td>
-<td>TODO</td>
-<td>0.2</td>
-</tr>
-
-</table>
-TODO: fill all hosts.cfg manpage in this table
--->
 
 # difference/improvment over xymon
 The goal is to be 100% compatible with old Xymon storage BUT via an option, I will support some possible change.
@@ -384,7 +228,6 @@ This is a uncomplete
 * Add manpage
 * Add html manpage
 * RRD / graph
-* SNMP
 * compression (gzip/zstd?) of all hostdata
 * re-read hosts.cfg
 * use PINGCOLUMN
@@ -398,6 +241,9 @@ TODO
 
 * /etc/xython: xython specific configuration (mostly xython.cfg)
 * /usr/share/xython/:   webpage graphic
+
+# Documentation
+You could see online documentation at <https://www.xython.fr/hosts.cfg.5.html>
 
 # Contact
 You can contact me (nick montjoie) on IRC libera channel #xython

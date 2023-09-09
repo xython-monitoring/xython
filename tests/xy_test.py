@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import pytest
 import time
 from xython.common import gcolor
@@ -19,7 +20,11 @@ from xython.rules import xy_rule_mem
 from xython.rules import xy_rule_cpu
 from xython.rules import xy_rule_sensors
 from xython.xython import xythonsrv
-
+try:
+    import rrdtool
+    has_rrdtool = True
+except ImportError:
+    has_rrdtool = False
 
 def test_xytime():
     assert xytime(1678871776) == 'Wed Mar 15 10:16:16 2023'
@@ -445,4 +450,27 @@ def test_reload():
     #print(results)
     assert len(results) == 1
     assert len(X.xy_hosts) == 2
+    X.sqc.close()
+    os.remove(f"{X.xt_data}/xython.db")
 
+def test_full():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    X.wwwdir = './tests/www/'
+    X.init()
+    X.read_configs()
+    H = X.find_host("donotexists")
+    assert H is None
+    H = X.find_host("test2")
+    assert H is not None
+    assert 'ftp' in H.tags
+
+    X.do_rrd("test1", "test", "t", 444)
+    if has_rrdtool:
+        rrdfpath = f"{X.xt_rrd}/test1/testt.rrd"
+        info = rrdtool.info(rrdfpath)
+        assert info
+        X.gen_rrds()
+        X.gen_rrd('test1', 'test')

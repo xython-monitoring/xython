@@ -593,7 +593,7 @@ class xythonsrv:
                     if len(remain) > 0:
                         self.debug(f"REMAIN: {remain}")
                         if remain[0] != ':':
-                            self.error(f"Config error, missing : at {sline}")
+                            self.error(f"Config error, missing : at {test}")
                             return RET_ERR
                         words = remain.split(":")
                         port = int(words[1])
@@ -630,7 +630,9 @@ class xythonsrv:
         except:
             self.error("ERROR: cannot open hosts.cfg")
             return RET_ERR
-        for line in fhosts:
+        dhosts = fhosts.read()
+        dhosts = dhosts.replace('\\\n', '')
+        for line in dhosts.split('\n'):
             line = line.rstrip()
             line = re.sub(r"\s+", " ", line)
             if len(line) == 0:
@@ -701,6 +703,8 @@ class xythonsrv:
         cdata += f"IP: TODO\n"
         if H.client_version:
             cdata += f"Client S/W: {H.client_version}\n"
+        cdata += f"TAGS={H.tags_known}\n"
+        cdata += f"TAGS not hanlded {H.tags_unknown}\n"
         # TODO infinite time
         self.column_update(hostname, "info", "green", time.time(), cdata, 365 * 24 * 3600, "xythond")
 
@@ -1347,6 +1351,7 @@ class xythonsrv:
         i = 0
         sensor_adapter = None
         for rrd in rrds:
+            #self.debug(f"DEBUG DORRD: graph {rrd} to {pngpath}")
             fname = str(os.path.basename(rrd)).replace(".rrd", "")
             rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
             rrdfpath = str(rrd)
@@ -1374,13 +1379,14 @@ class xythonsrv:
                 if column == 'sensor' and sensor_adapter != adapter:
                     sensor_adapter = adapter
                     base.append(f'COMMENT:{adapter}\\n')
-                base.append(f'GPRINT:pct{i}:LAST:{label} \: %5.1lf (cur)')
-                base.append(f'GPRINT:pct{i}:MIN: \: %5.1lf (min)')
-                base.append(f'GPRINT:pct{i}:MAX: \: %5.1lf (max)')
-                base.append(f'GPRINT:pct{i}:AVERAGE: \: %5.1lf (avg)\l')
+                base.append(f'GPRINT:pct{i}:LAST:{label} \\: %5.1lf (cur)')
+                base.append(f'GPRINT:pct{i}:MIN: \\: %5.1lf (min)')
+                base.append(f'GPRINT:pct{i}:MAX: \\: %5.1lf (max)')
+                base.append(f'GPRINT:pct{i}:AVERAGE: \\: %5.1lf (avg)\\l')
         rrdup = xytime(time.time()).replace(':', '\\:')
-        base.append(f'COMMENT:Updated\: {rrdup}')
-        rrdtool.graph(base)
+        base.append(f'COMMENT:Updated\\: {rrdup}')
+        ret = rrdtool.graph(base)
+        # TODO check this ret
         os.chmod(pngpath, 0o644)
 
     def do_rrd(self, hostname, rrdname, ds, value):
@@ -1393,9 +1399,13 @@ class xythonsrv:
             os.mkdir(rrdpath)
         rrdfpath = f"{self.xt_rrd}/{hostname}/{fname}.rrd"
         if not os.path.exists(rrdfpath):
+            self.debug(f"DEBUG: do_rrd create for {hostname} {rrdname} {ds} {value}")
+            DS = "DS:pct:GAUGE:600:0:U"
+            if ds == 'disk':
+                DS = "DS:pct:GAUGE:600:0:100"
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
                 "RRA:AVERAGE:0.5:1:1200",
-                "DS:pct:GAUGE:600:0:100")
+                DS)
         rrdtool.update(rrdfpath, f"N:{value}")
 
     def do_sensor_rrd(self, hostname, adapter, sname, value):
@@ -1432,6 +1442,7 @@ class xythonsrv:
             self.error(f"ERROR: parse_free: host is None for {hostname}")
             return False
         now = time.time()
+        self.debug(f"DEBUG: parse_free for {hostname}")
         # TODO handle other OS case
         color = 'green'
         sbuf = f"{xytime(now)} - Memory OK\n"
@@ -1649,7 +1660,7 @@ class xythonsrv:
         del(hc[-1])
         hostname = ".".join(hc)
         if color not in COLORS:
-            self.error("ERROR: invalid color")
+            self.error(f"ERROR: invalid color {color}")
             return False
         expire = 30 * 60
         wstatus = sline[0].replace("status", "")
@@ -1782,6 +1793,7 @@ class xythonsrv:
             line = line.rstrip()
             if len(line) == 0:
                 continue
+            #self.debug(f"DEBUG: section={section} line={line}")
             if line[0] == '[' and line[len(line) - 1] == ']':
                 if section is not None:
                     handled = False
