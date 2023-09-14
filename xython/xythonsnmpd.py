@@ -205,6 +205,7 @@ def main():
     X.xt_data= f"/var/lib/xython/"
     X.xt_rrd = f"{X.xt_data}/rrd/"
     X.lldebug = args.debug
+    X.daemon_name = "xython-snmpd"
     X.read_hosts()
     X.hosts_check_snmp_tags()
     while True:
