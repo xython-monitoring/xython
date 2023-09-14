@@ -171,6 +171,7 @@ class xythonsrv:
         # each time read_hosts is called, read_hosts_cnt is ++ abd all hosts found are set to this value
         # so all hosts with a lower value need to be removed
         self.read_hosts_cnt = 0
+        self.daemon_name = "xythond"
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -680,12 +681,18 @@ class xythonsrv:
             self.debug("DEBUG: ip=%s host=%s" % (host_ip, host_name))
             # conn is enabled by default
             # if host already exists, remove it
+            host_tags = None
             H = self.find_host(host_name)
             if H is not None:
+                host_tags = H.tags
                 self.xy_hosts.remove(H)
             H = xy_host(host_name)
             H.rhcnt = self.read_hosts_cnt
             H.hostip = host_ip
+            if host_tags != sline:
+                self.log(self.daemon_name, f"New host {H.name}")
+            else:
+                self.log(self.daemon_name, f"Known host {H.name}")
             H.tags = sline
             self.xy_hosts.append(H)
         for H in self.xy_hosts:
