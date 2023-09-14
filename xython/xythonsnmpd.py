@@ -16,7 +16,7 @@ def snmp_get(oid, H):
     iterator = hlapi.getCmd(
     hlapi.SnmpEngine(),
     hlapi.CommunityData(H.snmp_community, mpModel=0),
-    hlapi.UdpTransportTarget((H.name, 161)),
+    hlapi.UdpTransportTarget((H.gethost(), 161)),
     hlapi.ContextData(),
     hlapi.ObjectType(hlapi.ObjectIdentity(oid))
     )
