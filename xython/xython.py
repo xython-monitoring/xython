@@ -53,6 +53,8 @@ class xy_host:
         self.name = name
         self.tests = []
         self.hostip = ""
+        # False => use name, True use host_ip
+        self.use_ip = False
         self.rules = {}
         self.rhcnt = 0
         self.hist_read = False
@@ -98,6 +100,10 @@ class xy_host:
         else:
             T.add(url)
 
+    def gethost(self):
+        if self.use_ip:
+            return self.hostip
+        return self.name
 
 class xytest:
     def __init__(self, hostname, ttype, url, port):
@@ -552,6 +558,9 @@ class xythonsrv:
                     continue
                 if test[0] == '#':
                     test = test[1:]
+                if test[0:6] == 'testip':
+                    H.use_ip = True
+                    continue
                 if test[0:4] == 'snmp':
                     snmp_tags = test.split(':')
                     for stag in snmp_tags:
@@ -577,6 +586,10 @@ class xythonsrv:
                     continue
                 if test[0] == '#':
                     test = test[1:]
+                if test[0:6] == 'testip':
+                    H.use_ip = True
+                    H.tags_known.append(test)
+                    continue
                 if test[0:6] == 'noconn':
                     need_conn = False
                     H.tags_known.append(test)
@@ -1016,7 +1029,7 @@ class xythonsrv:
         if name in self.celerytasks:
             self.error(f"ERROR: lagging test for {name}")
             return False
-        ctask = ping.delay(T.hostname, H.hostip)
+        ctask = ping.delay(T.hostname, H.gethost())
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
         return True
