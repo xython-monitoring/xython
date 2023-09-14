@@ -736,7 +736,7 @@ class xythonsrv:
         if H.client_version:
             cdata += f"Client S/W: {H.client_version}\n"
         cdata += f"TAGS={H.tags_known}\n"
-        cdata += f"TAGS not hanlded {H.tags_unknown}\n"
+        cdata += f"TAGS not handled {H.tags_unknown}\n"
         # TODO infinite time
         self.column_update(hostname, "info", "green", time.time(), cdata, 365 * 24 * 3600, "xythond")
 
