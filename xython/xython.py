@@ -87,7 +87,7 @@ class xy_host:
     #    if self.edebug:
     #        print(buf)
 
-    def add_test(self, ttype, url, port):
+    def add_test(self, ttype, url, port, column):
         T = None
         for Tt in self.tests:
             if Tt.type == ttype:
@@ -95,7 +95,7 @@ class xy_host:
                 T = Tt
         if T is None:
             # self.debug(f"DEBUG: create test  {ttype} with URL={url}")
-            T = xytest(self.name, ttype, url, port)
+            T = xytest(self.name, ttype, url, port, column)
             self.tests.append(T)
         else:
             T.add(url)
@@ -106,7 +106,7 @@ class xy_host:
         return self.name
 
 class xytest:
-    def __init__(self, hostname, ttype, url, port):
+    def __init__(self, hostname, ttype, url, port, column):
         self.ts = time.time()
         self.hostname = hostname
         self.next = time.time()
@@ -114,6 +114,7 @@ class xytest:
         self.urls = []
         self.urls.append(url)
         self.port = port
+        self.column = column
 
     def add(self, url):
         self.urls.append(url)
@@ -595,7 +596,7 @@ class xythonsrv:
                     H.tags_known.append(test)
                     continue
                 if test == 'conn':
-                    H.add_test("conn", test, None)
+                    H.add_test("conn", test, None, "conn")
                     need_conn = False
                     H.tags_known.append(test)
                     continue
@@ -610,19 +611,37 @@ class xythonsrv:
                             return RET_ERR
                         words = remain.split(":")
                         port = int(words[1])
-                    H.add_test("ssh", test, port)
+                    H.add_test("ssh", test, port, "ssh")
+                    H.tags_known.append(test)
+                    continue
+                if test[0:4] == 'cont':
+                    # TODO column name
+                    self.debug("\tDEBUG: HTTP cont tests %s" % test)
+                    tokens = test.split(';')
+                    if len(tokens) != 3:
+                        self.error(f"INVALID {test}")
+                        continue
+                    url = f"{tokens[1]};cont={tokens[2]}"
+                    H.add_test("http", url, None, "http")
                     H.tags_known.append(test)
                     continue
                 if test[0:4] == 'http':
+                    url = test
+                    if test[0:10] == 'httpstatus':
+                        tokens = test.split(';')
+                        if len(tokens) != 3:
+                            self.error(f"INVALID {test}")
+                            continue
+                        url = f"{tokens[1]};httpcode={tokens[2]}"
                     self.debug("\tDEBUG: HTTP tests %s" % test)
-                    H.add_test("http", test, None)
+                    H.add_test("http", url, None, "http")
                     H.tags_known.append(test)
                     continue
                 self.log("todo", f"TODO hosts: test={test}")
                 self.debug(f"\tDEBUG: test={test}xxx")
                 H.tags_unknown.append(test)
             if need_conn:
-                H.add_test("conn", test, None)
+                H.add_test("conn", test, None, "conn")
             self.gen_column_info(H.name)
 
 # read hosts.cfg
@@ -1017,7 +1036,7 @@ class xythonsrv:
 
     def dohttp(self, T):
         name = f"{T.hostname}_http"
-        ctask = dohttp.delay(T.hostname, T.urls)
+        ctask = dohttp.delay(T.hostname, T.urls, T.column)
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 

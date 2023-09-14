@@ -39,16 +39,18 @@ def ping(hostname, t):
 
 
 @app.task
-def dohttp(hostname, urls):
-    verify = True
+def dohttp(hostname, urls, column):
     hdata = ""
     httpstate = ""
     httpcount = 0
     options = ""
-    need_httpcode = 200
-    headers = {}
-    headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
     for url in urls:
+        check_content = None
+        verify = True
+        headers = {}
+        headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
+        need_httpcode = 200
+        print(f'DEBUG: check {url}')
         tokens = url.split(';')
         url = tokens.pop(0)
         for token in tokens:
@@ -63,6 +65,11 @@ def dohttp(hostname, urls):
                 else:
                     verify=cmds[1]
                 options += f"verify={cmds[1]}"
+            elif cmd == 'cont':
+                check_content = cmds[1]
+            elif cmd == 'httpcode':
+                # TODO check it is an integer or regex
+                need_httpcode = cmds[1]
             else:
                 options += f"unknow={token}"
         if httpcount > 0:
@@ -77,10 +84,18 @@ def dohttp(hostname, urls):
             if r.status_code == need_httpcode:
                 hdata += f"{r.status_code} {r.reason}\n"
             else:
-                hdata += f"&red {r.status_code} {r.reason}\n"
+                print(type(r.status_code))
+                print(type(need_httpcode))
+                hdata += f"&red {r.status_code} {r.reason} (want code={need_httpcode})\n"
             for header in r.headers:
                 hdata += "%s: %s\n" % (header, r.headers[header])
             httpstate += "OK"
+            if check_content:
+                content = r.content.decode('utf8')
+                if re.search(check_content, content):
+                    hdata += f'&green pattern {check_content} found in {content}'
+                else:
+                    hdata += f'&red pattern {check_content} not found in {content}'
         except requests.exceptions.Timeout as e:
             color = "red"
             hdata += f"&red {url} - TIMEOUT\n"
