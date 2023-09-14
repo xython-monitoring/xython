@@ -1044,7 +1044,7 @@ or by putting the username and password into the ~/.netrc
 file (see
 .I ftp(1)
 for details).
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP "Authentication with SSL client certificates"
 An SSL client certificate can be used for authentication.
@@ -1255,12 +1255,12 @@ The content-check status by default includes the full URL
 that was requested, and the HTML data returned by the server.
 You can hide the HTML data on a per-host (not per-test) basis 
 by adding the \fBHIDEHTTP\fR tag to the host entry.
-.BR Xython: TODO
+.BR Xython: supported but deprecated. Replaced by: http://fqdn;cont[=column]=[expected_data_regexp|#digesttype:digest]
 
 .IP content=URL
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
-.BR Xython: TODO
+.BR Xython: will not be supported since deprecated by xymon
 
 .IP post[=COLUMN];URL;form\-data;[expected_data_regexp|#digesttype:digest]
 This tag can be used to test web pages, that use an input
@@ -1371,7 +1371,10 @@ returned when the URL is requested. The \fBokstatusexpr\fR and
 expressions, e.g. "2..|302" will match all OK codes and the
 redirect (302) status code. If the URL cannot be retrieved,
 the status is "999".
-.BR Xython: TODO
+.BR Xython support this, but set it as obsolete (replaced by the generic URL handling with httpcode=xxx)
+
+.IP http://fqdn/;httpcode=xxx
+Same as httpstatus
 
 .IP HIDEHTTP
 The status display for HTTP checks usually includes the URL,
