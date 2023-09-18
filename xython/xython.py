@@ -27,7 +27,7 @@ except ImportError:
 import sqlite3
 from .xython_tests import ping
 from .xython_tests import dohttp
-from .xython_tests import dossh
+from .xython_tests import do_generic_proto
 import celery
 from .common import xytime
 from .common import xytime_
@@ -47,6 +47,13 @@ from .rules import xy_rule_cpu
 from .rules import xy_rule_sensors
 
 
+class xy_protocol:
+    def __init__(self):
+        self.send = None
+        self.expect = None
+        self.port = None
+        self.options = None
+
 class xy_host:
     def __init__(self, name):
         self.last_ping = 0
@@ -58,6 +65,7 @@ class xy_host:
         self.rules = {}
         self.rhcnt = 0
         self.hist_read = False
+        self.tags = None
         self.tags_read = False
         self.tags_known = []
         self.tags_unknown = []
@@ -172,6 +180,8 @@ class xythonsrv:
         # so all hosts with a lower value need to be removed
         self.read_hosts_cnt = 0
         self.daemon_name = "xythond"
+        self.protocols = {}
+        self.time_read_protocols = 0
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -521,7 +531,6 @@ class xythonsrv:
 
     def read_snmp_hosts(self, hostname):
         H = self.find_host(hostname)
-        print("=============")
         fname = f"{self.etcdir}/snmp.d/{hostname}"
         try:
             f = open(fname)
@@ -546,7 +555,7 @@ class xythonsrv:
             goid["oid"] = t[1]
             goid["name"] = t[2]
             H.oidlist.append(goid)
-            print(H.oidlist)
+            #print(H.oidlist)
 
     def hosts_check_snmp_tags(self):
         for H in self.xy_hosts:
@@ -580,6 +589,9 @@ class xythonsrv:
             if H.tags_read:
                 continue
             need_conn = True
+            if H.tags is None:
+                self.error(f"ERROR: with {H.name} no tags")
+                continue
             for test in H.tags:
                 if len(test) == 0:
                     continue
@@ -596,23 +608,13 @@ class xythonsrv:
                     need_conn = False
                     H.tags_known.append(test)
                     continue
+                if test in self.protocols:
+                    H.add_test(test, test, None, test)
+                    H.tags_known.append(test)
+                    continue
                 if test == 'conn':
                     H.add_test("conn", test, None, "conn")
                     need_conn = False
-                    H.tags_known.append(test)
-                    continue
-                if test[0:3] == 'ssh':
-                    #self.debug(f"\tDEBUG: ssh tests {test}")
-                    port = 22
-                    remain = test[3:]
-                    if len(remain) > 0:
-                        self.debug(f"REMAIN: {remain}")
-                        if remain[0] != ':':
-                            self.error(f"Config error, missing : at {test}")
-                            return RET_ERR
-                        words = remain.split(":")
-                        port = int(words[1])
-                    H.add_test("ssh", test, port, "ssh")
                     H.tags_known.append(test)
                     continue
                 if test[0:4] == 'cont':
@@ -700,6 +702,59 @@ class xythonsrv:
                 self.debug(f"DEBUG: read_hosts: purge {H.name}")
                 self.xy_hosts.remove(H)
         return RET_NEW
+
+    def read_protocols(self):
+        mtime = os.path.getmtime(self.etcdir + "/protocols.cfg")
+        self.debug(f"DEBUG: compare mtime={mtime} and time_read_protocols={self.time_read_protocols}")
+        if self.time_read_protocols < mtime:
+            self.time_read_protocols = mtime
+        else:
+            return RET_OK
+        try:
+            fprotocols = open(self.etcdir + "/protocols.cfg", 'r')
+        except:
+            self.error("ERROR: cannot open protocols.cfg")
+            return RET_ERR
+        dprotocols = fprotocols.read()
+        cproto = None
+        P = None
+        for line in dprotocols.split('\n'):
+            line = re.sub(r"^\s+", "", line)
+            line = re.sub(r"#.*", "", line)
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            if line[0] == '[':
+                if P is not None:
+                    for protoname in cproto.split('|'):
+                        self.debug(f"DEBUG: register protocols {protoname}")
+                        self.protocols[protoname] = P
+                cproto = line.replace('[', '').replace(']', '')
+                P = xy_protocol()
+                continue
+            if line[0:5] == 'port ':
+                P.port = int(line[5:])
+                continue
+            if line[0:8] == 'options ':
+                P.options = line[8:]
+                continue
+            if line[0:8] == 'expect "':
+                if line[-1] != '"':
+                    self.error(f"ERROR: wrong expect format for {cproto}")
+                    continue
+                P.expect = line[8:len(line)-1]
+                continue
+            if line[0:6] == 'send "':
+                if line[-1] != '"':
+                    self.error(f"ERROR: wrong send format for {cproto}")
+                    continue
+                P.send = line[6:len(line)-1]
+                P.send = P.send.replace('\\n', '\n')
+                P.send = P.send.replace('\\r', '\r')
+                continue
+            self.debug(f"{cproto} unhandled {line}")
+        return RET_OK
 
     def find_host(self, hostname):
         for H in self.xy_hosts:
@@ -888,7 +943,7 @@ class xythonsrv:
             return None
         f.close()
         if len(data) < 4:
-            self.error("ERROR: get_histlogs: histlog is too small")
+            self.error(f"ERROR: get_histlogs: histlog of {hostname}:{column} is too small {data}")
             return None
         ret = {}
         ret["raw"] = data.copy()
@@ -1060,9 +1115,19 @@ class xythonsrv:
         self.celtasks.append(ctask)
         return True
 
-    def do_ssh(self, T):
-        name = f"{T.hostname}_ssh"
-        ctask = dossh.delay(T.hostname, T.port)
+    def do_generic_proto(self, H, T):
+        name = f"{T.hostname}_{T.type}"
+        if T.type not in self.protocols:
+            self.error(f"ERROR: {T.type} not found in protocols")
+            return None
+        P = self.protocols[T.type]
+        PP = {}
+        PP["port"] = P.port
+        PP["expect"]= P.expect
+        PP["options"]= P.options
+        PP["send"]= P.send
+        PP["protoname"]= T.type
+        ctask = do_generic_proto.delay(T.hostname, H.gethost(), PP, T.port)
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 
@@ -1090,8 +1155,9 @@ class xythonsrv:
                             lag += 1
                     if T.type == 'http':
                         self.dohttp(T)
-                    if T.type == 'ssh':
-                        self.do_ssh(T)
+                    if T.type in self.protocols:
+                        self.do_generic_proto(H, T)
+                        continue
         res = self.sqc.execute(f'UPDATE tests SET next = {now} + 120 WHERE next < {now}')
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
@@ -2147,6 +2213,8 @@ class xythonsrv:
 # read hosts.cfg and analysis.cfg
 # check if thoses files need to be reread
     def read_configs(self):
+        # TODO retcode
+        self.read_protocols()
         ret = self.read_hosts()
         if ret == RET_ERR:
             self.error("ERROR: failed to read hosts")
