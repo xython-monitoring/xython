@@ -20,6 +20,9 @@ from xython.rules import xy_rule_mem
 from xython.rules import xy_rule_cpu
 from xython.rules import xy_rule_sensors
 from xython.xython import xythonsrv
+from xython.xython_tests import hex_to_binary
+from xython.xython_tests import hex_compare
+
 try:
     import rrdtool
     has_rrdtool = True
@@ -452,6 +455,14 @@ def test_reload():
     assert len(X.xy_hosts) == 2
     X.sqc.close()
     os.remove(f"{X.xt_data}/xython.db")
+
+def test_protocols_binary():
+    assert hex_to_binary('\\x35\\x36') == b'56'
+    assert hex_to_binary('\\x35\\x37') == b'57'
+    assert hex_to_binary('\\x35\x37') is None
+    assert hex_compare(b'67', '\\x36\\x37')
+    assert hex_compare(b'ABC', '\\x41\\x42\\x43')
+    assert not hex_compare(b'ABC', '\\x41\\x42\\x44')
 
 def test_full():
     X = xythonsrv()

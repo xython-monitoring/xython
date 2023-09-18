@@ -13,6 +13,7 @@ import time
 import re
 import requests
 import socket
+import ssl
 from importlib.metadata import version
 from xython.common import xytime
 
@@ -135,33 +136,141 @@ def dohttp(hostname, urls, column):
     return dret
 
 
-@app.task
-def dossh(hostname, port):
+def hex_to_binary(hs):
+    hexs = ""
+    i = 0
+    while i < len(hs):
+        if i + 4 > len(hs):
+            return None
+        header = hs[i:i+2]
+        if header != '\\x':
+            return None
+        h = hs[i+2:i+4]
+        hexs += h
+        hexs += ' '
+        i += 4
+    return bytes.fromhex(hexs)
+
+# compare binary b and e
+def hex_compare(b, e):
+    i = 0
+    hexs = ""
+    while i < len(e):
+        if i + 4 > len(e):
+            return None
+        header = e[i:i+2]
+        if header != '\\x':
+            return None
+        hexs += e[i+2:i+4]
+        i += 4
+    bh = bytes.fromhex(hexs)
+    if bh == b:
+        return True
+    return False
+
+def do_generic_proto_ssl(hostname, address, PP, port):
     ts_start = time.time()
-    color = "green"
-    try:
-        s_ssh = socket.socket()
-        s_ssh.connect((hostname, port))
-        buf = s_ssh.recv(1024)
-        banner = buf.decode("UTF8")
-        s_ssh.close()
-    except ConnectionError:
-        color = "red"
-        banner = "Failed to connect"
-    except OSError as error:
-        color = "red"
-        banner = str(error)
-    if color != 'red' and not re.search("OpenSSH", banner):
-        color = 'red'
-        banner = f"{banner} is not openssh"
-    sbuf = f"{xytime(ts_start)} ssh ok\n\n"
-    # TODO
-    sbuf += f"Service ssh on {hostname}:{port} is OK (up)\n\n"
-    sbuf += f"{banner}\n\n"
-    sbuf += f"Seconds: {time.time() - ts_start}\n"
+    p_options = PP["options"]
+    p_port = PP["port"]
+    p_expect = PP["expect"]
+    p_send = PP["send"]
+    protoname = PP["protoname"]
     dret = {}
     dret["hostname"] = hostname
-    dret["color"] = color
-    dret["txt"] = sbuf
-    dret["type"] = 'ssh'
+    dret["type"] = protoname
+    dret["color"] = 'red'
+    protoname = PP["protoname"]
+
+    print(f"GENERIC TLS PROTOCOLS addr={address} port={p_port} proto={protoname}")
+
+    try:
+        context = ssl.create_default_context()
+        context.check_hostname = True
+        context.verify_mode = ssl.CERT_REQUIRED
+        with socket.create_connection((address, p_port)) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                if p_send:
+                    if '\\x' in p_send:
+                        ssock.write(hex_to_binary(p_send))
+                    else:
+                        ssock.write(p_send.encode("UTF8"))
+                if p_expect or (p_options is not None and 'banner' in p_options):
+                    buf = ssock.read(1024)
+                    banner = buf.decode("UTF8")
+                if p_expect:
+                    if '\\x' in p_send:
+                        if self.hex_compare(buf, p_expect):
+                            dret["color"] = 'green'
+                            dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
+                        else:
+                            dret["color"] = 'red'
+                            dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko\n\n"
+                    else:
+                        if p_expect in banner:
+                            dret["color"] = 'green'
+                            dret["txt"] = f"Service {protoname} on {hostname} is OK\n{banner}\n\n"
+                        else:
+                            dret["color"] = 'red'
+                            dret["txt"] = f"Service {protoname} on {hostname} is ko\n{banner}\n\nWanted {p_expect}\n\n"
+                else:
+                    dret["color"] = 'green'
+                    dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nconnected successfully on {address}\n"
+    except socket.gaierror as e:
+        dret["txt"] = f"Service {protoname} on {hostname} is KO\n\n{str(e)}n\n"
+    except ssl.SSLCertVerificationError as e:
+        dret["txt"] = f"Service {protoname} on {hostname} is KO\n\n{str(e)}\n\n"
+    except ConnectionRefusedError:
+        dret["txt"] = "connection refused\n\n"
+    dret["txt"] += f"Seconds: {time.time() - ts_start}\n"
+    return dret
+
+@app.task
+def do_generic_proto(hostname, address, PP, port):
+    ts_start = time.time()
+    p_options = PP["options"]
+    if p_options and "ssl" in p_options:
+        return do_generic_proto_ssl(hostname, address, PP, port)
+    p_port = PP["port"]
+    p_expect = PP["expect"]
+    p_send = PP["send"]
+    protoname = PP["protoname"]
+    dret = {}
+    dret["hostname"] = hostname
+    dret["type"] = protoname
+    dret["color"] = 'red'
+    try:
+        s = socket.socket()
+        s.connect((address, p_port))
+        if p_send:
+            if '\\x' in p_send:
+                s.send(hex_to_binary(p_send))
+            else:
+                s.send(p_send.encode("UTF8"))
+        if p_expect or (p_options is not None and 'banner' in p_options):
+            buf = s.recv(1024)
+            banner = buf.decode("UTF8")
+        if p_expect:
+            if '\\x' in p_send:
+                if self.hex_compare(buf, p_expect):
+                    dret["color"] = 'green'
+                    dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
+                else:
+                    dret["color"] = 'red'
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko\n\n"
+            else:
+                if p_expect in banner:
+                    dret["color"] = 'green'
+                    dret["txt"] = f"Service {protoname} on {hostname} is OK\n{banner}\n\n"
+                else:
+                    dret["color"] = 'red'
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n{banner}\n\n"
+        else:
+            dret["color"] = 'green'
+            dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nconnected successfully on {address}\n"
+        s.close()
+    except ConnectionError:
+        dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nFailed to connect to {address}\n\n"
+    except OSError as error:
+        dret["txt"] = f"Servide {protoname} on {hostname} is ko\n\n" + str(error) + "\n\n"
+    dret["txt"] += f"Seconds: {time.time() - ts_start}\n"
     return dret
