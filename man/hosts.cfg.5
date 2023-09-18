@@ -882,6 +882,7 @@ Similar to the "trace" option, this disables the running
 of a traceroute for the host after a failed connectivity
 test. It is only used if running traceroute is made the
 default via the \-\-trace option.
+
 .BR Xython: TODO
 
 .SH SNMP TESTS
@@ -889,9 +890,20 @@ default via the \-\-trace option.
 The snmp tag enable using SNMP for the host.
 The community could be set by community=xxx if different than public.
 Setting disk or memory enable gathering information via SNMP.
+.br
 If $ETCDIR/snmp.d/$HOSTNAME exists and has content with the following format:
 RRDNAME;OID;LINENAME
-TODO
+
+Example:
+.br
+memory;.1.3.6.1.4.1.2021.4.5.0;memorytotal
+.br
+memory;.1.3.6.1.4.1.2021.4.6.0;memoryused
+.br
+cpu;.1.3.6.1.4.1.2021.11.51.0;idle
+.br
+cpu;.1.3.6.1.4.1.2021.11.53.0;nice
+.br
 
 .SH SIMPLE NETWORK TESTS
 These tests perform a simple network test of a service by connecting
