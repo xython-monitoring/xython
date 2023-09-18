@@ -40,6 +40,7 @@ def ping(hostname, t):
 
 @app.task
 def dohttp(hostname, urls, column):
+    color = "green"
     hdata = ""
     httpstate = ""
     httpcount = 0
@@ -79,13 +80,14 @@ def dohttp(hostname, urls, column):
         ts_http_start = time.time()
         try:
             r = requests.get(url, headers=headers, verify=verify)
-            color = "green"
             hdata += f"&green {url} - OK\n\n"
-            if r.status_code == need_httpcode:
-                hdata += f"{r.status_code} {r.reason}\n"
+            scode = str(r.status_code)
+            sneed = str(need_httpcode)
+            rr = re.match(sneed, scode)
+            if rr:
+                hdata += f"&green {r.status_code} {r.reason}\n"
             else:
-                print(type(r.status_code))
-                print(type(need_httpcode))
+                color = "red"
                 hdata += f"&red {r.status_code} {r.reason} (want code={need_httpcode})\n"
             for header in r.headers:
                 hdata += "%s: %s\n" % (header, r.headers[header])
