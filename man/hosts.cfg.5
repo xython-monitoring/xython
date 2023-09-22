@@ -814,6 +814,19 @@ The actual name of the tag - "conn" by default - depends
 on the "\-\-ping=TESTNAME" option for xymonnet, as that
 decides the testname for the connectivity test.
 .BR Xython: OK (TODO: ! and TESTNAME)
+.br
+Xython add the choice to ping via ipv4 or ipv6. By default xython let "ping to choose".
+.br
+Adding ipv4 option to conn
+.I (ex: conn:ipv4)
+will force ping to ping an ipv4 address
+.br
+Adding ipv6 option to conn
+.I (ex: conn:ipv6)
+will force ping to ping an ipv6 address
+.br
+You can force xython to test both
+.I (ex: conn:ipv4:ipv6)
 
 .IP "conn={best,|worst,}IP1[,IP2...]"
 This adds additional IP-addresses that are pinged during the
