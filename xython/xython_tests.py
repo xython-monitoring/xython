@@ -15,32 +15,54 @@ import requests
 import socket
 import ssl
 from importlib.metadata import version
+from xython.common import setcolor
 from xython.common import xytime
+
+from datetime import datetime
 
 # TODO permit to configure localhost
 app = Celery('tasks', backend='redis://localhost', broker='redis://localhost')
 
 
 @app.task
-def ping(hostname, t):
+def ping(hostname, t, doipv4, doipv6):
+    ts_start = time.time()
+    dret = {}
+    dret["type"] = 'conn'
+    dret["hostname"] = hostname
+    dret["txt"] = ""
+    dret["color"] = 'green'
+
     env = os.environ
     env["LANG"] = 'C'
     env["LC_ALL"] = 'C'
-    color = 'green'
-    ret = subprocess.run(["ping", "-c", "1", t], capture_output=True)
-    if ret.returncode != 0:
-        color = 'red'
-    hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
-    dret = {}
-    dret["color"] = color
-    dret["txt"] = hdata
-    dret["hostname"] = hostname
-    dret["type"] = 'conn'
+    if not doipv4 and not doipv6:
+        ret = subprocess.run(["ping", "-c", "1", t], capture_output=True)
+        if ret.returncode != 0:
+            dret["color"] = 'red'
+        hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
+        dret["txt"] += hdata
+    if doipv4:
+        ret = subprocess.run(["ping", "-4", "-c", "1", t], capture_output=True)
+        if ret.returncode != 0:
+            dret["color"] = 'red'
+        hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
+        dret["txt"] += hdata
+    if doipv6:
+        ret = subprocess.run(["ping", "-6", "-c", "1", t], capture_output=True)
+        if ret.returncode != 0:
+            dret["color"] = 'red'
+        hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
+        dret["txt"] += hdata
+    test_duration = time.time() - ts_start
+    dret["txt"] += f"\nSeconds: {test_duration}\n"
+    dret["timing"] = test_duration
     return dret
 
 
 @app.task
 def dohttp(hostname, urls, column):
+    ts_start = time.time()
     color = "green"
     hdata = ""
     httpstate = ""
@@ -52,7 +74,7 @@ def dohttp(hostname, urls, column):
         headers = {}
         headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
         need_httpcode = 200
-        print(f'DEBUG: check {url}')
+        print(f'DEBUG: dohttp: check {url}')
         tokens = url.split(';')
         url = tokens.pop(0)
         for token in tokens:
@@ -122,16 +144,17 @@ def dohttp(hostname, urls, column):
             else:
                 hdata += f"&red {url} - KO\n"
                 httpstate += "KO"
-        ts_http_end = time.time()
-        hdata += f"\nSeconds: {ts_http_end-ts_http_start}\n\n"
         if options != "":
             hdata += f"xython options: {options}\n"
     now = time.time()
     fdata = f"{xytime(now)}: {httpstate}\n"
+    test_duration = now - ts_start
     dret = {}
     dret["hostname"] = hostname
     dret["color"] = color
     dret["txt"] = fdata + hdata
+    dret["timing"] = test_duration
+    dret["txt"] += f"\nSeconds: {test_duration}\n"
     dret["type"] = 'http'
     return dret
 
@@ -168,79 +191,174 @@ def hex_compare(b, e):
         return True
     return False
 
-def do_generic_proto_ssl(hostname, address, PP, port):
-    ts_start = time.time()
-    p_options = PP["options"]
-    p_port = PP["port"]
-    p_expect = PP["expect"]
-    p_send = PP["send"]
-    protoname = PP["protoname"]
-    dret = {}
-    dret["hostname"] = hostname
-    dret["type"] = protoname
-    dret["color"] = 'red'
-    protoname = PP["protoname"]
+def get_cn(t):
+    r = ""
+    unk = ""
+    #print(f"GETCN={t}")
+    for p in t:
+        if len(p) > 1:
+            unk += "length "
+            print("========================================= big length")
+        if p[0][0] == 'countryName':
+            r += f"/C={p[0][1]}"
+            continue
+        if p[0][0] == 'organizationName':
+            r += f"/O={p[0][1]}"
+            continue
+        if p[0][0] == 'commonName':
+            r += f"/CN={p[0][1]}"
+            continue
+        if p[0][0] == 'localityName':
+            r += f"/L={p[0][1]}"
+            continue
+        if p[0][0] == 'organizationalUnitName':
+            r += f"/OU={p[0][1]}"
+            continue
+        if p[0][0] == 'organizationIdentifier':
+            r += f"/OI={p[0][1]}"
+            continue
+        if p[0][0] == 'serialNumber':
+            r += f"/SN={p[0][1]}"
+            continue
+        unk += str(p)
+        print(f"UNK={p}")
+    ret = {}
+    ret["unk"] = unk
+    ret["name"] = r
+    return ret
 
-    print(f"GENERIC TLS PROTOCOLS addr={address} port={p_port} proto={protoname}")
+def show_cert(ssock, hostname):
+    cert = ssock.getpeercert()
+    #print(f"showcert for {hostname} ={cert}")
+    if 'subject' not in cert:
+        print("===================================")
+        print("ERROR no subject")
+        print(f"cert={cert}")
+        return "Failed to get certificate for {hostname}"
+    else:
+        ret = get_cn(cert['subject'])
+    if "name" not in ret:
+        return "Failed to get certificate for {hostname}"
+    certinfo = f"Server certificate:\n\tSubject: {ret['name']}\n"
+    certinfo += f"\tstart date: {cert['notBefore']}\n"
+    certinfo += f"\texpire date:{cert['notAfter']}\n"
+    ret = get_cn(cert['issuer'])
+    certinfo += f"\tissuer:{ret['name']}\n"
+    now = time.time()
+    date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+    expire =  date.timestamp()
+    certinfo += f"expire in {(expire - now) / 86400} days\n"
+    # TODO key size
+    # TODO signature used
+    # TODO cipher used
+
+    return certinfo
+
+def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expect, p_options):
+    ts_start = time.time()
+    dret = {}
+    dret["color"] = 'red'
+    thostname = hostname
+    tokens = url.split(':')
+    i = 1
+    verify = ssl.CERT_REQUIRED
+    while i < len(tokens):
+        option = tokens[i]
+        print(f"DEBUG: generic proto ssl: check {option}")
+        if tokens[i].isdigit():
+            port = int(tokens[i])
+        elif tokens[i][0:7] == 'verify=':
+            verify = ssl.CERT_NONE
+            print(f"DEBUG: no certificate check for {thostname}")
+        elif tokens[i][0:9] == 'hostname=':
+            hs = tokens[i].split('=')
+            thostname = hs[1]
+        i += 1
+
+    print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname}")
 
     try:
         context = ssl.create_default_context()
-        context.check_hostname = True
-        context.verify_mode = ssl.CERT_REQUIRED
-        with socket.create_connection((address, p_port)) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                if p_send:
-                    if '\\x' in p_send:
-                        ssock.write(hex_to_binary(p_send))
-                    else:
-                        ssock.write(p_send.encode("UTF8"))
-                if p_expect or (p_options is not None and 'banner' in p_options):
-                    buf = ssock.read(1024)
-                    banner = buf.decode("UTF8")
-                if p_expect:
-                    if '\\x' in p_send:
-                        if self.hex_compare(buf, p_expect):
-                            dret["color"] = 'green'
-                            dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
-                        else:
-                            dret["color"] = 'red'
-                            dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko\n\n"
-                    else:
-                        if p_expect in banner:
-                            dret["color"] = 'green'
-                            dret["txt"] = f"Service {protoname} on {hostname} is OK\n{banner}\n\n"
-                        else:
-                            dret["color"] = 'red'
-                            dret["txt"] = f"Service {protoname} on {hostname} is ko\n{banner}\n\nWanted {p_expect}\n\n"
-                else:
+        context.check_hostname = not (verify == ssl.CERT_NONE)
+        context.verify_mode = verify
+        sock = socket.create_connection((address, port))
+        ssock = context.wrap_socket(sock, server_hostname=thostname)
+        if p_send:
+            if '\\x' in p_send:
+                ssock.write(hex_to_binary(p_send))
+            else:
+                ssock.write(p_send.encode("UTF8"))
+        if p_expect or (p_options is not None and 'banner' in p_options):
+            buf = ssock.read(1024)
+            banner = buf.decode("UTF8")
+        if p_expect:
+            if '\\x' in p_send:
+                if hex_compare(buf, p_expect):
                     dret["color"] = 'green'
-                    dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nconnected successfully on {address}\n"
+                    dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
+                else:
+                    dret["color"] = 'red'
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko\n\n"
+            else:
+                if p_expect in banner:
+                    dret["color"] = 'green'
+                    dret["txt"] = f"Service {protoname} on {hostname} is OK\n{banner}\n\n"
+                else:
+                    dret["color"] = 'red'
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n{banner}\n\nWanted {p_expect}\n\n"
+        else:
+            dret["color"] = 'green'
+            dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nconnected successfully on {address}\n"
+        if context.check_hostname:
+            dret["txt"] += show_cert(ssock, hostname) + "\n\n"
+        else:
+            dret["txt"] += "Cannot test certificate since verify=0\n\n"
     except socket.gaierror as e:
         dret["txt"] = f"Service {protoname} on {hostname} is KO\n\n{str(e)}n\n"
     except ssl.SSLCertVerificationError as e:
         dret["txt"] = f"Service {protoname} on {hostname} is KO\n\n{str(e)}\n\n"
     except ConnectionRefusedError:
         dret["txt"] = "connection refused\n\n"
-    dret["txt"] += f"Seconds: {time.time() - ts_start}\n"
+    dret["txt"] += f"\nSeconds: {time.time() - ts_start}\n"
+    print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} ret={dret}")
     return dret
 
 @app.task
-def do_generic_proto(hostname, address, PP, port):
+def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect, p_options):
     ts_start = time.time()
-    p_options = PP["options"]
-    if p_options and "ssl" in p_options:
-        return do_generic_proto_ssl(hostname, address, PP, port)
-    p_port = PP["port"]
-    p_expect = PP["expect"]
-    p_send = PP["send"]
-    protoname = PP["protoname"]
     dret = {}
     dret["hostname"] = hostname
     dret["type"] = protoname
+    dret["color"] = 'green'
+    dret["txt"] = ""
+    for url in urls:
+        if p_options and "ssl" in p_options:
+            ret = do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expect, p_options)
+        else:
+            ret = do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options)
+        dret["color"] = setcolor(ret["color"], dret["color"])
+        dret["txt"] += ret["txt"]
+    test_duration = time.time() - ts_start
+    dret["txt"] += f"\nSeconds: {test_duration}\n"
+    dret["timing"] = test_duration
+    return dret
+
+def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options):
+    dret = {}
     dret["color"] = 'red'
+
+    tokens = url.split(':')
+    i = 1
+    while i < len(tokens):
+        option = tokens[i]
+        print(f"DEBUG: generic proto notls: check {option}")
+        if tokens[i].isdigit():
+            port = int(tokens[i])
+        i += 1
+
     try:
         s = socket.socket()
-        s.connect((address, p_port))
+        s.connect((address, port))
         if p_send:
             if '\\x' in p_send:
                 s.send(hex_to_binary(p_send))
@@ -251,7 +369,7 @@ def do_generic_proto(hostname, address, PP, port):
             banner = buf.decode("UTF8")
         if p_expect:
             if '\\x' in p_send:
-                if self.hex_compare(buf, p_expect):
+                if hex_compare(buf, p_expect):
                     dret["color"] = 'green'
                     dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
                 else:
@@ -272,5 +390,4 @@ def do_generic_proto(hostname, address, PP, port):
         dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nFailed to connect to {address}\n\n"
     except OSError as error:
         dret["txt"] = f"Servide {protoname} on {hostname} is ko\n\n" + str(error) + "\n\n"
-    dret["txt"] += f"Seconds: {time.time() - ts_start}\n"
     return dret

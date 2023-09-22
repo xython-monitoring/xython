@@ -95,7 +95,7 @@ class xy_host:
     #    if self.edebug:
     #        print(buf)
 
-    def add_test(self, ttype, url, port, column):
+    def add_test(self, ttype, url, port, column, doipv4, doipv6):
         T = None
         for Tt in self.tests:
             if Tt.type == ttype:
@@ -107,6 +107,8 @@ class xy_host:
             self.tests.append(T)
         else:
             T.add(url)
+        T.doipv4 = doipv4
+        T.doipv6 = doipv6
 
     def gethost(self):
         if self.use_ip:
@@ -123,6 +125,8 @@ class xytest:
         self.urls.append(url)
         self.port = port
         self.column = column
+        self.doipv4 = False
+        self.doipv6 = False
 
     def add(self, url):
         self.urls.append(url)
@@ -592,59 +596,76 @@ class xythonsrv:
             if H.tags is None:
                 self.error(f"ERROR: with {H.name} no tags")
                 continue
-            for test in H.tags:
-                if len(test) == 0:
+            for tag in H.tags:
+                if len(tag) == 0:
                     continue
-                self.debug(f"DEBUG: {H.name} {test}")
-                if test == '#':
+                self.debug(f"DEBUG: {H.name} {tag}")
+                if tag == '#':
                     continue
-                if test[0] == '#':
-                    test = test[1:]
-                if test[0:6] == 'testip':
+                if tag[0] == '#':
+                    tag = tag[1:]
+                if tag[0:6] == 'testip':
                     H.use_ip = True
-                    H.tags_known.append(test)
+                    H.tags_known.append(tag)
                     continue
-                if test[0:6] == 'noconn':
+                if tag[0:6] == 'noconn':
                     need_conn = False
-                    H.tags_known.append(test)
+                    H.tags_known.append(tag)
                     continue
+                tokens = tag.split(':')
+                test = tokens[0]
                 if test in self.protocols:
-                    H.add_test(test, test, None, test)
-                    H.tags_known.append(test)
+                    H.add_test(test, tag, None, test, True, False)
+                    H.tags_known.append(tag)
+                    H.dump()
                     continue
-                if test == 'conn':
-                    H.add_test("conn", test, None, "conn")
+                if tag[0:4] == 'conn':
+                    # TODO name of column via =column
+                    tokens = tag.split(':')
+                    doipv4 = False
+                    doipv6 = False
+                    for tok in tokens:
+                        if tok == 'conn':
+                            continue
+                        if tok == 'ipv4':
+                            doipv4 = True
+                            continue
+                        if tok == 'ipv6':
+                            doipv6 = True
+                            continue
+                        self.error(f"ERROR: unknow tag option {tok} for conn")
+                    H.add_test("conn", tag, None, "conn", doipv4, doipv6)
                     need_conn = False
-                    H.tags_known.append(test)
+                    H.tags_known.append(tag)
                     continue
-                if test[0:4] == 'cont':
+                if tag[0:4] == 'cont':
                     # TODO column name
-                    self.debug("\tDEBUG: HTTP cont tests %s" % test)
-                    tokens = test.split(';')
+                    self.debug("\tDEBUG: HTTP cont tests %s" % tag)
+                    tokens = tag.split(';')
                     if len(tokens) != 3:
-                        self.error(f"INVALID {test}")
+                        self.error(f"INVALID {tag}")
                         continue
                     url = f"{tokens[1]};cont={tokens[2]}"
-                    H.add_test("http", url, None, "http")
-                    H.tags_known.append(test)
+                    H.add_test("http", url, None, "http", True, False)
+                    H.tags_known.append(tag)
                     continue
-                if test[0:4] == 'http':
-                    url = test
-                    if test[0:10] == 'httpstatus':
-                        tokens = test.split(';')
+                if tag[0:4] == 'http':
+                    url = tag
+                    if tag[0:10] == 'httpstatus':
+                        tokens = tag.split(';')
                         if len(tokens) != 3:
-                            self.error(f"INVALID {test}")
+                            self.error(f"INVALID {tag}")
                             continue
                         url = f"{tokens[1]};httpcode={tokens[2]}"
-                    self.debug("\tDEBUG: HTTP tests %s" % test)
-                    H.add_test("http", url, None, "http")
-                    H.tags_known.append(test)
+                    self.debug("\tDEBUG: HTTP tests %s" % tag)
+                    H.add_test("http", url, None, "http", True, False)
+                    H.tags_known.append(tag)
                     continue
-                self.log("todo", f"TODO hosts: test={test}")
-                self.debug(f"\tDEBUG: test={test}xxx")
-                H.tags_unknown.append(test)
+                self.log("todo", f"TODO hosts: tag={tag}")
+                self.debug(f"\tDEBUG: unknow tag={tag}xxx")
+                H.tags_unknown.append(tag)
             if need_conn:
-                H.add_test("conn", test, None, "conn")
+                H.add_test("conn", tag, None, "conn", True, False)
             self.gen_column_info(H.name)
 
 # read hosts.cfg
@@ -1110,7 +1131,7 @@ class xythonsrv:
         if name in self.celerytasks:
             self.error(f"ERROR: lagging test for {name}")
             return False
-        ctask = ping.delay(T.hostname, H.gethost())
+        ctask = ping.delay(T.hostname, H.gethost(), T.doipv4, T.doipv6)
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
         return True
@@ -1121,13 +1142,8 @@ class xythonsrv:
             self.error(f"ERROR: {T.type} not found in protocols")
             return None
         P = self.protocols[T.type]
-        PP = {}
-        PP["port"] = P.port
-        PP["expect"]= P.expect
-        PP["options"]= P.options
-        PP["send"]= P.send
-        PP["protoname"]= T.type
-        ctask = do_generic_proto.delay(T.hostname, H.gethost(), PP, T.port)
+        ctask = do_generic_proto.delay(T.hostname, H.gethost(), T.type, P.port, T.urls,
+            P.send, P.expect, P.options)
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 
