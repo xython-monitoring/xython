@@ -115,6 +115,10 @@ class xy_host:
             return self.hostip
         return self.name
 
+    def dump(self):
+        for test in self.tests:
+            test.dump()
+
 class xytest:
     def __init__(self, hostname, ttype, url, port, column):
         self.ts = time.time()
@@ -130,6 +134,9 @@ class xytest:
 
     def add(self, url):
         self.urls.append(url)
+
+    def dump(self):
+        print(f"TEST DUMP: {self.hostname} {self.type} {self.urls}")
 
 
 RET_OK = 0
@@ -1095,7 +1102,7 @@ class xythonsrv:
             pdate = xytime(col[2])
             pedate = xytime(expire)
             pnow = xytime(now)
-            self.debug("DEBUG: purplelize %s %s %d<%d %s %s < %s" % (col[0], col[1], col[3], now, pdate, pedate, pnow))
+            #self.debug("DEBUG: purplelize %s %s %d<%d %s %s < %s" % (col[0], col[1], col[3], now, pdate, pedate, pnow))
             self.column_update(col[0], col[1], "purple", time.time(), None, 0, "xythond")
         ts_end = time.time()
         self.stat("PURPLE", ts_end - ts_start)
@@ -1189,8 +1196,8 @@ class xythonsrv:
                     # TODO better handle this problem, easy to generate by removing ping
                     continue
                 ret = ctask.get()
-                self.debug(f'DEBUG: result for {ret["hostname"]} {ret["type"]}')
-                self.column_update(ret["hostname"], ret["type"], ret["color"], time.time(), ret["txt"], 180, "xython-tests")
+                self.debug(f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
+                self.column_update(ret["hostname"], ret["type"], ret["color"], time.time(), ret["txt"], 200, "xython-tests")
                 self.celtasks.remove(ctask)
                 name = f'{ret["hostname"]}_{ret["type"]}'
                 if name not in self.celerytasks:
@@ -1961,20 +1968,23 @@ class xythonsrv:
                     if section == '[clientversion]':
                         handled = True
                         H = self.find_host(hostname)
-                        H.client_version = buf
+                        if H is not None:
+                            H.client_version = buf
                         self.gen_column_info(hostname)
                     if section == '[uname]':
                         handled = True
                         H = self.find_host(hostname)
-                        H.uname = buf
+                        if H is not None:
+                            H.uname = buf
                         self.gen_column_info(hostname)
                     if section == '[osversion]':
                         handled = True
                         H = self.find_host(hostname)
-                        H.osversion = buf
+                        if H is not None:
+                            H.osversion = buf
                         self.gen_column_info(hostname)
-                    if not handled:
-                        self.debug(f"DEBUG: section {section} not handled")
+                    #if not handled:
+                    #    self.debug(f"DEBUG: section {section} not handled")
                 section = line
                 buf = ""
                 continue
@@ -2238,7 +2248,7 @@ class xythonsrv:
         if ret == RET_NEW:
             self.hosts_check_tags()
         for H in self.xy_hosts:
-            self.debug(f"DEBUG: init FOUND: {H.name}")
+            #self.debug(f"DEBUG: init FOUND: {H.name}")
             if not self.read_hist(H.name):
                 self.error(f"ERROR: failed to read hist for {H.name}")
             self.read_analysis(H.name)
