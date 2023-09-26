@@ -71,6 +71,7 @@ def dohttp(hostname, urls, column):
     for url in urls:
         check_content = None
         verify = True
+        timeout = 30
         headers = {}
         headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
         need_httpcode = 200
@@ -80,6 +81,9 @@ def dohttp(hostname, urls, column):
         for token in tokens:
             cmds = token.split('=')
             cmd = cmds[0]
+            if cmd == 'timeout':
+                timeout = int(cmds[1])
+                options += f"timeout={cmds[1]}"
             if cmd == 'verify':
                 v = cmds[1]
                 if v == '0':
@@ -99,10 +103,14 @@ def dohttp(hostname, urls, column):
         if httpcount > 0:
             httpstate += "; "
         httpcount += 1
+        certinfo = None
         # self.debug("\tDEBUG: http %s" % url)
         ts_http_start = time.time()
         try:
-            r = requests.get(url, headers=headers, verify=verify)
+            r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True)
+            if verify and 'https' in url:
+                #cert = r.raw.connection.sock.getpeercert()
+                certinfo = show_cert(r.raw.connection.sock, hostname)
             hdata += f"&green {url} - OK\n\n"
             scode = str(r.status_code)
             sneed = str(need_httpcode)
@@ -120,30 +128,34 @@ def dohttp(hostname, urls, column):
                 if re.search(check_content, content):
                     hdata += f'&green pattern {check_content} found in {content}'
                 else:
+                    color = "red"
                     hdata += f'&red pattern {check_content} not found in {content}'
         except requests.exceptions.Timeout as e:
             color = "red"
             hdata += f"&red {url} - TIMEOUT\n"
-            httpstate += r.reason
-            httpstate += f"REASON={r.reason}"
+            httpstate += "Timeout"
+            #httpstate += r.reason
+            #httpstate += f"REASON={r.reason}"
         except requests.exceptions.RequestException as e:
             color = "red"
             if re.search('Connection refused', str(e)):
                 httpstate += 'Connection refused'
                 hdata += f"&red {url} - Connection refused\n"
             else:
-                # TODO find something better to put readble error message
+                # TODO find something better to put readable error message
                 emsg = str(e).replace(": ", ":<br>")
                 hdata += f"&red {url} - KO<br>\n{emsg}\n"
                 httpstate += "KO"
-        except requests.exceptions.ConnectionError as e:
-            color = "red"
-            if re.search('Connection refused', str(e)):
-                httpstate += 'Connection refused'
-                hdata += f"&red {url} - Connection refused\n"
-            else:
-                hdata += f"&red {url} - KO\n"
-                httpstate += "KO"
+#        except requests.exceptions.ConnectionError as e:
+#            color = "red"
+#            if re.search('Connection refused', str(e)):
+#                httpstate += 'Connection refused'
+#                hdata += f"&red {url} - Connection refused\n"
+#            else:
+#                hdata += f"&red {url} - KO\n"
+#                httpstate += "KO"
+        if certinfo:
+            hdata += certinfo + "\n\n"
         if options != "":
             hdata += f"xython options: {options}\n"
     now = time.time()
@@ -160,47 +172,68 @@ def dohttp(hostname, urls, column):
 
 
 def hex_to_binary(hs):
+    #print("====================")
     hexs = ""
     i = 0
     while i < len(hs):
-        if i + 4 > len(hs):
-            return None
-        header = hs[i:i+2]
-        if header != '\\x':
-            return None
-        h = hs[i+2:i+4]
-        hexs += h
-        hexs += ' '
-        i += 4
+        c = hs[i]
+        #print(f"DEBUG: current {c} i={i} len={len(hs)}")
+        if c == '\\':
+            if i + 1 >= len(hs):
+                return None
+            C = hs[i + 1]
+            if C == 'x':
+                if i + 3 >= len(hs):
+                    return None
+                v = hs[i+2:i+4]
+                #print(f"DEBUG: value is {v}")
+                hexs += f'{v} '
+                i += 4
+                continue
+            elif C == 'r':
+                hexs += "0D "
+            elif C == 'n':
+                hexs += "0A "
+            elif C == 't':
+                hexs += "09 "
+            else:
+                # TODO
+                print(f"DEBUG: invalid {C}")
+                return None
+            i += 2
+        else:
+            hexs += f'{ord(c):x} '
+            i += 1
+    #print(f"DEBUG: final {hexs}")
+    #print(f"DEBUG: final {bytes.fromhex(hexs)}")
+    #print(f"DEBUG: final {bytes.fromhex(hexs).decode('UTF8')}")
     return bytes.fromhex(hexs)
 
-# compare binary b and e
+# compare binary b and xython protocol binary format e
 def hex_compare(b, e):
-    i = 0
-    hexs = ""
-    while i < len(e):
-        if i + 4 > len(e):
-            return None
-        header = e[i:i+2]
-        if header != '\\x':
-            return None
-        hexs += e[i+2:i+4]
-        i += 4
-    bh = bytes.fromhex(hexs)
+    #print("==========================")
+    bh = hex_to_binary(e)
+    #print(f"DEBUG: compare {bh} and {b}")
+    # reduce lengh of b
+    b = b[:len(bh)]
+    #print(f"DEBUG: compare {bh} and {b}")
     if bh == b:
         return True
     return False
 
+# https://stackoverflow.com/questions/6464129/certificate-subject-x-509
 def get_cn(t):
     r = ""
     unk = ""
-    #print(f"GETCN={t}")
     for p in t:
-        if len(p) > 1:
-            unk += "length "
-            print("========================================= big length")
+        #if len(p) > 1:
+        #    unk += "length "
+        # TODO: does this can exists ?
         if p[0][0] == 'countryName':
             r += f"/C={p[0][1]}"
+            continue
+        if p[0][0] == 'stateOrProvinceName':
+            r += f"/ST={p[0][1]}"
             continue
         if p[0][0] == 'organizationName':
             r += f"/O={p[0][1]}"
@@ -220,6 +253,9 @@ def get_cn(t):
         if p[0][0] == 'serialNumber':
             r += f"/SN={p[0][1]}"
             continue
+        if p[0][0] == 'surname':
+            r += f"/SN={p[0][1]}"
+            continue
         unk += str(p)
         print(f"UNK={p}")
     ret = {}
@@ -228,8 +264,8 @@ def get_cn(t):
     return ret
 
 def show_cert(ssock, hostname):
+    #print(f"DEBUG: show_cert for {hostname}")
     cert = ssock.getpeercert()
-    #print(f"showcert for {hostname} ={cert}")
     if 'subject' not in cert:
         print("===================================")
         print("ERROR no subject")
@@ -238,7 +274,7 @@ def show_cert(ssock, hostname):
     else:
         ret = get_cn(cert['subject'])
     if "name" not in ret:
-        return "Failed to get certificate for {hostname}"
+        return f"Failed to get certificate for {hostname}"
     certinfo = f"Server certificate:\n\tSubject: {ret['name']}\n"
     certinfo += f"\tstart date: {cert['notBefore']}\n"
     certinfo += f"\texpire date:{cert['notAfter']}\n"
@@ -289,8 +325,10 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
             else:
                 ssock.write(p_send.encode("UTF8"))
         if p_expect or (p_options is not None and 'banner' in p_options):
+            #print("DEBUG: we have banner")
             buf = ssock.read(1024)
             banner = buf.decode("UTF8")
+            #print(f"DEBUG banner={banner}")
         if p_expect:
             if '\\x' in p_send:
                 if hex_compare(buf, p_expect):
@@ -298,7 +336,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
                     dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
                 else:
                     dret["color"] = 'red'
-                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko\n\n"
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko wanted {p_expect} got {buf}\n\n"
             else:
                 if p_expect in banner:
                     dret["color"] = 'green'
@@ -318,7 +356,10 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
     except ssl.SSLCertVerificationError as e:
         dret["txt"] = f"Service {protoname} on {hostname} is KO\n\n{str(e)}\n\n"
     except ConnectionRefusedError:
-        dret["txt"] = "connection refused\n\n"
+        dret["txt"] = "Connection refused\n\n"
+    except OSError as e:
+        # errno 113 No route to host
+        dret["txt"] = str(e) + "\n\n"
     dret["txt"] += f"\nSeconds: {time.time() - ts_start}\n"
     print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} ret={dret}")
     return dret
@@ -348,6 +389,7 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
     dret["color"] = 'red'
 
     tokens = url.split(':')
+    print(f"DEBUG: {url} {tokens} {len(tokens)}")
     i = 1
     while i < len(tokens):
         option = tokens[i]
@@ -374,7 +416,7 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
                     dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nbinary banner ok\n\n"
                 else:
                     dret["color"] = 'red'
-                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko\n\n"
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nbinary banner ko GOT {buf}\n\n"
             else:
                 if p_expect in banner:
                     dret["color"] = 'green'
@@ -386,8 +428,8 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
             dret["color"] = 'green'
             dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nconnected successfully on {address}\n"
         s.close()
-    except ConnectionError:
-        dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nFailed to connect to {address}\n\n"
+    except ConnectionError as e:
+        dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nFailed to connect to {address} {str(e)}\n\n"
     except OSError as error:
         dret["txt"] = f"Servide {protoname} on {hostname} is ko\n\n" + str(error) + "\n\n"
     return dret

@@ -468,22 +468,25 @@ class xy_rule_proc():
     def dump(self):
         print(f"PROC RULE {self.name} TEXT={self.text} min={self.min} max={self.max}")
 
+    # TODO handle TEXT=
     def init_from(self, portruleline):
         tokens = tokenize(portruleline)
+        if len(tokens) == 0:
+            return False
         self.name = tokens.pop(0)
         if len(tokens) == 0:
-            return
+            return True
         self.min = int(tokens.pop(0))
         if len(tokens) == 0:
-            return
+            return True
         self.max = int(tokens.pop(0))
         if len(tokens) == 0:
-            return
+            return True
         self.color = tokens.pop(0)
         if len(tokens) == 0:
-            return
+            return True
         print("UNHANDLED")
-        return
+        return False
 
     def check(self, data):
         if self.text is None:

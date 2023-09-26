@@ -2,6 +2,7 @@
 
 import os
 import pytest
+import re
 import time
 from xython.common import gcolor
 from xython.common import gif
@@ -13,6 +14,8 @@ from xython.common import xyts
 from xython.common import xyts_
 from xython.common import xydelay
 from xython.common import setcolor
+from xython.common import is_valid_hostname
+from xython.common import is_valid_column
 from xython.rules import xy_rule_disks
 from xython.rules import xy_rule_port
 from xython.rules import xy_rule_proc
@@ -22,6 +25,9 @@ from xython.rules import xy_rule_sensors
 from xython.xython import xythonsrv
 from xython.xython_tests import hex_to_binary
 from xython.xython_tests import hex_compare
+from xython.xython_tests import ping
+from xython.xython_tests import dohttp
+from xython.xython_tests import do_generic_proto
 
 try:
     import rrdtool
@@ -43,6 +49,8 @@ def test_git():
     now = time.time()
     assert gif("red", now) == 'red-recent.gif'
     assert gif("red", now - 300) == 'red.gif'
+    assert gif("red", now, False) == 'red-recent.gif'
+    assert gif("red", now, True) == 'red-ack.gif'
 
 
 def test_color():
@@ -67,6 +75,49 @@ def test_tokenize2():
     tok = tokenize('LOCAL=%[.:]22$ STATE= "LISTEN" "TEXT=SSH listener"')
     assert len(tok) == 3
 
+
+def test_validator():
+    assert is_valid_hostname("test")
+    assert is_valid_hostname("test46")
+    assert is_valid_hostname("test_46")
+    assert is_valid_hostname("test-46")
+    assert not is_valid_hostname("test,")
+    assert not is_valid_hostname("test=")
+    assert not is_valid_hostname("^test")
+    assert not is_valid_hostname("test+")
+    assert not is_valid_hostname("test/")
+    assert not is_valid_hostname("test*")
+    assert not is_valid_hostname("teséàçö")
+    assert is_valid_column("test")
+    assert is_valid_column("test46")
+    assert is_valid_column("test_46")
+    assert is_valid_column("test-46")
+    assert not is_valid_column("test,")
+    assert not is_valid_column("test=")
+    assert not is_valid_column("^test")
+    assert not is_valid_column("test+")
+    assert not is_valid_column("test/")
+    assert not is_valid_column("test*")
+    assert not is_valid_column("teséàçö")
+
+
+def test_xython_getvar():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    assert X.xython_getvar("UNSET") is None
+    assert X.xython_getvar("") is None
+    assert X.xython_getvar("XYTHON_TLS_KEY") == "./etc/xython/xymon.montjoie.local.key"
+
+def test_xymon_getvar():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.debug = True
+    assert X.xymon_getvar("UNSET") == ""
+    assert X.xymon_getvar("") == ""
+    assert X.xymon_getvar("SHELL") == "/bin/sh"
+    assert X.xymon_getvar("XYMONVAR") == "./tests/xymonvar"
+    X.set_xymonvar("./tests/xymonvar2")
+    assert X.xymon_getvar("XYMONVAR") == "./tests/xymonvar2"
 
 def test_port_rule():
     rp = xy_rule_port()
@@ -328,6 +379,7 @@ def test_setcolor():
     assert setcolor('red', 'clear') == 'red'
 
 def test_xydhm():
+    assert xydhm(0, 36) == '0m'
     assert xydhm(0, 3600) == '1h'
     assert xydhm(0, 60) == '1m'
     assert xydhm(0, 60 * 60 * 24) == '1d'
@@ -459,24 +511,46 @@ def test_reload():
 def test_protocols_binary():
     assert hex_to_binary('\\x35\\x36') == b'56'
     assert hex_to_binary('\\x35\\x37') == b'57'
-    assert hex_to_binary('\\x35\x37') is None
+    assert hex_to_binary('\\x35\\x37GET') == b'57GET'
+    assert hex_to_binary('\\x35\\o') is None
+    assert hex_to_binary('\\') is None
+    assert hex_to_binary('\\x1') is None
+    assert hex_to_binary('\\r\\t\\n') == bytes.fromhex("0D 09 0A")
+    assert hex_to_binary('\\r\\t\\n') == '\r\t\n'.encode("UTF8")
     assert hex_compare(b'67', '\\x36\\x37')
     assert hex_compare(b'ABC', '\\x41\\x42\\x43')
     assert not hex_compare(b'ABC', '\\x41\\x42\\x44')
+    assert not hex_compare(b'ABC', '\\x41\\x3778899')
+    assert not hex_compare(b'ABC', '\\x414')
 
 def test_full():
     X = xythonsrv()
+    X.lldebug = True
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data/'
+    X.xt_data = './tests/data2/'
+    if not os.path.exists('./tests/data2/'):
+        os.mkdir(X.xt_data)
     X.xt_logdir = './tests/logs/'
     X.wwwdir = './tests/www/'
     X.init()
+    # TODO set webdir in config file
+    X.webdir = './xymon/web/'
     X.read_configs()
     H = X.find_host("donotexists")
     assert H is None
     H = X.find_host("test2")
     assert H is not None
     assert 'ftp' in H.tags
+
+    # no testip
+    H = X.find_host("test3")
+    assert H.gethost() == 'test3'
+    # with testip
+    H = X.find_host("test4")
+    assert H.gethost() == '1.1.1.4'
+    # we should not have any column other than info
+    lc = X.get_columns("test3")
+    assert lc == ['info']
 
     X.do_rrd("test1", "test", "t", 444)
     if has_rrdtool:
@@ -485,3 +559,240 @@ def test_full():
         assert info
         X.gen_rrds()
         X.gen_rrd('test1', 'test')
+
+    X.unixsock = './tests/run/xython.sock'
+    assert X.unet_start()
+    X.unet_send("status+10m test1.coltest red\nfake content\n")
+    X.unet_loop()
+    res = X.sqc.execute(f'SELECT * FROM columns where column == "coltest"')
+    results = X.sqc.fetchall()
+    assert len(results) == 1
+
+    X.unet_send("acknowledge test1.coltest 60m test")
+    X.unet_loop()
+
+    # TODO verify content
+    X.gen_html("nongreen", None, None, None)
+    X.gen_html("all", None, None, None)
+    X.gen_html("svcstatus", None, None, None)
+    X.gen_html("svcstatus", "test1", "coltest", 0)
+    # TODO get the right ts for svcstatus
+
+    # send ack for coltest
+
+    # send bogus ack
+    X.unet_send("acknowledge invalid.coltest 60m test")
+    X.unet_loop()
+    X.unet_send("acknowledge invalid.invalid 60m test")
+    X.unet_loop()
+    X.unet_send("acknowledge test1.invalid 60m test")
+    X.unet_loop()
+
+    # test disable
+    X.unet_send("disable test1.coltest 60m test")
+    X.unet_loop()
+    X.unet_send("disable invalid.coltest 60m test")
+    X.unet_loop()
+    X.unet_send("disable invalid.invalid 60m test")
+    X.unet_loop()
+    X.unet_send("disable test1.invalid 60m test")
+    X.unet_loop()
+
+    # call the scheduler
+    X.scheduler()
+    # TODO find something that should changed after this call
+
+    # test client data
+    f = open("./tests/clientdata/good0")
+    data = f.read()
+    f.close()
+
+    X.unet_send(f"proxy: test\n{data}")
+    X.unet_loop()
+    res = X.sqc.execute(f'SELECT * FROM columns where hostname == "test1"')
+    results = X.sqc.fetchall()
+    # TODO check each column (disk, cpu, etc..) exists
+    assert len(results) == 9
+
+    # test client data with bogus
+    f = open("./tests/clientdata/bogus")
+    data = f.read()
+    f.close()
+
+    X.unet_send(f"proxy: test\n{data}")
+    X.unet_loop()
+
+def test_snmpd():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    X.daemon_name = "xython-snmpd"
+    X.read_hosts()
+    X.hosts_check_snmp_tags()
+    # test community
+    #do_snmpd(X)
+
+def test_tests():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    X.init()
+    X.read_hosts()
+    X.dump_tests()
+    X.gen_tests()
+#    X.do_tests()
+
+def test_celery_ping():
+    ret = ping("test", "-invalid", False, False)
+    assert ret["color"] == 'red'
+    ret = ping("test", "-invalid", True, True)
+    assert ret["color"] == 'red'
+
+    test_ping = True
+    # on github ping do not work
+    # so do not check result if ping do not work, but still run it to at least catch some possible unhandled exceptions
+    if 'GITHUB_ACTION' in os.environ:
+        print("INFO: on github testing ping is disabled")
+        test_ping = False
+    ret = ping("test", "8.8.8.8", False, False)
+    print(ret)
+    if test_ping:
+        assert ret["color"] == 'green'
+    ret = ping("test", "8.8.8.8", True, False)
+    if test_ping:
+        assert ret["color"] == 'green'
+    ret = ping("test", "google.com", True, True)
+    if test_ping:
+        assert ret["color"] == 'green'
+
+@pytest.mark.filterwarnings("ignore:InsecureRequestWarning.*Unverified HTTPS.*")
+def test_celery_http():
+    ret = dohttp("test", ['https://selfsigned.xython.fr'], 'http')
+    err = re.search("self-signed certificate", ret['txt'])
+    assert ret["color"] == 'red'
+    assert err
+    ret = dohttp("test", ['https://selfsigned.xython.fr;verify=0'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://selfsigned.xython.fr;verify=1'], 'http')
+    assert ret["color"] == 'red'
+
+    ret = dohttp("test", ['https://customca.xython.fr'], 'http')
+    err = re.search("unable to get local issuer certificate", ret['txt'])
+    assert ret["color"] == 'red'
+    assert err
+
+    ret = dohttp("test", ['https://customca.xython.fr;verify=./tests/customca.xython.fr.ca'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.200', 'https://tests.xython.fr/test.403;httpcode=403'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont;cont=hello'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont;cont=invalid'], 'http')
+    assert ret["color"] == 'red'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont;invalid=hello'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.403;httpcode=200'], 'http')
+    assert ret["color"] == 'red'
+
+    ret = dohttp("test", ['https://google.com/'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://github.com/'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://www.xython.fr/'], 'http')
+    print(ret)
+    assert ret["color"] == 'green'
+
+    # connexion refused
+    ret = dohttp("test", ['https://tests.xython.fr:444/'], 'http')
+    err = re.search("Connection refused", ret['txt'])
+    assert ret["color"] == 'red'
+    assert err
+    ret = dohttp("test", ['http://tests.xython.fr:444/'], 'http')
+    err = re.search("Connection refused", ret['txt'])
+    assert ret["color"] == 'red'
+    assert err
+    # timeout
+    ret = dohttp("test", ['http://8.8.8.8:445/;timeout=1'], 'http')
+    assert ret["color"] == 'red'
+
+def test_celery_protocols():
+    # protocols test
+    # no TLS tests
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldap'], None, None, None)
+    assert ret["color"] == 'green'
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 444, ['ldap'], None, None, None)
+    assert ret["color"] == 'red'
+    err = re.search("Connection refused", ret['txt'])
+    assert err
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldap', None, ['ldap:444'], None, None, None)
+    print(ret)
+    assert ret["color"] == 'red'
+    err = re.search("Connection refused", ret['txt'])
+    assert err
+    ret = do_generic_proto("test", "tests.xython.fr", 'smtps', 587, ['smtp'], "ehlo xymonnet\r\nquit\r\n", "220", "banner")
+    assert ret["color"] == 'green'
+    ret = do_generic_proto("test", "tests.xython.fr", 'smtps', 587, ['smtp'], "ehlo xymonnet\r\nquit\r\n", "invalid220", "banner")
+    assert ret["color"] == 'red'
+    # send GET /
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldap'], "\\x47\\x45\\x54\\x20\\x2F\\x10\\x08\\x10\\x08", "\\x48\\x54\\x54\\x50", "banner")
+    assert ret["color"] == 'green'
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldap'], "\\x47\\x45\\x54\\x20\\x2F\\x10\\x08\\x10\\x08", "\\x48\\x54\\x54\\x54", "banner")
+    assert ret["color"] == 'red'
+
+    # TLS tests
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldaps', 443, ['ldaps:hostname=tests.xython.fr'], None, None, "ssl")
+    assert ret["color"] == 'green'
+    # same with 2 hostname
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldaps', 443, ['ldaps:hostname=tests.xython.fr', 'ldaps:hostname=invalid'], None, None, "ssl")
+    assert ret["color"] == 'red'
+    err = re.search("CERTIFICATE_VERIFY_FAILED", ret['txt'])
+    assert err
+    ret = do_generic_proto("test", "tests.xython.fr", 'smtps', 465, ['smtps:verify=0'], "ehlo xymonnet\r\nquit\r\n", "220", "ssl, banner")
+    assert ret["color"] == 'green'
+    ret = do_generic_proto("test", "tests.xython.fr", 'smtps', 465, ['smtps:verify=0'], "ehlo xymonnet\r\nquit\r\n", "invalid220", "ssl, banner")
+    assert ret["color"] == 'red'
+
+    # test TLS hexa bad banner
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldaps', 443, ['smtps:443'], "\\x20ehlo xymonnet\r\nquit\r\n", "invalid220", "ssl, banner")
+    assert ret["color"] == 'red'
+
+    print("=====================================================")
+    print("DEBUG: tests: try to connect to a closed port")
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldaps', 444, ['ldaps:hostname=tests.xython.fr'], None, None, "ssl")
+    assert ret["color"] == 'red'
+    err = re.search("Connection refused", ret['txt'])
+    assert err
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldaps:444', None, ['ldaps:hostname=tests.xython.fr'], None, None, "ssl")
+    assert ret["color"] == 'red'
+    err = re.search("Connection refused", ret['txt'])
+    assert err
+
+    print("DEBUG: tests: send GET / and expect to find HTTP")
+    #ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "GET /\\r\\nHTTP/1.1\\r\\nHost: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
+    ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "\\x47\\x45\\x54\\x20\\x2F\\x47HTTP/1.1\\x13\\x10Host: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
+    assert ret["color"] == 'green'
+
+def test_net():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    assert not X.set_netport(0)
+    assert not X.set_netport(100000)
+    assert X.set_netport(1000)
+    assert X.netport == 1000
+
+    X.init()
+    X.unixsock = './tests/run/xython.sock'
+    assert X.unet_start()
+    assert X.unet_start()
+
+def test_misc():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    X.init()
+    X.print()
