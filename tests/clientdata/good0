@@ -1,0 +1,730 @@
+[collector:]
+client test1.linux linux
+[date]
+Sun Oct  1 15:59:31 CEST 2023
+[uname]
+Linux test1 6.1.35-dirty x86_64
+[osversion]
+Gentoo 2.14
+LSB Version:	n/a
+Distributor ID:	Gentoo
+Description:	Gentoo Linux
+Release:	2.14
+Codename:	n/a
+[uptime]
+ 15:59:31 up 100 days,  7:48,  9 users,  load average: 6.94, 4.76, 2.37
+[who]
+root     pts/56       Oct  1 13:11 (192.168.1.1)
+[df]
+Filesystem                        1024-blocks       Used Available Capacity Mounted on
+/dev/root                           229640100  188362776  29539440      87% /
+/dev/mapper/rvg-home                139013156  119991832  12692616      91% /home
+/dev/mapper/rvg-usr_local_portage       93518      15346     71004      18% /usr/local/portage
+/dev/md125                         3169394608 3010737644 158640580      95% /mnt/data
+/dev/mapper/vgs-portage--notmpfs     40973536         32  38859968       1% /var/tmp/portage-notmpfs
+/dev/mapper/vgs-linux--src           95663840   86298328   4903228      95% /mnt/sources
+/dev/mapper/rvg-iso                 339481788  321563500   1242196     100% /mnt/iso
+[inode]
+Filesystem                           Inodes   IUsed     IFree IUse% Mounted on
+/dev/root                          14655488 3551039  11104449   25% /
+/dev/mapper/rvg-home                8847360  549065   8298295    7% /home
+/dev/mapper/rvg-usr_local_portage     25688    7100     18588   28% /usr/local/portage
+/dev/md125                        201318400 5299852 196018548    3% /mnt/data
+/dev/mapper/vgs-portage--notmpfs    2621440      13   2621427    1% /var/tmp/portage-notmpfs
+/dev/mapper/vgs-linux--src          6094848 1685972   4408876   28% /mnt/sources
+/dev/mapper/rvg-iso                21626880  116653  21510227    1% /mnt/iso
+[mount]
+/dev/sdd1 on / type ext4 (rw,noatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,noexec,relatime,size=10240k,nr_inodes=4099174,mode=755)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,size=6559588k,nr_inodes=819200,mode=755)
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+cgroup_root on /sys/fs/cgroup type tmpfs (rw,nosuid,nodev,noexec,relatime,size=10240k,mode=755)
+openrc on /sys/fs/cgroup/openrc type cgroup (rw,nosuid,nodev,noexec,relatime,release_agent=/lib/rc/sh/cgroup-release-agent.sh,name=openrc)
+none on /sys/fs/cgroup/unified type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate)
+cpuset on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
+cpu on /sys/fs/cgroup/cpu type cgroup (rw,nosuid,nodev,noexec,relatime,cpu)
+cpuacct on /sys/fs/cgroup/cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpuacct)
+devices on /sys/fs/cgroup/devices type cgroup (rw,nosuid,nodev,noexec,relatime,devices)
+freezer on /sys/fs/cgroup/freezer type cgroup (rw,nosuid,nodev,noexec,relatime,freezer)
+net_cls on /sys/fs/cgroup/net_cls type cgroup (rw,nosuid,nodev,noexec,relatime,net_cls)
+perf_event on /sys/fs/cgroup/perf_event type cgroup (rw,nosuid,nodev,noexec,relatime,perf_event)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime)
+binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,nosuid,nodev,noexec,relatime)
+/dev/mapper/rvg-home on /home type ext4 (rw,nosuid,nodev,relatime)
+/dev/mapper/rvg-usr_local_portage on /usr/local/portage type ext4 (rw,nosuid,nodev,noexec,relatime,stripe=4)
+/dev/md125 on /mnt/data type ext4 (rw,relatime)
+/dev/mapper/vgs-portage--notmpfs on /var/tmp/portage-notmpfs type ext4 (rw,relatime,stripe=256)
+/dev/mapper/vgs-linux--src on /mnt/sources type ext4 (rw,relatime,stripe=256)
+rpc_pipefs on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfsd on /proc/fs/nfsd type nfsd (rw,nosuid,nodev,noexec,relatime)
+none on /var/tmp/portage type tmpfs (rw,relatime)
+/dev/mapper/rvg-iso on /mnt/iso type ext4 (rw,relatime)
+[free]
+               total        used        free      shared  buff/cache   available
+Mem:        32797936     8637724     4205208     1650928    19955004    21831516
+Swap:        8388604           0     8388604
+[ifconfig]
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 442479208  bytes 76977111186 (71.6 GiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 442479208  bytes 76977111186 (71.6 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+qemubr0: flags=4355<UP,BROADCAST,PROMISC,MULTICAST>  mtu 1500
+        inet 192.168.66.1  netmask 255.255.255.0  broadcast 192.168.66.255
+        inet6 fe80::bc72:38ff:fe77:69dd  prefixlen 64  scopeid 0x20<link>
+        ether 00:00:00:00:00:00  txqueuelen 1000  (Ethernet)
+        RX packets 1044302  bytes 75288065 (71.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 1329716  bytes 3537956624 (3.2 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+[ports]
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 0.0.0.0:38621           0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:4369            0.0.0.0:*               LISTEN
+[ss]
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      128          0.0.0.0:22      0.0.0.0:*    users:(("sshd",pid=4338,fd=3))
+LISTEN 0      1024         0.0.0.0:6379       0.0.0.0:*    users:(("redis-server",pid=30904,fd=6))
+LISTEN 0      512          0.0.0.0:1984       0.0.0.0:*    users:(("xymond",pid=24976,fd=3))
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*    users:(("rpcbind",pid=4996,fd=7))
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=4338,fd=5))
+LISTEN 0      64           0.0.0.0:36769      0.0.0.0:*
+LISTEN 0      64           0.0.0.0:2049       0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:631        0.0.0.0:*    users:(("cupsd",pid=4793,fd=6))
+[route]
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+0.0.0.0         192.168.1.1     0.0.0.0         UG        0 0          0 eth0
+127.0.0.0       127.0.0.1       255.0.0.0       UG        0 0          0 lo
+192.168.66.0    0.0.0.0         255.255.255.0   U         0 0          0 qemubr0
+[netstat]
+Ip:
+    Forwarding: 1
+    1679755738 total packets received
+    4928755 forwarded
+    215502 with unknown protocol
+    0 incoming packets discarded
+    1670879436 incoming packets delivered
+    1348275795 requests sent out
+    62480 outgoing packets dropped
+    460 dropped because of missing route
+    16 fragments dropped after timeout
+    314 reassemblies required
+    149 packets reassembled ok
+    16 packet reassemblies failed
+Icmp:
+    1563836 ICMP messages received
+    95198 input ICMP message failed
+    ICMP input histogram:
+        destination unreachable: 1016507
+        timeout in transit: 4
+        echo requests: 50957
+        echo replies: 496351
+        timestamp request: 4
+        timestamp reply: 1
+        address mask request: 4
+    2241134 ICMP messages sent
+    0 ICMP messages failed
+    ICMP output histogram:
+        destination unreachable: 1032300
+        redirect: 119
+        echo requests: 1157753
+        echo replies: 50961
+        timestamp requests: 1
+IcmpMsg:
+        InType0: 496351
+        InType3: 1016507
+        InType8: 50957
+        InType11: 4
+        InType13: 4
+        InType14: 1
+        InType15: 4
+        InType17: 4
+        InType37: 4
+        OutType0: 50961
+        OutType3: 1032300
+        OutType5: 119
+        OutType8: 1157753
+        OutType13: 1
+Tcp:
+    2590014 active connection openings
+    2189532 passive connection openings
+    164153 failed connection attempts
+    123393 connection resets received
+    50 connections established
+    1736508786 segments received
+    1832360819 segments sent out
+    2138747 segments retransmitted
+    24990 bad segments received
+    1085638 resets sent
+Udp:
+    31505570 packets received
+    62808 packets to unknown port received
+    151283 packet receive errors
+    26925371 packets sent
+    151283 receive buffer errors
+    0 send buffer errors
+    IgnoredMulti: 179132
+UdpLite:
+TcpExt:
+    786 resets received for embryonic SYN_RECV sockets
+    428 packets pruned from receive queue because of socket buffer overrun
+    1551 ICMP packets dropped because they were out-of-window
+    2120313 TCP sockets finished time wait in fast timer
+    204 time wait sockets recycled by time stamp
+    10705 packets rejected in established connections because of timestamp
+    53919049 delayed acks sent
+    13184 delayed acks further delayed because of locked socket
+    Quick ack mode was activated 200742 times
+    10878 times the listen queue of a socket overflowed
+    10907 SYNs to LISTEN sockets dropped
+    418143074 packet headers predicted
+    40891836 acknowledgments not containing data payload received
+    577463698 predicted acknowledgments
+    8 times recovered from packet loss due to fast retransmit
+    TCPSackRecovery: 168465
+    Detected reordering 14542 times using SACK
+    Detected reordering 16 times using reno fast retransmit
+    Detected reordering 8 times using time stamp
+    37 congestion windows fully recovered without slow start
+    7 congestion windows partially recovered using Hoe heuristic
+    TCPDSACKUndo: 1124
+    5262 congestion windows recovered without slow start after partial ack
+    TCPLostRetransmit: 90670
+    52 timeouts after reno fast retransmit
+    TCPSackFailures: 232
+    183 timeouts in loss state
+    1661743 fast retransmits
+    12904 retransmits in slow start
+    TCPTimeouts: 144598
+    TCPLossProbes: 384292
+    TCPLossProbeRecovery: 8738
+    TCPRenoRecoveryFail: 1
+    TCPSackRecoveryFail: 1260
+    TCPBacklogCoalesce: 9746440
+    TCPDSACKOldSent: 201054
+    TCPDSACKOfoSent: 410
+    TCPDSACKRecv: 271404
+    TCPDSACKOfoRecv: 78
+    225174 connections reset due to unexpected data
+    111760 connections reset due to early user close
+    7458 connections aborted due to timeout
+    45 times unable to send RST due to no memory
+    TCPSACKDiscard: 247
+    TCPDSACKIgnoredOld: 396
+    TCPDSACKIgnoredNoUndo: 131885
+    TCPSpuriousRTOs: 65
+    TCPSackShifted: 1211184
+    TCPSackMerged: 1359946
+    TCPSackShiftFallback: 322246
+    TCPDeferAcceptDrop: 148817
+    TCPReqQFullDrop: 29
+    TCPRetransFail: 18028
+    TCPRcvCoalesce: 219950734
+    TCPOFOQueue: 36372677
+    TCPOFOMerge: 374
+    TCPChallengeACK: 27350
+    TCPSYNChallenge: 27279
+    TCPSpuriousRtxHostQueues: 32564
+    TCPAutoCorking: 56792482
+    TCPFromZeroWindowAdv: 6580
+    TCPToZeroWindowAdv: 6592
+    TCPWantZeroWindowAdv: 32968
+    TCPSynRetrans: 72792
+    TCPOrigDataSent: 1343796905
+    TCPHystartTrainDetect: 4108
+    TCPHystartTrainCwnd: 188511
+    TCPHystartDelayDetect: 339
+    TCPHystartDelayCwnd: 34868
+    TCPACKSkippedSynRecv: 302
+    TCPACKSkippedPAWS: 8006
+    TCPACKSkippedSeq: 3298
+    TCPACKSkippedChallenge: 3
+    TCPWinProbe: 4263
+    TCPKeepAlive: 2325489
+    TCPDelivered: 1346001595
+    TCPAckCompressed: 30355654
+    TcpTimeoutRehash: 133881
+    TcpDuplicateDataRehash: 1552
+    TCPDSACKRecvSegs: 270963
+    TCPDSACKIgnoredDubious: 634
+IpExt:
+    InMcastPkts: 215758
+    OutMcastPkts: 311
+    InBcastPkts: 974483
+    OutBcastPkts: 732064
+    InOctets: 654205144330
+    OutOctets: 915207930568
+    InMcastOctets: 6915048
+    OutMcastOctets: 26650
+    InBcastOctets: 78649397
+    OutBcastOctets: 49781053
+    InNoECTPkts: 1679692158
+    InECT1Pkts: 82
+    InECT0Pkts: 63498
+[ifstat]
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 442479208  bytes 76977111186 (71.6 GiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 442479208  bytes 76977111186 (71.6 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+qemubr0: flags=4355<UP,BROADCAST,PROMISC,MULTICAST>  mtu 1500
+        inet 192.168.66.1  netmask 255.255.255.0  broadcast 192.168.66.255
+        inet6 fe80::bc72:38ff:fe77:69dd  prefixlen 64  scopeid 0x20<link>
+        ether 00:00:00:00:00:00  txqueuelen 1000  (Ethernet)
+        RX packets 1044302  bytes 75288065 (71.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 1329716  bytes 3537956624 (3.2 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[iproute2_route]
+default via 192.168.1.1 dev eth0 metric 2
+127.0.0.0/8 via 127.0.0.1 dev lo
+192.168.66.0/24 dev qemubr0 proto kernel scope link src 192.168.66.1 linkdown
+[iproute2_stat]
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    RX:   bytes   packets errors dropped  missed   mcast
+    76977111186 442479208      0       0       0       0
+    TX:   bytes   packets errors dropped carrier collsns
+    76977111186 442479208      0       0       0       0
+8: qemubr0: <NO-CARRIER,BROADCAST,MULTICAST,PROMISC,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default qlen 1000
+    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast
+      75288065 1044302      0       0       0     530
+    TX:  bytes packets errors dropped carrier collsns
+    3537956624 1329716      0       0       0       0
+[mdstat]
+Personalities : [raid0] [raid1] [raid10] [raid6] [raid5] [raid4]
+md125 : active raid1 sdb1[2] sdc1[0]
+      3221093376 blocks super 1.2 [2/2] [UU]
+      bitmap: 0/24 pages [0KB], 65536KB chunk
+
+md126 : active raid1 sdb2[0] sdc2[1]
+      2147351552 blocks super 1.2 [2/2] [UU]
+      bitmap: 0/16 pages [0KB], 65536KB chunk
+
+md127 : active raid0 sdc3[1] sdb3[0]
+      983360512 blocks super 1.2 512k chunks
+
+unused devices: <none>
+[lmsensors]
+k10temp-pci-00c3
+Adapter: PCI adapter
+CPU Temperature:  +63.8 C
+Tccd1:            +63.0 C
+
+drivetemp_ATA_____HUS726060ALE610_T7MH_HUS726060ALE610_T7MH-scsi-10-0
+Adapter: SCSI adapter
+temp1:        +36.0 C  (low  =  +0.0 C, high = +60.0 C)
+                       (crit low = -40.0 C, crit = +70.0 C)
+                       (lowest = +31.0 C, highest = +47.0 C)
+
+drivetemp_ATA_____TS64GMTS800_____5CE__TS64GMTS800_____5CE_-scsi-4-0
+Adapter: SCSI adapter
+temp1:        +39.0 C
+
+nct6798-isa-0290
+Adapter: ISA adapter
+in0:                        1.41 V  (min =  +0.00 V, max =  +1.74 V)
+in1:                        1.01 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in2:                        3.39 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in3:                        3.25 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in4:                      1000.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in5:                      744.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in6:                        1.01 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in7:                        3.39 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in8:                        3.31 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in9:                      896.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in10:                     240.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in11:                     512.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in12:                       1.02 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in13:                     992.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in14:                     968.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+fan1:                        0 RPM  (min =    0 RPM)
+fan2:                     1351 RPM  (min =    0 RPM)
+fan3:                     1790 RPM  (min =    0 RPM)
+fan4:                        0 RPM  (min =    0 RPM)
+fan5:                     3648 RPM  (min =    0 RPM)
+fan6:                        0 RPM  (min =    0 RPM)
+fan7:                        0 RPM  (min =    0 RPM)
+SYSTIN:                    +40.0 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor
+CPUTIN:                    +46.5 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor
+AUXTIN0:                   +26.0 C    sensor = thermistor
+AUXTIN1:                   +59.0 C    sensor = thermistor
+AUXTIN2:                   +25.0 C    sensor = thermistor
+AUXTIN3:                   +27.0 C    sensor = thermistor
+PECI Agent 0 Calibration:  +52.5 C
+SMBUSMASTER 1:             +69.0 C
+PCH_CHIP_CPU_MAX_TEMP:      +0.0 C
+PCH_CHIP_TEMP:              +0.0 C
+TSI0_TEMP:                 +63.8 C
+TSI1_TEMP:                 +69.2 C
+intrusion0:               ALARM
+intrusion1:               ALARM
+beep_enable:              disabled
+
+drivetemp_ATA_____WDC_WDS240G2G0B_0400_WDC_WDS240G2G0B_0400-scsi-16-0
+Adapter: SCSI adapter
+temp1:        +43.0 C
+
+drivetemp_ATA_____HUS726060ALE610_T7MH_HUS726060ALE610_T7MH-scsi-9-0
+Adapter: SCSI adapter
+temp1:        +37.0 C  (low  =  +0.0 C, high = +60.0 C)
+                       (crit low = -40.0 C, crit = +70.0 C)
+                       (lowest = +32.0 C, highest = +47.0 C)
+
+[lvm_pvs]
+  PV         VG  Fmt  Attr PSize   PFree
+  /dev/md126 rvg lvm2 a--   <2.00t 261.77g
+  /dev/md127 vgs lvm2 a--  937.80g  68.80g
+[lvm_vgs]
+  VG  #PV #LV #SN Attr   VSize   VFree
+  rvg   1  18   0 wz--n-  <2.00t 261.77g
+  vgs   1  14   0 wz--n- 937.80g  68.80g
+[ps]
+  PID  PPID USER      STARTED S PRI %CPU         TIME %MEM        RSZ        VSZ CMD
+    2     0 root       Jun 23 S  19  0.0     00:00:02  0.0          0          0 [kthreadd]
+    3     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [rcu_gp]
+    4     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [rcu_par_gp]
+    5     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [slub_flushwq]
+    6     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [netns]
+    8     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/0:0H-kblockd]
+   10     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [mm_percpu_wq]
+   11     2 root       Jun 23 S  19  0.0     00:01:39  0.0          0          0  \_ [ksoftirqd/0]
+   12     2 root       Jun 23 I  19  0.0     01:13:41  0.0          0          0  \_ [rcu_sched]
+   13     2 root       Jun 23 S 139  0.0     00:00:19  0.0          0          0  \_ [migration/0]
+   15     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/0]
+   16     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/1]
+   17     2 root       Jun 23 S 139  0.0     00:00:19  0.0          0          0  \_ [migration/1]
+   18     2 root       Jun 23 S  19  0.0     00:04:08  0.0          0          0  \_ [ksoftirqd/1]
+   20     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/1:0H-kblockd]
+   21     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/2]
+   22     2 root       Jun 23 S 139  0.0     00:00:17  0.0          0          0  \_ [migration/2]
+   23     2 root       Jun 23 S  19  0.0     00:01:15  0.0          0          0  \_ [ksoftirqd/2]
+   25     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/2:0H]
+   26     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/3]
+   27     2 root       Jun 23 S 139  0.0     00:00:19  0.0          0          0  \_ [migration/3]
+   28     2 root       Jun 23 S  19  0.0     00:01:24  0.0          0          0  \_ [ksoftirqd/3]
+   30     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/3:0H-kblockd]
+   31     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/4]
+   32     2 root       Jun 23 S 139  0.0     00:00:16  0.0          0          0  \_ [migration/4]
+   33     2 root       Jun 23 S  19  0.0     00:01:03  0.0          0          0  \_ [ksoftirqd/4]
+   35     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/4:0H-events_highpri]
+   36     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/5]
+   37     2 root       Jun 23 S 139  0.0     00:00:16  0.0          0          0  \_ [migration/5]
+   38     2 root       Jun 23 S  19  0.0     00:01:16  0.0          0          0  \_ [ksoftirqd/5]
+   40     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/5:0H-events_highpri]
+   41     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/6]
+   42     2 root       Jun 23 S 139  0.0     00:00:16  0.0          0          0  \_ [migration/6]
+   43     2 root       Jun 23 S  19  0.0     00:01:02  0.0          0          0  \_ [ksoftirqd/6]
+   45     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/6:0H-events_highpri]
+   46     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/7]
+   47     2 root       Jun 23 S 139  0.0     00:00:15  0.0          0          0  \_ [migration/7]
+   48     2 root       Jun 23 S  19  0.0     00:01:00  0.0          0          0  \_ [ksoftirqd/7]
+   50     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/7:0H-kblockd]
+   51     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/8]
+   52     2 root       Jun 23 S 139  0.0     00:00:14  0.0          0          0  \_ [migration/8]
+   53     2 root       Jun 23 S  19  0.0     00:00:59  0.0          0          0  \_ [ksoftirqd/8]
+   55     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/8:0H-kblockd]
+   56     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/9]
+   57     2 root       Jun 23 S 139  0.0     00:00:15  0.0          0          0  \_ [migration/9]
+   58     2 root       Jun 23 S  19  0.0     00:01:02  0.0          0          0  \_ [ksoftirqd/9]
+   60     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/9:0H-kblockd]
+   61     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/10]
+   62     2 root       Jun 23 S 139  0.0     00:00:15  0.0          0          0  \_ [migration/10]
+   63     2 root       Jun 23 S  19  0.0     00:01:00  0.0          0          0  \_ [ksoftirqd/10]
+   65     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/10:0H-kblockd]
+   66     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [cpuhp/11]
+   67     2 root       Jun 23 S 139  0.0     00:00:15  0.0          0          0  \_ [migration/11]
+   68     2 root       Jun 23 S  19  0.0     00:00:59  0.0          0          0  \_ [ksoftirqd/11]
+   70     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/11:0H-kblockd]
+   71     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [kdevtmpfs]
+   72     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [inet_frag_wq]
+   73     2 root       Jun 23 S  19  0.0     00:00:08  0.0          0          0  \_ [kauditd]
+   75     2 root       Jun 23 S  19  0.0     00:00:15  0.0          0          0  \_ [khungtaskd]
+   76     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [oom_reaper]
+   77     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [writeback]
+   78     2 root       Jun 23 S  19  0.1     02:55:39  0.0          0          0  \_ [kcompactd0]
+   79     2 root       Jun 23 S   0  0.0     00:09:19  0.0          0          0  \_ [khugepaged]
+   80     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [cryptd]
+   81     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kblockd]
+   84     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ata_sff]
+   85     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [md]
+   86     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [edac-poller]
+   87     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [devfreq_wq]
+   88     2 root       Jun 23 I  39  0.0     00:01:12  0.0          0          0  \_ [kworker/6:1H-kblockd]
+   91     2 root       Jun 23 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/26-AMD-Vi]
+  170     2 root       Jun 23 S  19  0.0     00:37:28  0.0          0          0  \_ [kswapd0]
+  171     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [cifsiod]
+  172     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [smb3decryptd]
+  173     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [cifsfileinfoput]
+  174     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [cifsoplockd]
+  175     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [deferredclose]
+  186     2 root       Jun 23 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/27-aerdrv]
+  195     2 root       Jun 23 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/28-aerdrv]
+  204     2 root       Jun 23 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/30-aerdrv]
+  216     2 root       Jun 23 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/31-aerdrv]
+  225     2 root       Jun 23 S  90  0.0     00:00:00  0.0          0          0  \_ [irq/32-aerdrv]
+  282     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [acpi_thermal_pm]
+  820     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [amd_iommu_v2]
+  845     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [nvme-wq]
+  847     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [nvme-reset-wq]
+  848     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [nvme-delete-wq]
+  870     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_0]
+  871     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_0]
+  875     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_1]
+  876     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_1]
+  880     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_2]
+  881     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_2]
+  885     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_3]
+  886     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_3]
+  890     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_4]
+  891     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_4]
+  913     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_5]
+  915     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_5]
+  919     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_6]
+  920     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_6]
+  924     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_7]
+  925     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_7]
+  929     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_8]
+  930     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_8]
+  934     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_9]
+  935     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_9]
+  939     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_10]
+  940     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_10]
+  967     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_11]
+  968     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_11]
+  972     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_12]
+  973     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_12]
+  977     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_13]
+  978     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_13]
+  982     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_14]
+  983     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_14]
+  987     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_15]
+  988     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_15]
+  992     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_16]
+  993     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_16]
+ 1072     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [raid5wq]
+ 1088     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kstrp]
+ 1157     2 root       Jun 23 I  39  0.0     00:01:09  0.0          0          0  \_ [kworker/9:1H-kblockd]
+ 1174     2 root       Jun 23 I  39  0.0     00:01:04  0.0          0          0  \_ [kworker/0:1H-kblockd]
+ 1177     2 root       Jun 23 I  39  0.0     00:01:10  0.0          0          0  \_ [kworker/11:1H-kblockd]
+ 1178     2 root       Jun 23 I  39  0.0     00:05:26  0.0          0          0  \_ [kworker/2:1H-kblockd]
+ 1179     2 root       Jun 23 I  39  0.0     00:01:06  0.0          0          0  \_ [kworker/1:1H-kblockd]
+ 1203     2 root       Jun 23 S  19  0.0     00:05:18  0.0          0          0  \_ [jbd2/sdd1-8]
+ 1204     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 1208     2 root       Jun 23 I  39  0.0     00:01:06  0.0          0          0  \_ [kworker/7:1H-kblockd]
+ 1217     2 root       Jun 23 I  39  0.0     00:01:14  0.0          0          0  \_ [kworker/10:1H-kblockd]
+ 1248     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [mld]
+ 1249     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ipv6_addrconf]
+ 1407     2 root       Jun 23 I  39  0.0     00:04:38  0.0          0          0  \_ [kworker/3:1H-kblockd]
+ 1413     2 root       Jun 23 I  39  0.0     00:01:02  0.0          0          0  \_ [kworker/8:1H-kblockd]
+ 1736     2 root       Jun 23 I  39  0.0     00:01:16  0.0          0          0  \_ [kworker/4:1H-kblockd]
+ 1798     2 root       Jun 23 I  39  0.0     00:01:12  0.0          0          0  \_ [kworker/5:1H-kblockd]
+ 2132     2 root       Jun 23 S  19  0.0     00:00:36  0.0          0          0  \_ [md125_raid1]
+ 2135     2 root       Jun 23 S  19  0.0     00:04:03  0.0          0          0  \_ [md126_raid1]
+ 2143     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:0]
+ 2144     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:1]
+ 2146     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:2]
+ 2150     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:3]
+ 2152     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:4]
+ 2156     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:5]
+ 2157     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:6]
+ 2160     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:7]
+ 2165     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:8]
+ 2168     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:9]
+ 2178     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:10]
+ 2185     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:11]
+ 2189     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:12]
+ 2193     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:13]
+ 2195     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:14]
+ 2199     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:15]
+ 2202     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:16]
+ 2205     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:17]
+ 2209     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:18]
+ 2212     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:19]
+ 2216     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:20]
+ 2217     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:21]
+ 2224     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:22]
+ 2226     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:23]
+ 2228     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:24]
+ 2230     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:25]
+ 2231     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:26]
+ 2235     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:27]
+ 2236     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:28]
+ 2237     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:29]
+ 2452     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [scsi_eh_17]
+ 2453     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [scsi_tmf_17]
+ 2454     2 root       Jun 23 S  19  0.0     00:03:43  0.0          0          0  \_ [usb-storage]
+ 2488     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [uas]
+ 2809     2 root       Jun 23 S  19  0.0     00:00:49  0.0          0          0  \_ [jbd2/dm-8-8]
+ 2810     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 2811     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [jbd2/dm-3-8]
+ 2812     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 2813     2 root       Jun 23 S  19  0.0     00:00:18  0.0          0          0  \_ [jbd2/md125-8]
+ 2814     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 2815     2 root       Jun 23 S  19  0.0     00:00:03  0.0          0          0  \_ [jbd2/dm-13-8]
+ 2816     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 2817     2 root       Jun 23 S  19  0.0     00:00:05  0.0          0          0  \_ [jbd2/dm-15-8]
+ 2818     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 2819     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [jbd2/dm-22-8]
+ 2820     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 5074     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [rpciod]
+ 5075     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [xprtiod]
+ 5165     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [lockd]
+ 5168     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [nfsd]
+ 5169     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [nfsd]
+ 5170     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [nfsd]
+ 5171     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [nfsd]
+ 5172     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [nfsd]
+ 5173     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [nfsd]
+ 5174     2 root       Jun 23 S  19  0.0     00:00:01  0.0          0          0  \_ [nfsd]
+ 5175     2 root       Jun 23 S  19  0.0     00:00:52  0.0          0          0  \_ [nfsd]
+ 5512     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:30]
+ 5521     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd_io/253:]
+ 5522     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd/253:30]
+ 5523     2 root       Jun 23 S  19  0.0     00:00:46  0.0          0          0  \_ [dmcrypt_write/253:30]
+ 5530     2 root       Jun 23 S  19  0.0     00:00:37  0.0          0          0  \_ [jbd2/dm-30-8]
+ 5531     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 6375     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:31]
+ 6376     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd_io/253:]
+ 6377     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd/253:31]
+ 6378     2 root       Jun 23 S  19  0.0     00:04:02  0.0          0          0  \_ [dmcrypt_write/253:31]
+ 6389     2 root       Jun 23 S  19  0.0     00:02:51  0.0          0          0  \_ [jbd2/dm-31-8]
+ 6390     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+26984     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:32]
+26985     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd_io/253:]
+26986     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd/253:32]
+26987     2 root       Jun 23 S  19  0.0     00:00:03  0.0          0          0  \_ [dmcrypt_write/253:32]
+ 5949     2 root       Jun 23 S  19  0.0     00:00:00  0.0          0          0  \_ [jbd2/dm-9-8]
+ 5950     2 root       Jun 23 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+12637     2 root       Jun 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:33]
+12638     2 root       Jun 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd_io/253:]
+12639     2 root       Jun 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kcryptd/253:33]
+12640     2 root       Jun 24 S  19  0.0     00:00:00  0.0          0          0  \_ [dmcrypt_write/253:33]
+12735     2 root       Jun 24 S  19  0.0     00:00:00  0.0          0          0  \_ [jbd2/dm-33-8]
+12736     2 root       Jun 24 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 9647     2 root       Jun 28 S  19  0.0     00:00:07  0.0          0          0  \_ [jbd2/dm-4-8]
+ 9648     2 root       Jun 28 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+19058     2 root       Jul 11 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:34]
+ 1040     2 root       Jul 14 S  19  0.0     00:00:00  0.0          0          0  \_ [jbd2/dm-1-8]
+ 1041     2 root       Jul 14 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+25832     2 root       Jul 30 S  19  0.0     00:00:00  0.0          0          0  \_ [nv_queue]
+25833     2 root       Jul 30 S  19  0.0     00:00:00  0.0          0          0  \_ [nv_queue]
+26308     2 root       Jul 30 S  90  0.3     04:37:41  0.0          0          0  \_ [irq/70-nvidia]
+26309     2 root       Jul 30 S  19  0.0     00:00:00  0.0          0          0  \_ [nvidia]
+26310     2 root       Jul 30 S  19  0.0     00:59:54  0.0          0          0  \_ [nv_queue]
+26315     2 root       Jul 30 S  19  0.0     00:00:00  0.0          0          0  \_ [nvidia-modeset/kthread_q]
+26316     2 root       Jul 30 S  19  0.0     00:00:00  0.0          0          0  \_ [nvidia-modeset/deferred_close_kthread_q]
+26811     2 root       Aug 14 S  19  0.0     00:00:04  0.0          0          0  \_ [jbd2/sda2-8]
+26812     2 root       Aug 14 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 3098     2 root       Aug 22 I  39  0.0     00:00:00  0.0          0          0  \_ [kdmflush/253:35]
+28275     2 root       Sep 10 S  19  0.0     00:00:00  0.0          0          0  \_ [jbd2/dm-2-8]
+28276     2 root       Sep 10 I  39  0.0     00:00:00  0.0          0          0  \_ [ext4-rsv-conver]
+ 1856     1 root       Jun 23 S  19  0.0     00:00:04  0.0       4744      20112 /lib/systemd/systemd-udevd
+ 3538     1 root       Jun 23 S  19  0.0     00:07:25  0.0       8556     374364 /usr/sbin/rsyslogd -f /etc/rsyslog.conf -i /run/rsyslogd.pid
+ 3576     1 root       Jun 23 S  19  0.0     00:03:12  0.0       1696       2468 /usr/sbin/acpid
+ 8330     1 xymon    15:58:44 S  19  0.0     00:00:00  0.0       3164       4300 sh -c vmstat 300 2 1>/usr/xymon//client/tmp/xymon_vmstat.Red.8275 2>&1; mv /usr/xymon//client/tmp/xymon_vmstat.Red.8275 /usr/xymon//client/tmp/xymon_vmstat.Red
+ 8332  8330 xymon    15:58:44 S  19  0.0     00:00:00  0.0       1012       2660  \_ vmstat 300 2
+[top]
+top - 15:59:31 up 100 days,  7:48,  9 users,  load average: 6.94, 4.76, 2.37
+Tasks: 653 total,   2 running, 651 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  2.7 us,  7.3 sy,  3.2 ni, 86.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  32029.2 total,   4102.3 free,   8439.5 used,  19487.4 buff/cache
+MiB Swap:   8192.0 total,   8192.0 free,      0.0 used.  21315.6 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 7098 winer     20   0 9881744   1.8g  88496 S  29.4   5.7  26:52.58 java
+17956 root      39  19   12744   8348   3588 S  17.6   0.0   0:00.03 bash
+17952 root      20   0    4248   3004   1992 R  11.8   0.0   0:00.02 top
+17214 root      39  19  306344 216568   5772 S   5.9   0.7   0:01.89 emerge
+17991 root      39  19    7916   3280   2804 R   5.9   0.0   0:00.01 find
+    1 root      20   0    2456   1552   1432 S   0.0   0.0   1:21.10 init
+    2 root      20   0       0      0      0 S   0.0   0.0   0:02.60 kthreadd
+    3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+    4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par_gp
+    5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_flushwq
+    6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+    8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/0:0H-kblockd
+   10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_percpu_wq
+   11 root      20   0       0      0      0 S   0.0   0.0   1:39.82 ksoftirqd/0
+   12 root      20   0       0      0      0 I   0.0   0.0  73:41.24 rcu_sched
+   13 root      rt   0       0      0      0 S   0.0   0.0   0:19.79 migration/0
+   15 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/0
+   16 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/1
+   17 root      rt   0       0      0      0 S   0.0   0.0   0:19.09 migration/1
+   18 root      20   0       0      0      0 S   0.0   0.0   4:08.14 ksoftirqd/1
+   20 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/1:0H-kblockd
+   21 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/2
+   22 root      rt   0       0      0      0 S   0.0   0.0   0:17.21 migration/2
+   23 root      20   0       0      0      0 S   0.0   0.0   1:15.27 ksoftirqd/2
+   25 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/2:0H
+   26 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/3
+   27 root      rt   0       0      0      0 S   0.0   0.0   0:19.08 migration/3
+   28 root      20   0       0      0      0 S   0.0   0.0   1:24.43 ksoftirqd/3
+   30 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/3:0H-kblockd
+   31 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/4
+   32 root      rt   0       0      0      0 S   0.0   0.0   0:16.98 migration/4
+   33 root      20   0       0      0      0 S   0.0   0.0   1:03.12 ksoftirqd/4
+   35 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/4:0H-events_highpri
+   36 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/5
+   37 root      rt   0       0      0      0 S   0.0   0.0   0:16.64 migration/5
+   38 root      20   0       0      0      0 S   0.0   0.0   1:16.76 ksoftirqd/5
+   40 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/5:0H-events_highpri
+   41 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/6
+   42 root      rt   0       0      0      0 S   0.0   0.0   0:16.67 migration/6
+   43 root      20   0       0      0      0 S   0.0   0.0   1:02.02 ksoftirqd/6
+   45 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/6:0H-events_highpri
+   46 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/7
+   47 root      rt   0       0      0      0 S   0.0   0.0   0:15.71 migration/7
+   48 root      20   0       0      0      0 S   0.0   0.0   1:00.02 ksoftirqd/7
+   50 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/7:0H-kblockd
+   51 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/8
+   52 root      rt   0       0      0      0 S   0.0   0.0   0:14.94 migration/8
+   53 root      20   0       0      0      0 S   0.0   0.0   0:59.03 ksoftirqd/8
+   55 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/8:0H-kblockd
+   56 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/9
+   57 root      rt   0       0      0      0 S   0.0   0.0   0:15.68 migration/9
+   58 root      20   0       0      0      0 S   0.0   0.0   1:02.04 ksoftirqd/9
+   60 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/9:0H-kblockd
+   61 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/10
+   62 root      rt   0       0      0      0 S   0.0   0.0   0:15.54 migration/10
+   63 root      20   0       0      0      0 S   0.0   0.0   1:00.56 ksoftirqd/10
+   65 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/10:0H-kblockd
+   66 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/11
+   67 root      rt   0       0      0      0 S   0.0   0.0   0:15.03 migration/11
+   68 root      20   0       0      0      0 S   0.0   0.0   0:59.83 ksoftirqd/11
+   70 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/11:0H-kblockd
+   71 root      20   0       0      0      0 S   0.0   0.0   0:00.00 kdevtmpfs
+   72 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 inet_frag_wq
+   73 root      20   0       0      0      0 S   0.0   0.0   0:08.20 kauditd
+   75 root      20   0       0      0      0 S   0.0   0.0   0:15.85 khungtaskd
+   76 root      20   0       0      0      0 S   0.0   0.0   0:00.13 oom_reaper
+   77 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 writeback
+   78 root      20   0       0      0      0 S   0.0   0.0 175:39.68 kcompactd0
+   79 root      39  19       0      0      0 S   0.0   0.0   9:19.58 khugepaged
+   80 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 cryptd
+
+[vmstat]
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  0      0 4200516 2754360 17200772    0    0    39    34    0    0  4  1 94  0  0
+[clientversion]
+xython-client

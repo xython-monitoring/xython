@@ -68,7 +68,7 @@ def main():
             X.scheduler()
             time.sleep(0.01)
             if args.quit > 0:
-                if X.uptime_start > time.time() + args.quit:
+                if X.uptime_start + args.quit < time.time():
                     sys.exit(0)
         sys.exit(0)
 

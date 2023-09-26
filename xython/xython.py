@@ -708,6 +708,9 @@ class xythonsrv:
                 continue
             host_ip = sline.pop(0)
             host_name = sline.pop(0)
+            if '/' in host_name:
+                self.error(f"ERROR: invalid hostname {host_name}")
+                continue
             self.debug("DEBUG: ip=%s host=%s" % (host_ip, host_name))
             # conn is enabled by default
             # if host already exists, remove it
@@ -955,6 +958,8 @@ class xythonsrv:
         self.stat("COLUPDATE", ts_end - ts_start)
 
     def get_histlogs(self, hostname, column, ts):
+        if hostname is None or column is None or ts is None:
+            return None
         try:
             if self.xythonmode == 0 or (self.xythonmode == 1 and int(self.uptime_start) > int(ts)):
                 fhist = f"{self.histlogs}/{hostname}/{column}/{xytime_(int(ts))}"
@@ -1266,7 +1271,11 @@ class xythonsrv:
             self.read_configs()
             self.ts_read_configs = now
         if self.has_pika:
-            self.channel.basic_publish(exchange='xython-ping', routing_key='', body="PING")
+            try:
+                self.channel.basic_publish(exchange='xython-ping', routing_key='', body="PING")
+            # pika.exceptions.StreamLostError: Stream connection lost: ConnectionResetError(104, 'Connection reset by peer')
+            except:
+                self.error("PIKA TODO")
         self.stat("SCHEDULER", time.time() - now)
 
     # read analysis.cfg
@@ -1357,7 +1366,10 @@ class xythonsrv:
                     H.rules["PORT"].append(rp)
             elif line[0:4] == 'PROC':
                 rp = xy_rule_proc()
-                rp.init_from(line[5:])
+                rr = rp.init_from(line[5:])
+                if not rr:
+                    self.error(f"ERROR: invalid line {line}")
+                    continue
                 if currhost == 'DEFAULT':
                     self.rules["PROC"].append(rp)
                 if currhost == hostname:
@@ -1444,6 +1456,14 @@ class xythonsrv:
         for hostname in hosts:
             for column in ["disk", 'inode', 'sensor', 'snmp']:
                 self.gen_rrd(hostname, column)
+
+    # give a DS name from a sensor name
+    def rrd_getdsname(self, sname):
+        dsname = sname.replace(" ", '_')
+        # dsname is 19 char max
+        if len(dsname) > 19:
+            dsname = sname.replace(" ", '')
+        return dsname[:19]
 
     def get_ds_name(self, l):
         r = []
@@ -1537,7 +1557,7 @@ class xythonsrv:
         rrdtool.update(rrdfpath, f"N:{value}")
 
     def do_sensor_rrd(self, hostname, adapter, sname, value):
-        #self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
+        self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
         if not has_rrdtool:
             return
         fname = f"sensor{self.rrd_pathname(sname)}"
@@ -1551,7 +1571,8 @@ class xythonsrv:
         if not os.path.exists(rrd_dpath):
             os.mkdir(rrd_dpath)
         rrdfpath = f"{rrd_dpath}/{fname}.rrd"
-        dsname = sname.replace(" ", '_')
+        dsname = self.rrd_getdsname(sname)
+        self.debug(f"DEBUG: create {rrdfpath} with dsname={dsname}")
         if not os.path.exists(rrdfpath):
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
                 "RRA:AVERAGE:0.5:1:1200",
@@ -1917,6 +1938,7 @@ class xythonsrv:
             self.parse_disable(hdata)
             return
         #self.debug("THIS IS HISTDATA")
+        hdata += "\n[end]\n"
         for line in hdata.split("\n"):
             line = line.rstrip()
             if len(line) == 0:
@@ -1932,6 +1954,8 @@ class xythonsrv:
                                 continue
                             if cline[0:6] == 'client':
                                 scline = cline.split(" ")
+                                if len(scline) < 2:
+                                    continue
                                 cname = scline[1]
                                 if cname.endswith(".linux"):
                                     hostname = cname.replace(".linux", "")
@@ -2020,6 +2044,7 @@ class xythonsrv:
         self.us.setblocking(0)
         self.uclients = []
         self.debug("DEBUG: create unix socket")
+        return True
 
     def unet_loop(self):
         try:
@@ -2062,6 +2087,8 @@ class xythonsrv:
                     pass
             elif cmd == "acknowledge":
                 self.parse_acknowledge(buf)
+            elif cmd == "disable":
+                self.parse_disable(buf)
             elif cmd[0:6] == "proxy:":
                 lines = buf.split("\n")
                 line = lines.pop(0)
@@ -2089,7 +2116,7 @@ class xythonsrv:
             C.close()
 
     def set_netport(self, port):
-        if port < 0 or port > 65535:
+        if port <= 0 or port > 65535:
             return False
         self.netport = port
         return True
@@ -2222,6 +2249,10 @@ class xythonsrv:
                 os.mkdir(self.xt_rrd)
         self.db = self.xt_data + '/xython.db'
         self.debug(f"DEBUG: DB is {self.db}")
+        print(f"DEBUG: DB === {self.db}")
+        # we always restart with a clean DB
+        if os.path.exists(self.db):
+            os.remove(self.db)
         self.sqconn = sqlite3.connect(self.db)
         self.sqc = self.sqconn.cursor()
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS columns

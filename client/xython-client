@@ -1,5 +1,8 @@
 #!/bin/sh
 
+export LANG=C
+export LC_ALL=C
+
 echo "[collector:]"
 echo "client $(hostname).linux linux"
 echo "[date]"
@@ -123,7 +126,7 @@ fi
 echo "[vmstat]"
 vmstat
 
-[clientversion]
+echo '[clientversion]'
 # to be changed by package manager
 CLIENTVERSION=""
 if [ -z "$CLIENTVERSION" ];then

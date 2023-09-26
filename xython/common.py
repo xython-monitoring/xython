@@ -139,8 +139,15 @@ def xydelay(s):
                 return int(v) * 60 * 60 * 24
             if pfix == 'w':
                 return int(v) * 60 * 60 * 24 * 7
-            print("UNREACHABLE")
+            #print("UNREACHABLE")
         return int(s)
     except ValueError:
         print(f"ERROR: invalid delay value {s}")
         return None
+
+def is_valid_hostname(hostname):
+    return re.match("^[a-zA-Z0-9_-]*$", hostname)
+
+def is_valid_column(column):
+    return re.match("^[a-zA-Z0-9_-]*$", column)
+
