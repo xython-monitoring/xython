@@ -1202,7 +1202,7 @@ class xythonsrv:
                     continue
                 ret = ctask.get()
                 self.debug(f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
-                self.column_update(ret["hostname"], ret["type"], ret["color"], time.time(), ret["txt"], 200, "xython-tests")
+                self.column_update(ret["hostname"], ret["column"], ret["color"], time.time(), ret["txt"], 200, "xython-tests")
                 self.celtasks.remove(ctask)
                 name = f'{ret["hostname"]}_{ret["type"]}'
                 if name not in self.celerytasks:

@@ -29,6 +29,7 @@ def ping(hostname, t, doipv4, doipv6):
     ts_start = time.time()
     dret = {}
     dret["type"] = 'conn'
+    dret["column"] = 'conn'
     dret["hostname"] = hostname
     dret["txt"] = ""
     dret["color"] = 'green'
@@ -168,6 +169,7 @@ def dohttp(hostname, urls, column):
     dret["timing"] = test_duration
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     dret["type"] = 'http'
+    dret["column"] = 'http'
     return dret
 
 
@@ -294,6 +296,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
     ts_start = time.time()
     dret = {}
     dret["color"] = 'red'
+    dret['column'] = protoname
     thostname = hostname
     tokens = url.split(':')
     i = 1
@@ -303,6 +306,9 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
         print(f"DEBUG: generic proto ssl: check {option}")
         if tokens[i].isdigit():
             port = int(tokens[i])
+        elif tokens[i][0:7] == 'column=':
+            hs = tokens[i].split('=')
+            dret['column'] = hs[1]
         elif tokens[i][0:7] == 'verify=':
             verify = ssl.CERT_NONE
             print(f"DEBUG: no certificate check for {thostname}")
@@ -370,6 +376,7 @@ def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect,
     dret = {}
     dret["hostname"] = hostname
     dret["type"] = protoname
+    dret["column"] = protoname
     dret["color"] = 'green'
     dret["txt"] = ""
     for url in urls:
@@ -379,6 +386,8 @@ def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect,
             ret = do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options)
         dret["color"] = setcolor(ret["color"], dret["color"])
         dret["txt"] += ret["txt"]
+        if 'column' in ret:
+            dret["column"] = ret["column"]
     test_duration = time.time() - ts_start
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     dret["timing"] = test_duration
@@ -387,6 +396,7 @@ def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect,
 def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options):
     dret = {}
     dret["color"] = 'red'
+    dret['column'] = protoname
 
     tokens = url.split(':')
     print(f"DEBUG: {url} {tokens} {len(tokens)}")
