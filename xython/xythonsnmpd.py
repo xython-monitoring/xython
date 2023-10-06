@@ -9,6 +9,7 @@ import sys
 from importlib.metadata import version
 from pysnmp import hlapi
 from xython import xythonsrv
+from xython.common import setcolor
 
 def snmp_get(oid, H):
     ret = {}
@@ -134,6 +135,8 @@ def do_snmpd_memory(X, H, buf):
     return ret
 
 def do_snmpd_client(X, H):
+    dret = {}
+    color = 'green'
     status = ""
     buf = f'proxy:snmpd\n[collector:]\nclient {H.name}.linux linux\n'
     sysdscr = snmp_get('.1.3.6.1.2.1.1.1.0', H)
@@ -143,6 +146,7 @@ def do_snmpd_client(X, H):
         status += sysdscr['pretty']
         status += '\n'
     else:
+        color = 'red'
         status += f"&red do_snmpd_client: error with sysdscr: {sysdscr['errmsg']}\n"
     if 'memory' in H.snmp_columns:
         ret = do_snmpd_memory(X, H, buf)
@@ -155,35 +159,32 @@ def do_snmpd_client(X, H):
     if 'disk' in H.snmp_columns:
         buf = do_snmpd_disk(X, H, buf)
     buf += '[end]\n'
-    #print("========================= unet_send")
-    #print(buf)
     X.unet_send(buf)
-    #print("========================= status")
-    #print(status)
-    #print("=========================")
-    return status
+    dret['txt'] = status
+    dret['color'] = color
+    return dret
 
 def do_snmpd(X):
     for H in X.xy_hosts:
         X.debug(f"DEBUG: SNMP for {H.name}")
-        buf = f"status+10m {H.name}.snmp green\n"
+        color = 'green'
+        buf = ''
         if len(H.snmp_columns) == 0 and len(H.oidlist) == 0:
             continue
         if len(H.snmp_columns) > 0:
-            ret = do_snmpd_client(X, H)
-            #print("=========================")
-            #print(ret)
-            buf += ret
+            dret = do_snmpd_client(X, H)
+            buf += dret["txt"]
+            color = setcolor(dret["color"], color)
         for o in H.oidlist:
             X.debug(f"DEBUG: handle SNMP OID {o['oid']}")
             ret = snmp_get(o['oid'], H)
             if ret['err'] == 0:
-                buf += f"did {o['oid']}\n"
+                buf += f"&green did {o['oid']}\n"
                 X.do_rrd(H.name, "snmp", o['name'], ret["v"])
             else:
-                buf += f"did {o['oid']} {ret['errmsg']}\n"
-        #print("========================= buf send")
-        #print(buf)
+                buf += f"&red did {o['oid']} {ret['errmsg']}\n"
+                color = 'red'
+        buf = f"status+10m {H.name}.snmp {color}\n" + buf
         X.unet_send(buf)
 
 def main():
