@@ -38,6 +38,8 @@ from .common import setcolor
 from .common import xydhm
 from .common import xydelay
 from .common import COLORS
+from .common import is_valid_hostname
+from .common import is_valid_column
 
 from .rules import xy_rule_disks
 from .rules import xy_rule_port
@@ -1824,6 +1826,83 @@ class xythonsrv:
             self.column_update(hostname, column, color, time.time(), hdata, expire, msg["addr"])
         return False
 
+    def do_ack(self, hostname, cname, expire, why):
+        req = f'UPDATE columns SET ackcause="{why}", ackend={expire} WHERE hostname="{hostname}" AND column="{cname}" AND color != "green"'
+        self.sqc.execute(req)
+        # TODO check if we changed at least one line
+
+    def read_acks(self):
+        if self.xythonmode == 0:
+            return self.read_xymon_acks()
+        now = time.time()
+        dirFiles = os.listdir(self.xt_acks)
+        for fack in dirFiles:
+            self.debug(f"DEBUG: read ack {fack}")
+            f = open(f"{self.xt_acks}/{fack}")
+            line = f.read()
+            f.close()
+            tokens = line.split(" ")
+            hostname = tokens.pop(0)
+            if not is_valid_hostname(hostname):
+                self.error(f"ERROR: read_acks: hostname {hostname} is not valid")
+                continue
+            cname = tokens.pop(0)
+            if not is_valid_column(cname):
+                self.error(f"ERROR: read_acks: column {cname} is not valid")
+                continue
+            start = float(tokens.pop(0))
+            expire = float(tokens.pop(0))
+            if expire < now:
+                self.debug(f"DEBUG: expired ack")
+                # TODO ignore it and delete it
+                continue
+            why = ' '.join(tokens)
+            self.debug(f"DEBUG: ack {hostname}.{cname} until {xytime(expire)} why={why}")
+            self.do_ack(hostname, cname, expire, why)
+
+    def store_ack(self, hostname, column, start, expire, msg):
+        fname = f"{self.xt_acks}/{xytime_(start)}"
+        f = open(fname, 'w')
+        f.write(f"{hostname} {column} {start} {expire} {msg}\n")
+        f.close()
+
+    # TODO
+    def read_xymon_acks(self):
+        try:
+            # TODO XYMONTMP
+            f = open("/var/tmp/xymon/xymond.chk")
+        except:
+            return RET_ERR
+        data = f.readlines()
+        f.close()
+        for line in data:
+            #print("======================================")
+            #print(line)
+            tokens = line.split('|')
+            if tokens[0] != '@@XYMONDCHK-V1':
+                print(f"Invalid header {tokens[0]}")
+                continue
+            if tokens[1] != "":
+                print(tokens)
+                continue
+            hostname = tokens[2]
+            column = tokens[3]
+            sender = tokens[4]
+            ackmsg = tokens[17]
+            bluetime = int(tokens[11])
+            bluemsg = tokens[16]
+            if bluemsg != "":
+                print(f"DEBUG: acks: for {hostname}.{column} by={sender} reason={bluemsg} end={bluetime}")
+            if ackmsg == "":
+                continue
+            print("========")
+            ackend = int(tokens[12])
+            print(f"DEBUG: acks: for {hostname}.{column} by={sender} reason={ackmsg} end={ackend}")
+            now = time.time()
+            print(ackend - now)
+            print((ackend - now)/ 60)
+            print((ackend - now) / (3600 * 24))
+
 # format acknowledge hostname column duration cause
     def parse_acknowledge(self, msg):
         self.debug(f"ACK ACTION {msg}")
@@ -1847,7 +1926,8 @@ class xythonsrv:
         howlong = lmsg.pop(0)
         howlongs = xydelay(howlong)
         # TODO the real expire in DB could be some secs after
-        expire = time.time() + howlongs
+        now = time.time()
+        expire = now + howlongs
         if howlongs is None:
             self.error(f"ERROR: invalid duration {howlong}")
             return False
@@ -1862,9 +1942,8 @@ class xythonsrv:
         else:
             columns.append(testname)
         for cname in columns:
-            now = time.time()
-            req = f'UPDATE columns SET ackcause="{why}", ackend={now + howlongs} WHERE hostname="{hostname}" AND column="{cname}" AND color != "green"'
-            self.sqc.execute(req)
+            self.do_ack(hostname, cname, expire, why)
+            self.store_ack(hostname, cname, now, expire, why)
         return True
 
     def parse_disable(self, msg):
@@ -2236,6 +2315,7 @@ class xythonsrv:
         self.xt_histlogs = f"{self.xt_data}/histlogs"
         self.xt_histdir = f"{self.xt_data}/hist/"
         self.xt_rrd = f"{self.xt_data}/rrd/"
+        self.xt_acks = f"{self.xt_data}/acks/"
         if self.xythonmode > 0:
             if not os.path.exists(self.xt_histlogs):
                 os.mkdir(self.xt_histlogs)
@@ -2247,6 +2327,8 @@ class xythonsrv:
                 os.mkdir(self.xt_logdir)
             if not os.path.exists(self.xt_rrd):
                 os.mkdir(self.xt_rrd)
+            if not os.path.exists(self.xt_acks):
+                os.mkdir(self.xt_acks)
         self.db = self.xt_data + '/xython.db'
         self.debug(f"DEBUG: DB is {self.db}")
         print(f"DEBUG: DB === {self.db}")
@@ -2263,6 +2345,7 @@ class xythonsrv:
             (hostname text, column text, next date, UNIQUE(hostname, column))''')
         self.sqc.execute('DELETE FROM tests')
         self.read_configs()
+        self.read_acks()
         self.sqconn.commit()
         ts_end = time.time()
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
