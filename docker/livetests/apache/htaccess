@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "NeedPass"
+AuthUserFile /var/www/passwd
+Require valid-user
