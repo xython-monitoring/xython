@@ -184,37 +184,39 @@ The goal is to be 100% compatible with old Xymon storage BUT via an option, I wi
 Probably all options stated as deprecated in xymon will be not supported.
 In the same time, all BB and hobbit compatibility will be removed probably.
 
-* compression of data files: all histlogs could be compressed saving disk space
+## Changes in server (vs xymon)
 * There are some inconsistency in xymon between timestamp (like used in storing hostdata) and full date (like histlogs).
   Furthermore, using full localized date is bad when sorting directory output and lead to timezone problems.
   Xython will propose a new storage using only timestamp.
 * disk status show which rule matched the partition
-* TODO: permit to hide acked tests in nongreen page
-* Add more "standard" tests to xymon client (ntpd, smart, lvm, sensors for example)
 * TLS communication between client and server is supported as a PoC (until I finish deploy client)
 * IPV6 communication between client and server is supported
+* you could ack and disable directly from a status page
+* you can choose which ipvX address to ping ( you can choose both with conn:ipv4:ipv6
+* Added a verify= option to http test to allow using custom CA or disabling testing certificate
+* Added SNMP support, you can simulate a client by gathering information via SNMP
+* Custom SNMP graphing and reporting
+* deprecating httpstatus, xython way is to add httpcode=xxx to a http URL
+* deprecating cont, xython way is to add cont=xxx to a http URL
 
-# GUI
-## acks
-you could ack directly from a status page
+## Changes in client
+* The xython client support now reporting lm-sensors
+* ip route (to replace obsolete netstat), already reported by client, but xythond need to check them
+* ss (to replace obsolete netstat), already reported by client, but xythond need to check them
 
-# client
-My goal is to keep the client simple as it can be already now. (a simple sh | nc)
-But having a version of it with TLS is currently worked.
+## Planned changes in server
+* compression of data files: all histlogs could be compressed saving disk space
+* permit to hide acked tests in nongreen page
 
-## lm-sensors
-The xymon client provided by xython support now reporting lm-sensors
-
-## planned
-smart
-megacli
-ntpd + rtc
-kernel log / dmesg
-ip route (to replace obsolete netstat), already reported by client, but xythond need to check them
-ss (to replace obsolete netstat), already reported by client, but xythond need to check them
+## Planned changes in client
+* Add more "standard" tests to xymon client (ntpd, smart, lvm, sensors for example)
+* smart
+* megacli
+* ntpd + rtc
+* kernel log / dmesg
 
 # TODO
-This is a uncomplete
+This is a uncomplete list
 
 * fuzz xython
 * re-bench xython
