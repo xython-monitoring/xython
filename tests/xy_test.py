@@ -689,6 +689,14 @@ def test_celery_http():
     assert ret["color"] == 'green'
     ret = dohttp("test", ['https://tests.xython.fr/test.cont;cont=hello'], 'http')
     assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont.regex;cont=A[[:space:]]B'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont.regex;cont=new\nline'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont.regex;cont=\\x41\\x20\\x42'], 'http')
+    assert ret["color"] == 'green'
+    ret = dohttp("test", ['https://tests.xython.fr/test.cont.regex;cont=\\x41\\x20\\x43'], 'http')
+    assert ret["color"] == 'red'
     ret = dohttp("test", ['https://tests.xython.fr/test.cont;cont=invalid'], 'http')
     assert ret["color"] == 'red'
     ret = dohttp("test", ['https://tests.xython.fr/test.cont;invalid=hello'], 'http')
