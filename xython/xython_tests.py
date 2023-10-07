@@ -68,14 +68,15 @@ def dohttp(hostname, urls, column):
     hdata = ""
     httpstate = ""
     httpcount = 0
-    options = ""
     for url in urls:
+        options = ""
         check_content = None
         verify = True
         timeout = 30
         headers = {}
         headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
         need_httpcode = 200
+        hdata += f'<fieldset><legend>{url}</legend>'
         print(f'DEBUG: dohttp: check {url}')
         tokens = url.split(';')
         url = tokens.pop(0)
@@ -95,7 +96,7 @@ def dohttp(hostname, urls, column):
                     verify=cmds[1]
                 options += f"verify={cmds[1]}"
             elif cmd == 'cont':
-                check_content = cmds[1]
+                check_content = cmds[1].replace('[[:space:]]', '\s')
             elif cmd == 'httpcode':
                 # TODO check it is an integer or regex
                 need_httpcode = cmds[1]
@@ -127,10 +128,10 @@ def dohttp(hostname, urls, column):
             if check_content:
                 content = r.content.decode('utf8')
                 if re.search(check_content, content):
-                    hdata += f'&green pattern {check_content} found in {content}'
+                    hdata += f'&green pattern {check_content} found\n'
                 else:
                     color = "red"
-                    hdata += f'&red pattern {check_content} not found in {content}'
+                    hdata += f'&red pattern {check_content} not found\n'
         except requests.exceptions.Timeout as e:
             color = "red"
             hdata += f"&red {url} - TIMEOUT\n"
@@ -159,6 +160,7 @@ def dohttp(hostname, urls, column):
             hdata += certinfo + "\n\n"
         if options != "":
             hdata += f"xython options: {options}\n"
+        hdata += f'</fieldset><br>'
     now = time.time()
     fdata = f"{xytime(now)}: {httpstate}\n"
     test_duration = now - ts_start
