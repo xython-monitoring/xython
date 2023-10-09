@@ -2192,13 +2192,19 @@ class xythonsrv:
             if cmd == 'GETSTATUS':
                 hostname = sbuf[1]
                 service = sbuf[2].rstrip()
+                if not is_valid_column(service):
+                    smsg = f"ERROR: service has invalid name {service}\n"
+                    C.send(smsg.encode("UTF8"))
+                    C.close()
+                    continue
                 if len(sbuf) > 3:
                     ts = xyts_(sbuf[3], None)
                 else:
                     res = self.sqc.execute('SELECT ts FROM columns WHERE hostname == ? AND column == ?', (hostname, service))
                     results = self.sqc.fetchall()
                     if len(results) != 1:
-                        C.send(b"ERROR: no service\n")
+                        smsg = f"ERROR: no service named {service}\n"
+                        C.send(smsg.encode("UTF8"))
                         C.close()
                         continue
                     ts = results[0][0]
