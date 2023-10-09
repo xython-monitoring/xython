@@ -53,6 +53,11 @@ if svc is None:
     print('Status: 400 Bad Request\n')
     print("\n")
     sys.exit(0)
+dsvc = None
+if "DSERVICE" in POST:
+    dsvc = POST["DSERVICE"]
+if "dservice" in POST:
+    dsvc = POST["dservice"]
 
 #timebuf = arguments.getvalue("TIMEBUF")
 if "TIMEBUG" in POST:
@@ -67,8 +72,19 @@ if "cause" in POST:
     cause = POST["cause"]
 else:
     cause = None
-if cause is not None and duration is not None:
+if "action" in POST:
+    action = POST["action"]
+else:
+    action = None
+if cause is not None and duration is not None and action == 'ack':
     buf = "acknowledge %s.%s %s %s\n" % (hostname, svc, duration, cause)
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    # TODO this must be not hardcoded
+    sock.connect('/run/xython/xython.sock')
+    sock.send(buf.encode("UTF8"))
+    sock.close()
+if cause is not None and duration is not None and action == 'disable':
+    buf = "disable %s.%s %s %s\n" % (hostname, dsvc, duration, cause)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     # TODO this must be not hardcoded
     sock.connect('/run/xython/xython.sock')
