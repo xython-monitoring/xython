@@ -91,10 +91,22 @@ def do_snmpd_disk(X, H, buf):
     for oid in H.snmp_disk_oid:
         X.debug(f"DEBUG: SNMP DISK check {oid}")
         disk_name = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{oid}', H)
-        disk_block_size = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', H)
-        disk_total = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', H)
-        disk_used = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', H)
+        if disk_name['err'] != 0:
+            buf += f'ERROR getting {oid}\n'
+            continue
         dname = disk_name['v']
+        disk_block_size = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', H)
+        if disk_block_size['err'] != 0:
+            buf += f'ERROR getting {dname} block size\n'
+            continue
+        disk_total = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', H)
+        if disk_total['err'] != 0:
+            buf += f'ERROR getting {dname} total size\n'
+            continue
+        disk_used = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', H)
+        if disk_used['err'] != 0:
+            buf += f'ERROR getting {dname} used size\n'
+            continue
         dbs = int(disk_block_size['v'])
         dt = int(disk_total['v'])
         du = int(disk_used['v'])
