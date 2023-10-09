@@ -1228,6 +1228,12 @@ class xythonsrv:
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
+    def do_tests_rip(self):
+        self.celery_workers = celery.current_app.control.inspect().ping()
+        if self.celery_workers is None:
+            self.error("ERROR: no celery workers")
+            return
+        ts_start = time.time()
         # RIP celery tasks
         now = int(time.time())
         for ctask in self.celtasks:
@@ -1288,6 +1294,7 @@ class xythonsrv:
         now = time.time()
         if now > self.ts_tests + 5:
             self.do_tests()
+            self.do_tests_rip()
             self.ts_tests = now
             self.gen_rrds()
         if now > self.ts_check + 1:
