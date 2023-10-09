@@ -818,6 +818,7 @@ class xythonsrv:
         f.close()
 
     def gen_column_info(self, hostname):
+        color = 'green'
         H = self.find_host(hostname)
         if H is None:
             return
@@ -832,8 +833,10 @@ class xythonsrv:
             cdata += f"Client S/W: {H.client_version}\n"
         cdata += f"TAGS={H.tags_known}\n"
         cdata += f"TAGS not handled {H.tags_unknown}\n"
+        if len(H.tags_unknown):
+            color = 'yellow'
         # TODO infinite time
-        self.column_update(hostname, "info", "green", time.time(), cdata, 365 * 24 * 3600, "xythond")
+        self.column_update(hostname, "info", color, int(time.time()), cdata, 365 * 24 * 3600, "xythond")
 
     # return all cname for a host in a list
     def get_columns(self, hostname):
@@ -946,7 +949,6 @@ class xythonsrv:
             self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
 
         #req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
-        now = time.time()
         res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color, ackend, ackcause) VALUES (?, ?, ?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color, ackend, ackcause))
         #self.sqconn.commit()
         if color == 'purple':
@@ -1099,25 +1101,27 @@ class xythonsrv:
         #for col in results:
 
     def check_purples(self):
-        now = time.time()
+        now = int(time.time())
         ts_start = now
         req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple"'
         res = self.sqc.execute(req)
         results = self.sqc.fetchall()
         for col in results:
+            hostname = col[0]
+            column = col[1]
             expire = col[3]
             pdate = xytime(col[2])
             pedate = xytime(expire)
             pnow = xytime(now)
-            #self.debug("DEBUG: purplelize %s %s %d<%d %s %s < %s" % (col[0], col[1], col[3], now, pdate, pedate, pnow))
-            self.column_update(col[0], col[1], "purple", time.time(), None, 0, "xythond")
+            self.debug(f"DEBUG: purplelize {hostname} {column} {expire}<{now} {pdate} {pedate} < {pnow}")
+            self.column_update(hostname, column, "purple", now, None, 0, "xythond")
         ts_end = time.time()
         self.stat("PURPLE", ts_end - ts_start)
         return
 
     # gen all tests to be scheduled
     def gen_tests(self):
-        now = time.time()
+        now = int(time.time())
         self.debug("DEBUG: GEN TESTS")
         self.sqc.execute('DELETE FROM tests')
         for H in self.xy_hosts:
@@ -1167,7 +1171,7 @@ class xythonsrv:
             self.error("ERROR: no celery workers")
             return
         ts_start = time.time()
-        now = time.time()
+        now = int(time.time())
         res = self.sqc.execute(f'SELECT * FROM tests WHERE next < {now}')
         results = self.sqc.fetchall()
         self.log("tests", f"DEBUG: DO TESTS {len(results)}")
@@ -1193,7 +1197,7 @@ class xythonsrv:
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
         # RIP celery tasks
-        now = time.time()
+        now = int(time.time())
         for ctask in self.celtasks:
             if ctask.ready():
                 status = ctask.status
@@ -1203,8 +1207,8 @@ class xythonsrv:
                     # TODO better handle this problem, easy to generate by removing ping
                     continue
                 ret = ctask.get()
-                self.debug(f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
-                self.column_update(ret["hostname"], ret["column"], ret["color"], time.time(), ret["txt"], 200, "xython-tests")
+                self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
+                self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], 200, "xython-tests")
                 self.celtasks.remove(ctask)
                 name = f'{ret["hostname"]}_{ret["type"]}'
                 if name not in self.celerytasks:
@@ -1218,7 +1222,7 @@ class xythonsrv:
 
     # TODO hardcoded hostname
     def do_xythond(self):
-        now = time.time()
+        now = int(time.time())
         buf = f"{xytime(now)} - xythond\n"
         for stat in self.stats:
             color = '&clear'
@@ -1245,7 +1249,7 @@ class xythonsrv:
         res = self.sqc.execute('SELECT count(next) FROM tests')
         results = self.sqc.fetchall()
         buf += f"Active tests: {results[0][0]}\n"
-        self.column_update(socket.gethostname(), "xythond", "green", time.time(), buf, 1600, "xythond")
+        self.column_update(socket.gethostname(), "xythond", "green", now, buf, 1600, "xythond")
 
     def scheduler(self):
         #self.debug("====================")
@@ -1588,12 +1592,13 @@ class xythonsrv:
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
 
     def parse_free(self, hostname, buf, sender):
+        ts_start = time.time()
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_free: host is None for {hostname}")
             return False
-        now = time.time()
-        self.debug(f"DEBUG: parse_free for {hostname}")
+        now = int(time.time())
+        #self.debug(f"DEBUG: parse_free for {hostname}")
         # TODO handle other OS case
         color = 'green'
         sbuf = f"{xytime(now)} - Memory OK\n"
@@ -1608,13 +1613,13 @@ class xythonsrv:
             color = setcolor(ret["color"], color)
 
         sbuf += buf
-        self.column_update(hostname, "memory", color, time.time(), sbuf, 4 * 60, sender)
-        self.stat("PARSEFREE", time.time() - now)
+        self.column_update(hostname, "memory", color, now, sbuf, 4 * 60, sender)
+        self.stat("PARSEFREE", time.time() - ts_start)
         return True
 
     # TODO Machine has been up more than 0 days
     def parse_uptime(self, hostname, buf, sender):
-        now = time.time()
+        now = int(time.time())
         color = 'green'
         H = self.find_host(hostname)
         if H is None:
@@ -1641,10 +1646,10 @@ class xythonsrv:
             color = setcolor(gret["UP"]["color"], color)
             sbuf += gret["UP"]["txt"]
         sbuf += buf
-        self.column_update(hostname, "cpu", color, time.time(), sbuf, 4 * 60, sender)
+        self.column_update(hostname, "cpu", color, now, sbuf, 4 * 60, sender)
 
     def parse_ps(self, hostname, buf, sender):
-        now = time.time()
+        now = int(time.time())
         color = 'green'
         sbuf = f"{xytime(now)} - procs Ok\n"
         H = self.find_host(hostname)
@@ -1665,11 +1670,11 @@ class xythonsrv:
         sbuf += buf
         ts_end = time.time()
         self.stat("parseps", ts_end - now)
-        self.column_update(hostname, "procs", color, time.time(), sbuf, 4 * 60, sender)
+        self.column_update(hostname, "procs", color, now, sbuf, 4 * 60, sender)
 
     # TODO
     def parse_mdstat(self, hostname, buf, sender):
-        now = time.time()
+        now = int(time.time())
         devices = []
         color = 'green'
         sbuf = f"{xytime(now)} - RAID Ok\n"
@@ -1685,11 +1690,11 @@ class xythonsrv:
         if len(devices) == 0:
             return
         sbuf += buf
-        self.column_update(hostname, "raid", color, time.time(), sbuf, 4 * 60, sender)
+        self.column_update(hostname, "raid", color, now, sbuf, 4 * 60, sender)
 
     #TODO
     def parse_ports(self, hostname, buf, sender):
-        now = time.time()
+        now = int(time.time())
         color = 'clear'
         sbuf = f"{xytime(now)} - ports Ok\n"
         H = self.find_host(hostname)
@@ -1706,13 +1711,13 @@ class xythonsrv:
             sbuf += ret["txt"] + '\n'
             color = setcolor(ret["color"], color)
         sbuf += buf
-        self.column_update(hostname, "ports", color, time.time(), sbuf, 4 * 60, sender)
+        self.column_update(hostname, "ports", color, now, sbuf, 4 * 60, sender)
 
 # TODO self detect high/crit min/max from output
 # like Core 0:        +46.0 C  (high = +82.0 C, crit = +102.0 C)
 # should detect a second warn=82 and red=102
     def parse_sensors(self, hostname, buf, sender):
-        now = time.time()
+        now = int(time.time())
         color = 'green'
         sbuf = f"{xytime(now)} - sensors Ok\n"
         H = self.find_host(hostname)
@@ -1745,10 +1750,10 @@ class xythonsrv:
                     self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
         ts_end = time.time()
         self.stat("parsesensor", ts_end - now)
-        self.column_update(hostname, "sensor", color, time.time(), sbuf, 4 * 60, sender)
+        self.column_update(hostname, "sensor", color, now, sbuf, 4 * 60, sender)
 
     def parse_df(self, hostname, buf, inode, sender):
-        now = time.time()
+        now = int(time.time())
         if inode:
             column = 'inode'
             S = "INODE"
@@ -1791,7 +1796,7 @@ class xythonsrv:
             if pct is not None:
                 self.do_rrd(hostname, column, mnt, pct)
         sbuf += buf
-        self.column_update(hostname, column, color, time.time(), sbuf, 4 * 60, sender)
+        self.column_update(hostname, column, color, now, sbuf, 4 * 60, sender)
         return
 
     def parse_status(self, msg):
@@ -1823,7 +1828,7 @@ class xythonsrv:
         self.debug("HOST.COL=%s %s %s color=%s expire=%d" % (sline[1], hostname, column, color, expire))
 
         if column is not None:
-            self.column_update(hostname, column, color, time.time(), hdata, expire, msg["addr"])
+            self.column_update(hostname, column, color, int(time.time()), hdata, expire, msg["addr"])
         return False
 
     def do_ack(self, hostname, cname, expire, why):
@@ -1948,7 +1953,7 @@ class xythonsrv:
 
     def parse_disable(self, msg):
         self.debug(f"DISABLE ACTION {msg}")
-        dstart = time.time()
+        dstart = int(time.time())
         lmsg = msg.split(" ")
         if len(lmsg) < 4:
             return False
@@ -1969,7 +1974,7 @@ class xythonsrv:
         howlong = lmsg.pop(0)
         howlongs = xydelay(howlong)
         # TODO the real expire in DB could be some secs after
-        expire = time.time() + howlongs
+        expire = dstart + howlongs
         if howlongs is None:
             self.error(f"ERROR: invalid duration {howlong}")
             return False
