@@ -439,13 +439,26 @@ class xythonsrv:
             else:
                 print(f"ackinfo is len={len(ackinfo)}")
             # TODO acknowledge is only for non-history and non-green
+            #if gcolor != 'green':
             html += f'<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
             html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
-            html += '<input type="text" name="cause" required>\n'
+            html += '<input type="text" placeholder="ack message" name="cause" required>\n'
             html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
             html += f'<input type="hidden" name="service" value="{column}">\n'
-            html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
-            html += '<button type="submit">Send</button></form>\n'
+            html += f'<input type="hidden" name="action" value="ack">\n'
+            #html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            html += '<button type="submit">Send ack</button></form>\n'
+            html += '</CENTER>\n'
+
+            html += f'<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
+            html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
+            html += '<input type="text" placeholder="disable message" name="cause" required>\n'
+            html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
+            html += f'<input type="text" name="dservice" value="{column}">\n'
+            html += f'<input type="hidden" name="service" value="{column}">\n'
+            html += f'<input type="hidden" name="action" value="disable">\n'
+            #html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            html += '<button type="submit">Send blue</button></form>\n'
             html += '</CENTER>\n'
 
             if has_rrdtool:
