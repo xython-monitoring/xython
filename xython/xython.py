@@ -1025,7 +1025,7 @@ class xythonsrv:
             return False
         if H.hist_read:
             return True
-        self.debug(f"DEBUG: read_hist {name}")
+        self.debug(f"DEBUG: read_hist of {name}")
         H.hist_read = True
         histdir = self.histdir
         if self.xythonmode > 0:
@@ -1072,9 +1072,9 @@ class xythonsrv:
             # check color, if blue read histlogs
             if st_new == 'blue' or st_new == 'bl':
                 self.debug(f"DEBUG: BLUE CASE {sline}")
-                print(xytime(int(tsa)))
-                bbuf = self.get_histlogs(H.name, column, tsa)
-                print(xytime(int(tsb)))
+                #print(xytime(int(tsa)))
+                #bbuf = self.get_histlogs(H.name, column, tsa)
+                #print(xytime(int(tsb)))
                 bbuf = self.get_histlogs(H.name, column, tsb)
                 #print(bbuf)
             self.debugdev("hist", "DEBUG: %s goes from %s to %s" % (column, st_old, st_new))
@@ -1122,7 +1122,7 @@ class xythonsrv:
         self.sqc.execute('DELETE FROM tests')
         for H in self.xy_hosts:
             for T in H.tests:
-                self.debug("DEBUG: %s %s\n" % (H.name, T.type))
+                self.debug("DEBUG: gentest %s %s" % (H.name, T.type))
                 # self.debug(T.urls)
                 tnext = now + randint(1, 30)
                 res = self.sqc.execute(f'INSERT OR REPLACE INTO tests(hostname, column, next) VALUES ("{H.name}", "{T.type}", {tnext})')
@@ -1141,7 +1141,7 @@ class xythonsrv:
         H = self.find_host(T.hostname)
         hostip = H.hostip
         name = f"{T.hostname}_conn"
-        self.debug(f"DEBUG: doping for {name}")
+        self.debugdev('celery', f"DEBUG: doping for {name}")
         if name in self.celerytasks:
             self.error(f"ERROR: lagging test for {name}")
             return False
@@ -1407,7 +1407,7 @@ class xythonsrv:
                     rxd = H.rules["INODE"]
                     rxd.add(line[6:])
             elif line[0:6] == 'SENSOR':
-                self.debug(f"DEBUG: {line}")
+                #self.debug(f"DEBUG: {line}")
                 if currhost == 'DEFAULT':
                     # TODO
                     self.rules["SENSOR"].add(line[7:])
@@ -1559,7 +1559,7 @@ class xythonsrv:
         rrdtool.update(rrdfpath, f"N:{value}")
 
     def do_sensor_rrd(self, hostname, adapter, sname, value):
-        self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
+        #self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
         if not has_rrdtool:
             return
         fname = f"sensor{self.rrd_pathname(sname)}"
@@ -1574,7 +1574,7 @@ class xythonsrv:
             os.mkdir(rrd_dpath)
         rrdfpath = f"{rrd_dpath}/{fname}.rrd"
         dsname = self.rrd_getdsname(sname)
-        self.debug(f"DEBUG: create {rrdfpath} with dsname={dsname}")
+        #self.debug(f"DEBUG: create {rrdfpath} with dsname={dsname}")
         if not os.path.exists(rrdfpath):
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
                 "RRA:AVERAGE:0.5:1:1200",
@@ -2243,7 +2243,7 @@ class xythonsrv:
                 buf = client.recv(64000)
             except socket.error as e:
                 if C["t"] + 30 < now:
-                    self.debug(f'TIMEOUT client len={len(C["buf"])} addr=${C["addr"]}')
+                    self.debug(f'TIMEOUT client len={len(C["buf"])} addr={C["addr"]}')
                     client.close()
                     self.parse_hostdata(C)
                     self.clients.remove(C)

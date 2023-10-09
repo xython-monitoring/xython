@@ -111,7 +111,7 @@ class xy_rule_sensor():
 
     def check(self, sname, pc):
         color = 'green'
-        print(f"DEBUG: check {self.mpanic} {self.mwarn} {self.warn} {self.panic} vs {pc}")
+        #print(f"DEBUG: check {self.mpanic} {self.mwarn} {self.warn} {self.panic} vs {pc}")
         ret = {}
         if pc < self.warn:
             if self.mwarn != SENSOR_DISABLE:
@@ -146,8 +146,8 @@ class xy_rule_sensors():
         print(f"SENSORS RULE {self.name} warn={self.warn} panic={self.panic}")
 
     def add(self, sensorruleline):
-        print("===========================================================")
-        print(f"DEBUG: add {sensorruleline}")
+        #print("===========================================================")
+        #print(f"DEBUG: add {sensorruleline}")
         sensorruleline = re.sub(r"\s+", ' ', sensorruleline)
         tokens = tokenize(sensorruleline)
         adapter = tokens.pop(0)
@@ -156,7 +156,7 @@ class xy_rule_sensors():
         if adapter[0] == '%':
             adapter = adapter[1:]
             regex = True
-        print(f"DEBUG: adapter is {adapter}, sname is {sname}")
+        #print(f"DEBUG: adapter is {adapter}, sname is {sname}")
         if adapter not in self.rules:
             self.rules[adapter] = {}
             self.rules[adapter]["rules"] = {}
@@ -185,7 +185,7 @@ class xy_rule_sensors():
         if sname[0] == '%':
             sname = sname.lstrip('%')
             regex = True
-        print(f"DEBUG: sname is {sname}")
+        #print(f"DEBUG: sname is {sname}")
         self.rules[adapter]["rules"][sname] = {}
         self.rules[adapter]["rules"][sname]["rule"] = xrd
         self.rules[adapter]["rules"][sname]["regex"] = regex
