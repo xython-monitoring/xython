@@ -339,7 +339,7 @@ class xythonsrv:
 
             # TODO handle all green column
             if kind == 'nongreen':
-                res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' ORDER BY column")
+                res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' ORDER BY column")
                 # TODO
                 gcolor = 'red'
             else:
@@ -354,7 +354,7 @@ class xythonsrv:
             html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
 
             if kind == 'nongreen':
-                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green") ORDER by ackend, hostname')
+                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green" and color != "blue") ORDER by ackend, hostname')
             else:
                 res = self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
             hostlist = self.sqc.fetchall()
