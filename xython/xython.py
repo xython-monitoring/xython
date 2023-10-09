@@ -31,6 +31,7 @@ from .xython_tests import do_generic_proto
 import celery
 from .common import xytime
 from .common import xytime_
+from .common import xyts
 from .common import xyts_
 from .common import gcolor
 from .common import gif
@@ -225,8 +226,8 @@ class xythonsrv:
         req = f'INSERT INTO history(hostname, column, ts, duration, color, ocolor)VALUES ("{hostname}", "{cname}", {ts}, {duration}, "{color}", "{ocolor}")'
         res = self.sqc.execute(req)
 
-    # used only at start
-    def column_set(self, hostname, cname, color, ts, expire=60):
+    # used only at start, expire is set to let enough time to arrive before purpleing
+    def column_set(self, hostname, cname, color, ts, expire=60 * 6):
         color = gcolor(color)
         now = time.time()
         req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {now} + {expire}, "{color}")'
@@ -409,8 +410,8 @@ class xythonsrv:
             html += '<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"]
             html += '<PRE>'
             data = ''.join(rdata["data"])
-            data.replace("\n", '<br>')
-            data = re.sub("\n", '<br>', data)
+            data.replace("\n", '<br>\n')
+            #data = re.sub("\n", '<br>\n', data)
             for gifc in COLORS:
                 data = re.sub("&%s" % gifc, '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % gifc, data)
             html += data
@@ -816,6 +817,16 @@ class xythonsrv:
         f = open(histfile, "a+")
         f.write("%s %d %d %d %s %s %d\n" % (column, ts, ots, duration, color[0:2], ocolor[0:2], 1))
         f.close()
+        hostcolpath = f"{self.xt_histdir}/{hostname}.{column}"
+        newfile = False
+        if not os.path.exists(hostcolpath):
+            newfile = True
+        f = open(hostcolpath, "a+")
+        if newfile:
+            f.write(f"{xytime(ts)} {color} {int(ts)}")
+        else:
+            f.write(f" {duration}\n{xytime(ts)} {color} {int(ts)}")
+        f.close()
 
     def gen_column_info(self, hostname):
         color = 'green'
@@ -1016,10 +1027,11 @@ class xythonsrv:
 
     # read hist of a host, creating columns
     # this permit to detect current blue
-    # a dropped column is detecte by checking existence of host.col files BUT on my system some
+    # a dropped column is detected by checking existence of host.col files BUT on my system some
     # column has host.col and are still detected as droped by xymon, how it achieves this ?
     # we could speed up reading by only checking last line of host.col BUT I want to validate
     # that I perfectly understood format of all file
+    # xython TODO: create hostname subdir instead of all in one directory
     def read_hist(self, name):
         H = self.find_host(name)
         if H is None:
@@ -1059,6 +1071,8 @@ class xythonsrv:
             if column not in hostcols:
                 #self.debug(f"DEBUG: ignore dropped {name} {column}")
                 continue
+            if column == 'info':
+                continue
             hostcols[column] = True
             # validate column name
             if not re.match(r"[a-z]", column):
@@ -1071,6 +1085,8 @@ class xythonsrv:
                 self.error(f"ERROR: TS/duration in histlog invalid {sline} TSA+DUR={tsa + duration}")
             st_new = sline[4]
             st_old = sline[5]
+            expire = 6 * 60
+            self.debugdev("hist", "DEBUG: %s goes from %s to %s" % (column, st_old, st_new))
             # check color, if blue read histlogs
             if st_new == 'blue' or st_new == 'bl':
                 self.debug(f"DEBUG: BLUE CASE {sline}")
@@ -1078,12 +1094,15 @@ class xythonsrv:
                 #bbuf = self.get_histlogs(H.name, column, tsa)
                 #print(xytime(int(tsb)))
                 bbuf = self.get_histlogs(H.name, column, tsb)
-                #print(bbuf)
-            self.debugdev("hist", "DEBUG: %s goes from %s to %s" % (column, st_old, st_new))
+                edate = bbuf['first'].replace('blue Disabled until ', '').rstrip()
+                #self.debug(f"DEBUG: disable date is {edate}X")
+                ets = xyts(edate, None)
+                expire = ets - int(time.time())
+                #print(expire)
             if self.readonly:
                 self.column_update(H.name, column, st_new, int(tsb), None, 3 * 60, "xython")
             else:
-                self.column_set(H.name, column, st_new, tsb)
+                self.column_set(H.name, column, st_new, tsb, expire)
         for column in hostcols:
             if not hostcols[column]:
                 self.error(f"ERROR: remains of {name} {column}")
