@@ -382,16 +382,22 @@ def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect,
     dret["color"] = 'green'
     dret["txt"] = ""
     for url in urls:
+        dret["txt"] += f'<fieldset><legend>{url}</legend>\n'
         if p_options and "ssl" in p_options:
             ret = do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expect, p_options)
         else:
             ret = do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options)
         dret["color"] = setcolor(ret["color"], dret["color"])
         dret["txt"] += ret["txt"]
+        dret["txt"] += '<br></fieldset><br>\n'
         if 'column' in ret:
             dret["column"] = ret["column"]
     test_duration = time.time() - ts_start
     dret["txt"] += f"\nSeconds: {test_duration}\n"
+    if dret['color'] == 'green':
+        dret["txt"] = f"{xytime(ts_start)}: OK\n" + dret["txt"]
+    else:
+        dret["txt"] = f"{xytime(ts_start)}: KO\n" + dret["txt"]
     dret["timing"] = test_duration
     return dret
 
