@@ -68,6 +68,8 @@ def dohttp(hostname, urls, column):
     hdata = ""
     httpstate = ""
     httpcount = 0
+    dret = {}
+    dret["certs"] = {}
     for url in urls:
         options = ""
         check_content = None
@@ -105,14 +107,14 @@ def dohttp(hostname, urls, column):
         if httpcount > 0:
             httpstate += "; "
         httpcount += 1
-        certinfo = None
+        cret = None
         # self.debug("\tDEBUG: http %s" % url)
         ts_http_start = time.time()
         try:
             r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True)
             if verify and 'https' in url:
                 #cert = r.raw.connection.sock.getpeercert()
-                certinfo = show_cert(r.raw.connection.sock, hostname)
+                cret = show_cert(r.raw.connection.sock.getpeercert(), hostname)
             hdata += f"&green {url} - OK\n\n"
             scode = str(r.status_code)
             sneed = str(need_httpcode)
@@ -156,15 +158,15 @@ def dohttp(hostname, urls, column):
 #            else:
 #                hdata += f"&red {url} - KO\n"
 #                httpstate += "KO"
-        if certinfo:
-            hdata += certinfo + "\n\n"
+        if cret:
+            hdata += cret["txt"] + "\n\n"
+            dret["certs"][url] = cret
         if options != "":
             hdata += f"xython options: {options}\n"
         hdata += f'</fieldset><br>'
     now = time.time()
     fdata = f"{xytime(now)}: {httpstate}\n"
     test_duration = now - ts_start
-    dret = {}
     dret["hostname"] = hostname
     dret["color"] = color
     dret["txt"] = fdata + hdata
@@ -267,38 +269,45 @@ def get_cn(t):
     ret["name"] = r
     return ret
 
-def show_cert(ssock, hostname):
-    #print(f"DEBUG: show_cert for {hostname}")
-    cert = ssock.getpeercert()
+def show_cert(cert, hostname):
+    cret = {}
+    cret['txt'] = ''
+    cret['expire'] = None
+    #print(f"DEBUG: show_cert for {hostname} {cert}")
     if 'subject' not in cert:
         print("===================================")
         print("ERROR no subject")
         print(f"cert={cert}")
-        return "Failed to get certificate for {hostname}"
+        cret["txt"] = f"Failed to get certificate for {hostname}"
+        return cret
     else:
         ret = get_cn(cert['subject'])
     if "name" not in ret:
-        return f"Failed to get certificate for {hostname}"
-    certinfo = f"Server certificate:\n\tSubject: {ret['name']}\n"
-    certinfo += f"\tstart date: {cert['notBefore']}\n"
-    certinfo += f"\texpire date:{cert['notAfter']}\n"
+        cret["txt"] = f"Failed to get certificate for {hostname}"
+        return cret
+    cret["txt"] = f"Server certificate:\n\tSubject: {ret['name']}\n"
+    cret["txt"] += f"\tstart date: {cert['notBefore']}\n"
+    cret["txt"] += f"\texpire date:{cert['notAfter']}\n"
     ret = get_cn(cert['issuer'])
-    certinfo += f"\tissuer:{ret['name']}\n"
+    cret["txt"] += f"\tissuer:{ret['name']}\n"
     now = time.time()
     date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
     expire =  date.timestamp()
-    certinfo += f"expire in {(expire - now) / 86400} days\n"
+    expire_days = (expire - now) / 86400
+    cret["txt"] += f"expire in {expire_days} days\n"
+    cret["expire"] = expire_days
     # TODO key size
     # TODO signature used
     # TODO cipher used
 
-    return certinfo
+    return cret
 
 def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expect, p_options):
     ts_start = time.time()
     dret = {}
     dret["color"] = 'red'
     dret['column'] = protoname
+    dret['certs'] = {}
     thostname = hostname
     tokens = url.split(':')
     i = 1
@@ -356,7 +365,9 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
             dret["color"] = 'green'
             dret["txt"] = f"Service {protoname} on {hostname} is OK\n\nconnected successfully on {address}\n"
         if context.check_hostname:
-            dret["txt"] += show_cert(ssock, hostname) + "\n\n"
+            cret = show_cert(ssock.getpeercert(), hostname)
+            dret["txt"] += cret["txt"] + '\n\n'
+            dret["certs"][url] = cret
         else:
             dret["txt"] += "Cannot test certificate since verify=0\n\n"
     except socket.gaierror as e:
@@ -381,10 +392,13 @@ def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect,
     dret["column"] = protoname
     dret["color"] = 'green'
     dret["txt"] = ""
+    dret["certs"] = {}
     for url in urls:
         dret["txt"] += f'<fieldset><legend>{url}</legend>\n'
         if p_options and "ssl" in p_options:
             ret = do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expect, p_options)
+            for u in ret["certs"]:
+                dret["certs"][u] = ret["certs"][u]
         else:
             ret = do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options)
         dret["color"] = setcolor(ret["color"], dret["color"])
