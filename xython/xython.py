@@ -71,6 +71,7 @@ class xy_host:
         self.tags = None
         self.tags_read = False
         self.tags_known = []
+        self.tags_error = []
         self.tags_unknown = []
         # string reported by client
         self.client_version = None
@@ -93,6 +94,9 @@ class xy_host:
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
+        self.certs = {}
+        self.sslwarn = 30
+        self.sslalarm = 10
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -687,6 +691,20 @@ class xythonsrv:
                 if tag[0:4] == 'snmp':
                     H.tags_known.append(tag)
                     continue
+                if tag[0:8] == 'ssldays=':
+                    tokens = tag[8:].split(':')
+                    if len(tokens) != 2:
+                        H.tags_error.append(tag)
+                        continue
+                    if not tokens[0].isnumeric():
+                        H.tags_error.append(tag)
+                        continue
+                    if not tokens[1].isnumeric():
+                        H.tags_error.append(tag)
+                        continue
+                    H.sslwarn = int(tokens[0])
+                    H.sslalarm = int(tokens[1])
+                    continue
                 self.log("todo", f"TODO hosts: tag={tag}")
                 self.debug(f"\tDEBUG: unknow tag={tag}xxx")
                 H.tags_unknown.append(tag)
@@ -860,8 +878,11 @@ class xythonsrv:
             cdata += f"Client S/W: {H.client_version}\n"
         cdata += f"TAGS={H.tags_known}\n"
         cdata += f"TAGS not handled {H.tags_unknown}\n"
+        cdata += f"TAGS with error {H.tags_error}\n"
         if len(H.tags_unknown):
             color = 'yellow'
+        if len(H.tags_error):
+            color = 'red'
         # TODO infinite time
         self.column_update(hostname, "info", color, int(time.time()), cdata, 365 * 24 * 3600, "xythond")
 
@@ -1070,6 +1091,7 @@ class xythonsrv:
         hostcols = {}
         dirFiles = os.listdir(histdir)
         for hostcol in dirFiles:
+            #self.debug(f"DEBUG: read_hist hostcol={hostcol} from {histdir} for {name}")
             # TODO does column has a character restrictions ?
             if not re.match(r'%s\.[a-z0-9_-]+' % name, hostcol):
                 continue
@@ -1231,6 +1253,7 @@ class xythonsrv:
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
+
     def do_tests_rip(self):
         self.celery_workers = celery.current_app.control.inspect().ping()
         if self.celery_workers is None:
@@ -1250,6 +1273,13 @@ class xythonsrv:
                 ret = ctask.get()
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
                 self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], 200, "xython-tests")
+                if "certs" in ret:
+                    #self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
+                    for url in ret["certs"]:
+                        H = self.find_host(ret["hostname"])
+                        H.certs[url] = ret["certs"][url]
+                    if len(ret["certs"]):
+                        self.do_sslcert(ret["hostname"])
                 self.celtasks.remove(ctask)
                 name = f'{ret["hostname"]}_{ret["type"]}'
                 if name not in self.celerytasks:
@@ -1260,6 +1290,28 @@ class xythonsrv:
         self.stat("tests-rip", ts_end - ts_start)
         self.stat("tests-remains", len(self.celtasks))
         return
+
+    def do_sslcert(self, hostname):
+        color = 'green'
+        H = self.find_host(hostname)
+        if H is None:
+            return
+        cdata = f"{xytime(time.time())} - sslcert\n"
+        for url in H.certs:
+            #self.debug(f"DEBUG: sslcert handle {url}")
+            cdata += f"<fieldset><legend>{url}</legend>\n"
+            cdata += f"{H.certs[url]['txt']}\n"
+            expire = H.certs[url]["expire"]
+            if expire <= H.sslalarm:
+                cdata += f"&red expire in {expire} days\n"
+                color = setcolor('red', color)
+            elif expire <= H.sslwarn:
+                cdata += f"&yellow expire in {expire} days\n"
+                color = setcolor('yellow', color)
+            else:
+                cdata += f"&green expire in {expire} days (WARN={H.sslwarn} CRIT={H.sslalarm})\n"
+            cdata += f"</fieldset>\n"
+        self.column_update(hostname, "sslcert", color, int(time.time()), cdata, 365 * 24 * 3600, "sslcert")
 
     # TODO hardcoded hostname
     def do_xythond(self):
