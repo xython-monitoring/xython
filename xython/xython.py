@@ -684,6 +684,9 @@ class xythonsrv:
                     H.add_test("http", url, None, "http", True, False)
                     H.tags_known.append(tag)
                     continue
+                if tag[0:4] == 'snmp':
+                    H.tags_known.append(tag)
+                    continue
                 self.log("todo", f"TODO hosts: tag={tag}")
                 self.debug(f"\tDEBUG: unknow tag={tag}xxx")
                 H.tags_unknown.append(tag)
