@@ -8,6 +8,7 @@ WorkingDirectory=/var/lib/xython
 Restart=always
 User=xython
 Group=xython
+RuntimeDirectory=xython
 
 [Install]
 WantedBy=multi-user.target
