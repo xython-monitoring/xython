@@ -901,11 +901,16 @@ default via the \-\-trace option.
 .SH SNMP TESTS
 .IP snmp[:disk][:memory][:community=name]
 The snmp tag enable using SNMP for the host.
-The community could be set by community=xxx if different than public.
-Setting disk or memory enable gathering information via SNMP.
+.br
+The community could be set by community=xxx if different than "public".
+.br
+Setting "disk" or "memory" tags enables gathering thoses information via SNMP on their respective column.
 .br
 If $ETCDIR/snmp.d/$HOSTNAME exists and has content with the following format:
+.br
 RRDNAME;OID;LINENAME
+.br
+xython-snmpd will collect them and graph in the snmp column.
 
 Example:
 .br
@@ -917,6 +922,9 @@ cpu;.1.3.6.1.4.1.2021.11.51.0;idle
 .br
 cpu;.1.3.6.1.4.1.2021.11.53.0;nice
 .br
+.br
+This is only supported by xython
+
 
 .SH SIMPLE NETWORK TESTS
 These tests perform a simple network test of a service by connecting
