@@ -37,7 +37,7 @@ The goal is to have the minimum in non-core modules and only modules availlable 
 
 ### package install
 #### using the APT repository
-First you need to addi xython repository (bookworm only for the moment)
+First you need to add xython repository
 Add in /etc/apt/sources.list.d/xython.list
 > deb https://www.xython.fr/mirror/bookworm /
 
@@ -46,6 +46,9 @@ For bullseye simply replace bookworm by bullseye in the URL.
 And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
 > apt-get install gnupg
 
+> gpg -o /etc/apt/trusted.gpg.d/xython.gpg --dearmour pgp-key.public
+
+Or the old way:
 > apt-key add pgp-key.public
 
 #### manual debian setup
@@ -234,7 +237,6 @@ This is a uncomplete list
 * re-read hosts.cfg
 * use PINGCOLUMN
 * add conn by default on hosts
-* apt-key warn about deprecated
 * rename pgp public key
 
 # List of xython install path (FHS)
