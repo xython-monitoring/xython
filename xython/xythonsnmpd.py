@@ -10,6 +10,7 @@ from importlib.metadata import version
 from pysnmp import hlapi
 from xython import xythonsrv
 from xython.common import setcolor
+import pyasn1
 
 def snmp_get(oid, H):
     ret = {}
@@ -21,7 +22,11 @@ def snmp_get(oid, H):
     hlapi.ContextData(),
     hlapi.ObjectType(hlapi.ObjectIdentity(oid))
     )
-    errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+    try:
+        errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+    except pyasn1.error.PyAsn1Error:
+        ret["errmsg"] = f"Probable malformed OID {oid}"
+        return ret
 
     if errorIndication:
         #print(f"errorIndication={errorIndication}")
