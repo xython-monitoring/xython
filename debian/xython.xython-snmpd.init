@@ -15,8 +15,8 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/xython-snmpd
 DAEMON_ARGS="--etcdir /etc/xython"
-NAME=xythond
-DESC=xythond
+NAME=xython-snmpd
+DESC=xython-snmpd
 
 RUNDIR=/run/xython-snmpd
 PIDFILE=$RUNDIR/xython-snmpd.pid
