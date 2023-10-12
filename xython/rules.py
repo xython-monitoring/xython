@@ -337,6 +337,7 @@ class xy_rule_cpu():
             return None
         load = loadavg.group(1).replace(',', '.')
         self.xload = float(load)
+        ret["la"] = load
         if self.xload >= self.loadpanic:
             ret["LOAD"] = {}
             ret["LOAD"]["color"] = 'red'
@@ -435,6 +436,7 @@ class xy_rule_mem():
                 color = 'red'
             elif memusedpct >= self.warn:
                 color = 'yellow'
+            ret['v'] = memusedpct
             ret["color"] = color
             ret["txt"] = f"&{color} {T:16}{memused:11}M{memtotal:11}M{memusedpct:11}% WARN={self.warn:4} PANIC={self.panic:4}\n"
         if what == "MEMSWAP":
@@ -443,6 +445,7 @@ class xy_rule_mem():
                 color = 'red'
             elif swappct >= self.warn:
                 color = 'yellow'
+            ret['v'] = swappct
             ret["color"] = color
             ret["txt"] = f"&{color} {T:16}{swapused:11}M{swaptotal:11}M{swappct:11}% WARN={self.warn:4} PANIC={self.panic:4}\n"
         if what == "MEMACT":
@@ -451,6 +454,7 @@ class xy_rule_mem():
                 color = 'red'
             elif memactpct >= self.warn:
                 color = 'yellow'
+            ret['v'] = memactpct
             ret["color"] = color
             ret["txt"] = f"&{color} {T:16}{memact:11}M{memtotal:11}M{memactpct:11}% WARN={self.warn:4} PANIC={self.panic:4}\n"
         return ret
