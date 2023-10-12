@@ -49,6 +49,10 @@ from .rules import xy_rule_mem
 from .rules import xy_rule_cpu
 from .rules import xy_rule_sensors
 
+RRD_COLOR = ["0000FF", "FF0000", "00CC00", "FF00FF", "555555", "880000", "000088", "008800",
+             "008888", "888888", "880088", "FFFF00", "888800", "00FFFF", "00FF00", "AA8800",
+             "AAAAAA", "DD8833", "DDCC33", "8888FF", "5555AA", "B428D3", "FF5555", "DDDDDD",
+             "AAFFAA", "AAFFFF", "FFAAFF", "FFAA55", "55AAFF", "AA55FF"]
 
 class xy_protocol:
     def __init__(self):
@@ -200,6 +204,7 @@ class xythonsrv:
         self.daemon_name = "xythond"
         self.protocols = {}
         self.time_read_protocols = 0
+        self.graphscfg = {}
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -1548,14 +1553,120 @@ class xythonsrv:
             return '/'
         return path.replace(column, '').replace(',', '/').replace('.rrd', '')
 
+    def rrd_color(self, i):
+        if i < 0:
+            i = 0
+        if i < len(RRD_COLOR):
+            return RRD_COLOR[i]
+        return '000000'
+
+    def load_graphs_cfg(self):
+        try:
+            fgraphs = open(self.etcdir + "/graphs.cfg", 'r')
+        except:
+            self.error("ERROR: cannot open hosts.cfg")
+            return RET_ERR
+        lines = fgraphs.readlines()
+        section = None
+        for line in lines:
+            line = line.rstrip()
+            line = line.lstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            if line[0] == '[':
+                if ']' not in line:
+                    #error
+                    continue
+                section = line.split('[')[1]
+                section = section.split(']')[0]
+                #print(f"SECTION is {section}")
+                self.graphscfg[section] = {}
+                self.graphscfg[section]["info"] = []
+                continue
+            if section is None:
+                continue
+            tokens = line.split(" ")
+            keyword = tokens.pop(0)
+            if keyword == 'YAXIS':
+                self.graphscfg[section]['YAXIS'] = ' '.join(tokens)
+                continue
+            if keyword == 'TITLE':
+                self.graphscfg[section]['TITLE'] = ' '.join(tokens)
+                continue
+            if keyword == 'FNPATTERN':
+                self.graphscfg[section]['FNPATTERN'] = tokens[0]
+                continue
+            #print(f"{section} {line}")
+            self.graphscfg[section]["info"].append(line)
+
+    # TODO we can generate RRD while writing to it https://www.mail-archive.com/rrd-users@lists.oetiker.ch/msg13016.html
+    def gen_rrd2(self, hostname):
+        self.debug(f"GENERATE RRD FOR {hostname}")
+        for graph in self.graphscfg:
+            if graph not in ['disk', 'inode', 'memory', 'la']:
+                continue
+            self.debug(f"DEBGUG: check {graph}")
+            rrdlist = []
+            if 'FNPATTERN' in self.graphscfg[graph]:
+                rrdpattern = self.graphscfg[graph]["FNPATTERN"]
+                for rrd in os.listdir(f"{self.xt_rrd}/{hostname}/"):
+                    if re.match(rrdpattern, rrd):
+                        rrdlist.append(rrd)
+            else:
+                rrdpath = f'{self.xt_rrd}/{hostname}/{graph}.rrd'
+                if os.path.exists(rrdpath):
+                    rrdlist.append(f"{graph}.rrd")
+            if len(rrdlist) == 0:
+                continue
+            pngpath = f"{self.wwwdir}/{hostname}/{graph}.png"
+            base = [pngpath,
+                '--width=576', '--height=140',
+                '--vertical-label="% Full"',
+                '--start=end-96h'
+                ]
+            if 'YAXIS' in self.graphscfg[graph]:
+                base.append(f'--vertical-label={self.graphscfg[graph]["YAXIS"]}')
+            else:
+                base.append(f'--vertical-label="unset"')
+            if 'TITLE' in self.graphscfg[graph]:
+                base.append(f'--title={self.graphscfg[graph]["TITLE"]} on {hostname}')
+            else:
+                base.append(f'--title={graph} on {hostname}')
+            i = 0
+            for rrd in rrdlist:
+                fname = str(rrd.replace(".rrd", ""))
+                rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
+                label = self.rrd_label(fname, graph)
+                info = rrdtool.info(rrdfpath)
+                for dsname in self.get_ds_name(info):
+                    template = self.graphscfg[graph]["info"]
+                    for line in template:
+                        line = line.replace('@COLOR@', self.rrd_color(i))
+                        line = line.replace('@RRDIDX@', f"{dsname}{i}")
+                        line = line.replace('@RRDFN@', rrdfpath)
+                        if graph == 'la':
+                            line = line.replace('la.rrd', rrdfpath)
+                        line = line.replace('@RRDFN@', rrdfpath)
+                        line = line.replace('@RRDPARAM@', f"{label}")
+                        base.append(line)
+                    i += 1
+            rrdup = xytime(time.time()).replace(':', '\\:')
+            base.append(f'COMMENT:Updated\\: {rrdup}')
+            ret = rrdtool.graph(base)
+            # TODO check this ret
+            os.chmod(pngpath, 0o644)
+
     def gen_rrds(self):
         if not has_rrdtool:
             return True
         #self.debug("GEN RRDS")
         hosts = os.listdir(f"{self.xt_rrd}")
         for hostname in hosts:
-            for column in ["disk", 'inode', 'sensor', 'snmp']:
+            for column in ['sensor', 'snmp']:
                 self.gen_rrd(hostname, column)
+            self.gen_rrd2(hostname)
 
     # give a DS name from a sensor name
     def rrd_getdsname(self, sname):
@@ -2458,6 +2569,7 @@ class xythonsrv:
 # read hosts.cfg and analysis.cfg
 # check if thoses files need to be reread
     def read_configs(self):
+        self.load_graphs_cfg()
         # TODO retcode
         self.read_protocols()
         ret = self.read_hosts()
