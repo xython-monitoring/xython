@@ -471,8 +471,11 @@ class xythonsrv:
             html += '</CENTER>\n'
 
             if has_rrdtool:
-                if column in ['disk', 'inode', 'sensor', 'snmp']:
-                    html += f'<CENTER><img src="/xython/{hostname}/{column}.png"></CENTER>'
+                if column in ['cpu', 'disk', 'inode', 'memory', 'sensor', 'snmp']:
+                    rrdname = column
+                    if column == 'cpu':
+                        rrdname = 'la'
+                    html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
 
 
         # history
@@ -1753,6 +1756,9 @@ class xythonsrv:
         if not has_rrdtool:
             return
         fname = f"{rrdname}{self.rrd_pathname(ds)}"
+        # hardcoded load is 'la'
+        if ds == 'la':
+            fname = 'la'
         rrdpath = f"{self.xt_rrd}/{hostname}"
         if not os.path.exists(rrdpath):
             os.mkdir(rrdpath)
@@ -1762,6 +1768,10 @@ class xythonsrv:
             DS = "DS:pct:GAUGE:600:0:U"
             if ds == 'disk':
                 DS = "DS:pct:GAUGE:600:0:100"
+            if ds == 'real' or ds == 'swap' or ds == 'actual':
+                DS = 'DS:realmempct:GAUGE:600:0:U'
+            if ds == 'la':
+                DS = 'DS:la:GAUGE:600:0:U'
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
                 "RRA:AVERAGE:0.5:1:1200",
                 DS)
@@ -1816,6 +1826,12 @@ class xythonsrv:
                 ret = self.rules[memtype].memcheck(buf, memtype)
             sbuf += ret["txt"]
             color = setcolor(ret["color"], color)
+            rrdmemtype = 'real'
+            if memtype == 'MEMACT':
+                rrdmemtype = 'actual'
+            if memtype == 'MEMSWAP':
+                rrdmemtype = 'swap'
+            self.do_rrd(hostname, 'memory', rrdmemtype, ret['v'])
 
         sbuf += buf
         self.column_update(hostname, "memory", color, now, sbuf, 4 * 60, sender)
@@ -1834,6 +1850,7 @@ class xythonsrv:
         sbuf = f"{xytime(now)} {udisplay}\n"
         # Check with global rules
         gret = self.rules["CPU"].cpucheck(buf)
+        self.do_rrd(hostname, 'la', 'la', gret['la'])
         # check gret not None
         if H.rules["CPU"] is not None:
             # check with dedicated host rules
