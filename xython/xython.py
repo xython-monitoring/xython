@@ -193,6 +193,7 @@ class xythonsrv:
         self.xy_data = None
         self.xt_data = None
         self.xt_rrd = None
+        self.xt_state = None
         self.vars = {}
         self.debugs = []
         self.msgn = 0
@@ -1014,8 +1015,20 @@ class xythonsrv:
                 return
             data = ''.join(rdata["data"])
         self.save_histlogs(hostname, cname, data, ts, color, updater)
+        self.save_state(hostname, cname, color, int(ts), int(expiretime))
         ts_end = time.time()
         self.stat("COLUPDATE", ts_end - ts_start)
+
+    def save_state(self, hostname, cname, color, ts_start, ts_expire):
+        if self.xythonmode == 0:
+            return
+        expdir = f"{self.xt_state}/{hostname}"
+        if not os.path.exists(expdir):
+            os.mkdir(expdir)
+        fexpire = f"{expdir}/{cname}"
+        f = open(fexpire, 'w')
+        f.write(f"{color} {ts_start} {ts_expire}")
+        f.close()
 
     def get_histlogs(self, hostname, column, ts):
         if hostname is None or column is None or ts is None:
@@ -1070,6 +1083,45 @@ class xythonsrv:
         f.write(f"Client data ID {int(ts)}\n")
         f.close()
 
+    # replacement for read_hist
+    def load_state(self, hostname):
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: read_hist: {hostname} not found")
+            return False
+        if H.hist_read:
+            return True
+        self.debug(f"DEBUG: read_hist of {hostname}")
+        H.hist_read = True
+        expdir = f"{self.xt_state}/{hostname}"
+        try:
+            dirFiles = os.listdir(expdir)
+        except:
+            self.error(f"ERROR: fail to open {expdir}")
+            return False
+        for cname in dirFiles:
+            if cname == "info":
+                continue
+            self.debug(f"DEBUG: load_state {hostname} {cname}")
+            try:
+                fstate = f"{expdir}/{cname}"
+                f = open(fstate, 'r')
+                data = f.read()
+                f.close()
+                #print(data)
+                tokens = data.split(" ")
+                if len(tokens) != 3:
+                    self.error(f"ERROR: fail to load {expdir}/{cname}: invalid data")
+                    continue
+                color = tokens[0]
+                ts_start = int(tokens[1])
+                expire = int(tokens[2])
+                #self.debug(f"DEBUG: expire of {hostname}.{cname} is {expire} {xytime(expire)}")
+                self.column_set(hostname, cname, color, ts_start, expire)
+            except:
+                self.error(f"ERROR: fail to load {expdir}/{cname}")
+                continue
+
     # read hist of a host, creating columns
     # this permit to detect current blue
     # a dropped column is detected by checking existence of host.col files BUT on my system some
@@ -1078,6 +1130,8 @@ class xythonsrv:
     # that I perfectly understood format of all file
     # xython TODO: create hostname subdir instead of all in one directory
     def read_hist(self, name):
+        # TODO read_hist could be converted as a hist checker
+        return self.load_state(name)
         H = self.find_host(name)
         if H is None:
             self.error(f"ERROR: read_hist: {name} not found")
@@ -2549,6 +2603,7 @@ class xythonsrv:
         self.xt_histdir = f"{self.xt_data}/hist/"
         self.xt_rrd = f"{self.xt_data}/rrd/"
         self.xt_acks = f"{self.xt_data}/acks/"
+        self.xt_state = f"{self.xt_data}/state/"
         if self.xythonmode > 0:
             if not os.path.exists(self.xt_histlogs):
                 os.mkdir(self.xt_histlogs)
@@ -2562,6 +2617,8 @@ class xythonsrv:
                 os.mkdir(self.xt_rrd)
             if not os.path.exists(self.xt_acks):
                 os.mkdir(self.xt_acks)
+            if not os.path.exists(self.xt_state):
+                os.mkdir(self.xt_state)
         self.db = self.xt_data + '/xython.db'
         self.debug(f"DEBUG: DB is {self.db}")
         print(f"DEBUG: DB === {self.db}")
