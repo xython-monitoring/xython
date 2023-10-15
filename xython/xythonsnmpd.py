@@ -183,24 +183,40 @@ def do_snmpd_client(X, H):
 
 def do_snmpd(X):
     for H in X.xy_hosts:
-        X.debug(f"DEBUG: SNMP for {H.name}")
         color = 'green'
         buf = ''
-        if len(H.snmp_columns) == 0 and len(H.oidlist) == 0:
+        if len(H.snmp_columns) == 0 and len(H.oids) == 0:
             continue
+        X.debug(f"DEBUG: SNMP for {H.name}")
         if len(H.snmp_columns) > 0:
             dret = do_snmpd_client(X, H)
             buf += dret["txt"]
             color = setcolor(dret["color"], color)
-        for o in H.oidlist:
-            X.debug(f"DEBUG: handle SNMP OID {o['oid']}")
-            ret = snmp_get(o['oid'], H)
-            if ret['err'] == 0:
-                buf += f"&green did {o['oid']}\n"
-                X.do_rrd(H.name, "snmp", o['name'], ret["v"])
-            else:
-                buf += f"&red did {o['oid']} {ret['errmsg']}\n"
-                color = 'red'
+        for rrd in H.oids:
+            rrdcolor = 'green'
+            rrdbuf = ''
+            X.debug(f"DEBUG: handle SNMP OID {rrd}")
+            for obj in H.oids[rrd]:
+                X.debug(f"DEBUG: handle SNMP custom {rrd} {obj}")
+                dsnames = []
+                values = []
+                dsspecs = []
+                for oid in H.oids[rrd][obj]:
+                    dsnames.append(oid['dsname'])
+                    dsspecs.append(oid['dsspec'])
+                    ret = snmp_get(oid['oid'], H)
+                    if ret['err'] == 0:
+                        buf += f"&green did {oid['oid']}\n"
+                        rrdbuf += f"&green did {oid['oid']}\n"
+                        values.append(str(ret["v"]))
+                    else:
+                        buf += f"&red did {oid['oid']} {ret['errmsg']}\n"
+                        rrdbuf += f"&red did {oid['oid']} {ret['errmsg']}\n"
+                        color = 'red'
+                        rrdcolor = 'red'
+                X.do_rrd(H.name, "ifstat", obj, ":".join(dsnames), ":".join(values), dsspecs)
+            rrdbuf = f"status+10m {H.name}.{rrd} {rrdcolor}\n" + buf
+            X.unet_send(rrdbuf)
         buf = f"status+10m {H.name}.snmp {color}\n" + buf
         X.unet_send(buf)
 
@@ -226,7 +242,10 @@ def main():
     X.read_hosts()
     X.hosts_check_snmp_tags()
     while True:
+        ts_start = time.time()
         do_snmpd(X)
-        time.sleep(20)
+        ts_end = time.time()
+        d = ts_end - ts_start
+        time.sleep(300 - d)
 
     sys.exit(0)

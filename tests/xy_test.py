@@ -552,7 +552,7 @@ def test_full():
     lc = X.get_columns("test3")
     assert lc == ['info']
 
-    X.do_rrd("test1", "test", "t", 444)
+    X.do_rrd("test1", "test", "t", "t", 444, "DS:t:GAUGE:600:-280:5000")
     if has_rrdtool:
         rrdfpath = f"{X.xt_rrd}/test1/testt.rrd"
         info = rrdtool.info(rrdfpath)
@@ -643,6 +643,15 @@ def test_tests():
     X.dump_tests()
     X.gen_tests()
 #    X.do_tests()
+
+def test_rrd():
+    X = xythonsrv()
+    # test the truncating
+    assert X.rrd_getdsname("01234567890123456789") == "0123456789012345678"
+    # test space replacement
+    assert X.rrd_getdsname("one test") == "one_test"
+    assert X.rrd_pathname("disk", '/') == "disk,root"
+    assert X.rrd_pathname("disk", '/test') == "disk,test"
 
 def test_celery_ping():
     ret = ping("test", "-invalid", False, False)

@@ -37,20 +37,37 @@ def ping(hostname, t, doipv4, doipv6):
     env = os.environ
     env["LANG"] = 'C'
     env["LC_ALL"] = 'C'
+    # always ping with -c>1, this detect some error in switch trunking (like 1 packet out of x is bad)
     if not doipv4 and not doipv6:
-        ret = subprocess.run(["ping", "-c", "1", t], capture_output=True)
+        ret = subprocess.run(["ping", "-c", "2", t], capture_output=True)
         if ret.returncode != 0:
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
+        re_rtts = re.search("[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/", hdata)
+        if re_rtts is not None:
+            rtts = re_rtts.group(0)
+            tokens = rtts.split('/')
+            if len(tokens) == 4:
+                rtt_min = tokens[0]
+                dret["rtt_avg"] = tokens[1]
+                rtt_max = tokens[2]
     if doipv4:
-        ret = subprocess.run(["ping", "-4", "-c", "1", t], capture_output=True)
+        ret = subprocess.run(["ping", "-4", "-c", "2", t], capture_output=True)
         if ret.returncode != 0:
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
+        re_rtts = re.search("[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/", hdata)
+        if re_rtts is not None:
+            rtts = re_rtts.group(0)
+            tokens = rtts.split('/')
+            if len(tokens) == 4:
+                rtt_min = tokens[0]
+                dret["rtt_avg"] = tokens[1]
+                rtt_max = tokens[2]
     if doipv6:
-        ret = subprocess.run(["ping", "-6", "-c", "1", t], capture_output=True)
+        ret = subprocess.run(["ping", "-6", "-c", "2", t], capture_output=True)
         if ret.returncode != 0:
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")

@@ -82,7 +82,7 @@ class xy_host:
         self.osversion = None
         self.uname = None
         # for SNMP
-        self.oidlist = []
+        self.oids = {}
         self.snmp_disk_last = None
         self.snmp_disk_oid = []
         self.snmp_columns = []
@@ -184,6 +184,7 @@ class xythonsrv:
         self.ts_tests = time.time()
         self.ts_check = time.time()
         self.ts_read_configs = time.time()
+        self.ts_genrrd = time.time()
         self.expires = []
         self.stats = {}
         self.uptime_start = time.time()
@@ -206,6 +207,17 @@ class xythonsrv:
         self.protocols = {}
         self.time_read_protocols = 0
         self.graphscfg = {}
+        # list rrd to display per column
+        self.rrd_column = {}
+        self.rrd_column["cpu"] = ['la']
+        self.rrd_column["disk"] = ['disk']
+        self.rrd_column["inode"] = ['inode']
+        self.rrd_column["memory"] = ['memory']
+        self.rrd_column["snmp"] = ['snmp']
+        self.rrd_column["conn"] = ['connrtt']
+        self.rrd_column["ifstat"] = ['ifstat']
+        # timings
+        self.RRD_INTERVAL = 5 * 60
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -471,12 +483,12 @@ class xythonsrv:
             html += '<button type="submit">Send blue</button></form>\n'
             html += '</CENTER>\n'
 
+            #html += f"Status valid until {xytime()}"
+
             if has_rrdtool:
-                if column in ['cpu', 'disk', 'inode', 'memory', 'sensor', 'snmp']:
-                    rrdname = column
-                    if column == 'cpu':
-                        rrdname = 'la'
-                    html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
+                if column in self.rrd_column:
+                    for rrdname in self.rrd_column[column]:
+                        html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
 
 
         # history
@@ -589,13 +601,22 @@ class xythonsrv:
                 continue
             self.debug(f"\tDEBUG: read {line}")
             t = line.split(";")
-            #goid = oid(t[0], t[1], t[2])
+            if len(t) < 5:
+                self.error(f"ERROR: invalid SNMP custom graph line {line}")
+                # TODO error
+                continue
             goid = {}
-            goid["rrd"] = t[0]
-            goid["oid"] = t[1]
-            goid["name"] = t[2]
-            H.oidlist.append(goid)
-            #print(H.oidlist)
+            goid["oid"] = t[2]
+            goid["dsname"] = t[3]
+            goid["dsspec"] = t[4]
+            rrd = t[0]
+            obj = t[1]
+            if rrd not in H.oids:
+                H.oids[rrd] = {}
+            if obj not in H.oids[rrd]:
+                H.oids[rrd][obj] = []
+            H.oids[rrd][obj].append(goid)
+            self.rrd_column[obj] = obj
 
     def hosts_check_snmp_tags(self):
         for H in self.xy_hosts:
@@ -699,6 +720,7 @@ class xythonsrv:
                     continue
                 if tag[0:4] == 'snmp':
                     H.tags_known.append(tag)
+                    self.read_snmp_hosts(H.name)
                     continue
                 if tag[0:8] == 'ssldays=':
                     tokens = tag[8:].split(':')
@@ -1153,10 +1175,10 @@ class xythonsrv:
         hostcols = {}
         dirFiles = os.listdir(histdir)
         for hostcol in dirFiles:
-            #self.debug(f"DEBUG: read_hist hostcol={hostcol} from {histdir} for {name}")
             # TODO does column has a character restrictions ?
             if not re.match(r'%s\.[a-z0-9_-]+' % name, hostcol):
                 continue
+            self.debug(f"DEBUG: read_hist hostcol={hostcol} from {histdir} for {name}")
             # The value is "do we have saw it ?"
             column = re.sub(f'{name}.', '', hostcol)
             hostcols[column] = False
@@ -1333,6 +1355,9 @@ class xythonsrv:
                     # TODO better handle this problem, easy to generate by removing ping
                     continue
                 ret = ctask.get()
+                hostname = ret["hostname"]
+                testtype = ret["type"]
+                column = ret["column"]
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
                 self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], 200, "xython-tests")
                 if "certs" in ret:
@@ -1348,6 +1373,8 @@ class xythonsrv:
                     self.error(f"ERROR: BUG {name} not found")
                 else:
                     del(self.celerytasks[name])
+                if testtype == 'conn' and "rtt_avg" in ret:
+                    self.do_rrd(hostname, column, "rtt", 'sec', ret["rtt_avg"], ['DS:sec:GAUGE:600:0:U'])
         ts_end = time.time()
         self.stat("tests-rip", ts_end - ts_start)
         self.stat("tests-remains", len(self.celtasks))
@@ -1413,7 +1440,6 @@ class xythonsrv:
             self.do_tests()
             self.do_tests_rip()
             self.ts_tests = now
-            self.gen_rrds()
         if now > self.ts_check + 1:
             self.check_purples()
             self.check_acks()
@@ -1432,6 +1458,9 @@ class xythonsrv:
         if now > self.ts_read_configs + 60:
             self.read_configs()
             self.ts_read_configs = now
+        if now > self.ts_genrrd + self.RRD_INTERVAL:
+            self.gen_rrds()
+            self.ts_genrrd = now
         if self.has_pika:
             try:
                 self.channel.basic_publish(exchange='xython-ping', routing_key='', body="PING")
@@ -1600,15 +1629,19 @@ class xythonsrv:
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
         return RET_NEW
 
-    def rrd_pathname(self, path):
-        if path == '/':
-            return ',root'
-        return path.replace('/', ',').replace(' ', '_')
+    def rrd_pathname(self, cname, ds):
+        if ds == 'la':
+            return 'la'
+        if cname not in ['disk', 'inode']:
+            return f"{cname}.{ds}"
+        if ds == '/':
+            return cname + ',root'
+        return cname + ds.replace('/', ',').replace(' ', '_')
 
     def rrd_label(self, path, column):
         if path == f'{column},root':
             return '/'
-        return path.replace(column, '').replace(',', '/').replace('.rrd', '')
+        return path.replace(f"{column}.", '').replace(column, '').replace(',', '/').replace('.rrd', '')
 
     def rrd_color(self, i):
         if i < 0:
@@ -1660,11 +1693,10 @@ class xythonsrv:
 
     # TODO we can generate RRD while writing to it https://www.mail-archive.com/rrd-users@lists.oetiker.ch/msg13016.html
     def gen_rrd2(self, hostname):
-        self.debug(f"GENERATE RRD FOR {hostname}")
+        #self.debug(f"GENERATE RRD FOR {hostname}")
         for graph in self.graphscfg:
-            if graph not in ['disk', 'inode', 'memory', 'la']:
+            if graph not in ['connrtt', 'disk', 'ifstat', 'inode', 'memory', 'la']:
                 continue
-            self.debug(f"DEBGUG: check {graph}")
             rrdlist = []
             if 'FNPATTERN' in self.graphscfg[graph]:
                 rrdpattern = self.graphscfg[graph]["FNPATTERN"]
@@ -1677,6 +1709,11 @@ class xythonsrv:
                     rrdlist.append(f"{graph}.rrd")
             if len(rrdlist) == 0:
                 continue
+            self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
+            basedir = f"{self.wwwdir}/{hostname}"
+            if not os.path.exists(basedir):
+                os.mkdir(basedir)
+                os.chmod(basedir, 0o755)
             pngpath = f"{self.wwwdir}/{hostname}/{graph}.png"
             base = [pngpath,
                 '--width=576', '--height=140',
@@ -1697,18 +1734,17 @@ class xythonsrv:
                 rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
                 label = self.rrd_label(fname, graph)
                 info = rrdtool.info(rrdfpath)
-                for dsname in self.get_ds_name(info):
-                    template = self.graphscfg[graph]["info"]
-                    for line in template:
-                        line = line.replace('@COLOR@', self.rrd_color(i))
-                        line = line.replace('@RRDIDX@', f"{dsname}{i}")
-                        line = line.replace('@RRDFN@', rrdfpath)
-                        if graph == 'la':
-                            line = line.replace('la.rrd', rrdfpath)
-                        line = line.replace('@RRDFN@', rrdfpath)
-                        line = line.replace('@RRDPARAM@', f"{label}")
-                        base.append(line)
-                    i += 1
+                template = self.graphscfg[graph]["info"]
+                for line in template:
+                    line = line.replace('@COLOR@', self.rrd_color(i))
+                    line = line.replace('@RRDIDX@', f"{i}")
+                    line = line.replace('@RRDFN@', rrdfpath)
+                    if graph == 'la':
+                        line = line.replace('la.rrd', rrdfpath)
+                    line = line.replace('@RRDFN@', rrdfpath)
+                    line = line.replace('@RRDPARAM@', f"{label}")
+                    base.append(line)
+                i += 1
             rrdup = xytime(time.time()).replace(':', '\\:')
             base.append(f'COMMENT:Updated\\: {rrdup}')
             ret = rrdtool.graph(base)
@@ -1718,12 +1754,14 @@ class xythonsrv:
     def gen_rrds(self):
         if not has_rrdtool:
             return True
+        ts_start = time.time()
         #self.debug("GEN RRDS")
         hosts = os.listdir(f"{self.xt_rrd}")
         for hostname in hosts:
             for column in ['sensor', 'snmp']:
                 self.gen_rrd(hostname, column)
             self.gen_rrd2(hostname)
+        self.stat("GENRRD", time.time() - ts_start)
 
     # give a DS name from a sensor name
     def rrd_getdsname(self, sname):
@@ -1805,37 +1843,27 @@ class xythonsrv:
         # TODO check this ret
         os.chmod(pngpath, 0o644)
 
-    def do_rrd(self, hostname, rrdname, ds, value):
-        #self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {ds} {value}")
+    def do_rrd(self, hostname, rrdname, obj, dsname, value, dsspec):
+        self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
         if not has_rrdtool:
             return
-        fname = f"{rrdname}{self.rrd_pathname(ds)}"
-        # hardcoded load is 'la'
-        if ds == 'la':
-            fname = 'la'
+        fname = self.rrd_pathname(rrdname, obj)
         rrdpath = f"{self.xt_rrd}/{hostname}"
         if not os.path.exists(rrdpath):
             os.mkdir(rrdpath)
         rrdfpath = f"{self.xt_rrd}/{hostname}/{fname}.rrd"
         if not os.path.exists(rrdfpath):
-            self.debug(f"DEBUG: do_rrd create for {hostname} {rrdname} {ds} {value}")
-            DS = "DS:pct:GAUGE:600:0:U"
-            if ds == 'disk':
-                DS = "DS:pct:GAUGE:600:0:100"
-            if ds == 'real' or ds == 'swap' or ds == 'actual':
-                DS = 'DS:realmempct:GAUGE:600:0:U'
-            if ds == 'la':
-                DS = 'DS:la:GAUGE:600:0:U'
+            self.debug(f"DEBUG: do_rrd create for {hostname} {rrdname} {dsname} {value}")
+            # TODO get this (RRAxxx) from somewhere else
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
-                "RRA:AVERAGE:0.5:1:1200",
-                DS)
-        rrdtool.update(rrdfpath, f"N:{value}")
+                "RRA:AVERAGE:0.5:1:1200", dsspec);
+        rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
 
     def do_sensor_rrd(self, hostname, adapter, sname, value):
         #self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
         if not has_rrdtool:
             return
-        fname = f"sensor{self.rrd_pathname(sname)}"
+        fname = self.rrd_pathname('sensor', sname)
         rrdpath = f"{self.xt_rrd}/{hostname}"
         if not os.path.exists(rrdpath):
             os.mkdir(rrdpath)
@@ -1885,7 +1913,7 @@ class xythonsrv:
                 rrdmemtype = 'actual'
             if memtype == 'MEMSWAP':
                 rrdmemtype = 'swap'
-            self.do_rrd(hostname, 'memory', rrdmemtype, ret['v'])
+            self.do_rrd(hostname, 'memory', rrdmemtype, 'realmempct', ret['v'], ['DS:realmempct:GAUGE:600:0:U'])
 
         sbuf += buf
         self.column_update(hostname, "memory", color, now, sbuf, 4 * 60, sender)
@@ -1904,7 +1932,7 @@ class xythonsrv:
         sbuf = f"{xytime(now)} {udisplay}\n"
         # Check with global rules
         gret = self.rules["CPU"].cpucheck(buf)
-        self.do_rrd(hostname, 'la', 'la', gret['la'])
+        self.do_rrd(hostname, 'la', 'la', 'la', gret['la'], ['DS:la:GAUGE:600:0:U'])
         # check gret not None
         if H.rules["CPU"] is not None:
             # check with dedicated host rules
@@ -2070,7 +2098,7 @@ class xythonsrv:
                         pct = ret["pct"]
                         mnt = ret["mnt"]
             if pct is not None:
-                self.do_rrd(hostname, column, mnt, pct)
+                self.do_rrd(hostname, column, mnt, 'pct', pct, ['DS:pct:GAUGE:600:0:100'])
         sbuf += buf
         self.column_update(hostname, column, color, now, sbuf, 4 * 60, sender)
         return
