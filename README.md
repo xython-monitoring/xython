@@ -243,8 +243,15 @@ This is a uncomplete list
 
 TODO
 
-* /etc/xython: xython specific configuration (mostly xython.cfg)
-* /usr/share/xython/:   webpage graphic
+* /etc/xython               xython specific configuratio
+* /etc/xython/snmpd.d       SNMP custom graph directory
+* /usr/share/xython/        webpage graphic
+* /var/lib/xython           base directory for xython data
+* /var/lib/xython/acks      acknowledges are store here
+* /var/lib/xython/hist      xymon like hist
+* /var/lib/xython/hostdata  xymon like hostdata
+* /var/lib/xython/rrd       base directory for RRD
+* /var/lib/xython/state     xython store current state of all status in this directory, used when starting xython to restore all status to a sane state
 
 # Documentation
 You could see online documentation at <https://www.xython.fr/hosts.cfg.5.html>
