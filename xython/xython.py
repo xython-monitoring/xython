@@ -180,11 +180,13 @@ class xythonsrv:
         self.celtasks = []
         self.celerytasks = {}
         self.celery_workers = None
+        # timestamp for doing actions
         self.ts_page = time.time()
         self.ts_tests = time.time()
         self.ts_check = time.time()
         self.ts_read_configs = time.time()
         self.ts_genrrd = time.time()
+        self.ts_xythond = time.time()
         self.expires = []
         self.stats = {}
         self.uptime_start = time.time()
@@ -218,6 +220,12 @@ class xythonsrv:
         self.rrd_column["ifstat"] = ['ifstat']
         # timings
         self.RRD_INTERVAL = 5 * 60
+        # at which interval state/client send their status
+        # default 5 minute
+        self.ST_INTERVAL = 5 * 60
+        self.NETTEST_INTERVAL = 2 * 60
+        self.XYTHOND_INTERVAL = 2 * 60
+        self.GENPAGE_INTERVAL = 30
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -249,7 +257,7 @@ class xythonsrv:
         res = self.sqc.execute(req)
 
     # used only at start, expire is set to let enough time to arrive before purpleing
-    def column_set(self, hostname, cname, color, ts, expire=60 * 6):
+    def column_set(self, hostname, cname, color, ts, expire):
         color = gcolor(color)
         now = time.time()
         req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {now} + {expire}, "{color}")'
@@ -452,7 +460,6 @@ class xythonsrv:
             res = self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
             ackinfos = self.sqc.fetchall()
             if len(ackinfos) == 1:
-                print(ackinfos)
                 ackinfo = ackinfos[0]
                 ackend = ackinfo[0]
                 if ackend is not None:
@@ -1333,7 +1340,7 @@ class xythonsrv:
                     if T.type in self.protocols:
                         self.do_generic_proto(H, T)
                         continue
-        res = self.sqc.execute(f'UPDATE tests SET next = {now} + 120 WHERE next < {now}')
+        res = self.sqc.execute(f'UPDATE tests SET next = {now} + {self.NETTEST_INTERVAL} WHERE next < {now}')
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
@@ -1359,7 +1366,7 @@ class xythonsrv:
                 testtype = ret["type"]
                 column = ret["column"]
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
-                self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], 200, "xython-tests")
+                self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 60, "xython-tests")
                 if "certs" in ret:
                     #self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
                     for url in ret["certs"]:
@@ -1431,7 +1438,7 @@ class xythonsrv:
         res = self.sqc.execute('SELECT count(next) FROM tests')
         results = self.sqc.fetchall()
         buf += f"Active tests: {results[0][0]}\n"
-        self.column_update(socket.gethostname(), "xythond", "green", now, buf, 1600, "xythond")
+        self.column_update(socket.gethostname(), "xythond", "green", now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
     def scheduler(self):
         #self.debug("====================")
@@ -1444,11 +1451,14 @@ class xythonsrv:
             self.check_purples()
             self.check_acks()
             self.ts_check = now
-        if now > self.ts_page + 30:
+        if now > self.ts_xythond + self.XYTHOND_INTERVAL:
             xythond_start = time.time()
             self.do_xythond()
-            self.stat("xythond", time.time() - xythond_start)
+            now = time.time()
+            self.stat("xythond", now - xythond_start)
+            self.ts_xythond = now
 
+        if now > self.ts_page + self.GENPAGE_INTERVAL:
             ts_start = time.time()
             self.gen_html("nongreen", None, None, None)
             self.gen_html("all", None, None, None)
@@ -1709,7 +1719,7 @@ class xythonsrv:
                     rrdlist.append(f"{graph}.rrd")
             if len(rrdlist) == 0:
                 continue
-            self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
+            #self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
             basedir = f"{self.wwwdir}/{hostname}"
             if not os.path.exists(basedir):
                 os.mkdir(basedir)
@@ -1844,7 +1854,7 @@ class xythonsrv:
         os.chmod(pngpath, 0o644)
 
     def do_rrd(self, hostname, rrdname, obj, dsname, value, dsspec):
-        self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
+        #self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
         if not has_rrdtool:
             return
         fname = self.rrd_pathname(rrdname, obj)
@@ -1916,7 +1926,7 @@ class xythonsrv:
             self.do_rrd(hostname, 'memory', rrdmemtype, 'realmempct', ret['v'], ['DS:realmempct:GAUGE:600:0:U'])
 
         sbuf += buf
-        self.column_update(hostname, "memory", color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, "memory", color, now, sbuf, self.ST_INTERVAL + 60, sender)
         self.stat("PARSEFREE", time.time() - ts_start)
         return True
 
@@ -1950,7 +1960,7 @@ class xythonsrv:
             color = setcolor(gret["UP"]["color"], color)
             sbuf += gret["UP"]["txt"]
         sbuf += buf
-        self.column_update(hostname, "cpu", color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, "cpu", color, now, sbuf, self.ST_INTERVAL + 60, sender)
 
     def parse_ps(self, hostname, buf, sender):
         now = int(time.time())
@@ -1974,7 +1984,7 @@ class xythonsrv:
         sbuf += buf
         ts_end = time.time()
         self.stat("parseps", ts_end - now)
-        self.column_update(hostname, "procs", color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, "procs", color, now, sbuf, self.ST_INTERVAL + 60, sender)
 
     # TODO
     def parse_mdstat(self, hostname, buf, sender):
@@ -1994,7 +2004,7 @@ class xythonsrv:
         if len(devices) == 0:
             return
         sbuf += buf
-        self.column_update(hostname, "raid", color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, "raid", color, now, sbuf, self.ST_INTERVAL + 60, sender)
 
     #TODO
     def parse_ports(self, hostname, buf, sender):
@@ -2015,7 +2025,7 @@ class xythonsrv:
             sbuf += ret["txt"] + '\n'
             color = setcolor(ret["color"], color)
         sbuf += buf
-        self.column_update(hostname, "ports", color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, "ports", color, now, sbuf, self.ST_INTERVAL + 60, sender)
 
 # TODO self detect high/crit min/max from output
 # like Core 0:        +46.0 C  (high = +82.0 C, crit = +102.0 C)
@@ -2054,7 +2064,7 @@ class xythonsrv:
                     self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
         ts_end = time.time()
         self.stat("parsesensor", ts_end - now)
-        self.column_update(hostname, "sensor", color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, "sensor", color, now, sbuf, self.ST_INTERVAL + 60, sender)
 
     def parse_df(self, hostname, buf, inode, sender):
         now = int(time.time())
@@ -2100,7 +2110,7 @@ class xythonsrv:
             if pct is not None:
                 self.do_rrd(hostname, column, mnt, 'pct', pct, ['DS:pct:GAUGE:600:0:100'])
         sbuf += buf
-        self.column_update(hostname, column, color, now, sbuf, 4 * 60, sender)
+        self.column_update(hostname, column, color, now, sbuf, self.ST_INTERVAL + 60, sender)
         return
 
     def parse_status(self, msg):
@@ -2129,7 +2139,7 @@ class xythonsrv:
             if wstatus[0] == '+':
                 delay = wstatus[1:]
                 expire = xydelay(wstatus)
-        self.debug("HOST.COL=%s %s %s color=%s expire=%d" % (sline[1], hostname, column, color, expire))
+        self.debug("DEBUG: HOST.COL=%s %s %s color=%s expire=%d" % (sline[1], hostname, column, color, expire))
 
         if column is not None:
             self.column_update(hostname, column, color, int(time.time()), hdata, expire, msg["addr"])

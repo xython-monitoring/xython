@@ -246,6 +246,6 @@ def main():
         do_snmpd(X)
         ts_end = time.time()
         d = ts_end - ts_start
-        time.sleep(300 - d)
+        time.sleep(X.ST_INTERVAL - d)
 
     sys.exit(0)
