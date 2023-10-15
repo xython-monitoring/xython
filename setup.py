@@ -39,7 +39,7 @@ with open("README.md", "r", "utf-8") as f:
 
 setup(
     name="xython",
-    version="0.1.9",
+    version="0.1.10",
     description="xython is a rewrite in python of xymon",
     long_description=readme,
     long_description_content_type="text/markdown",
