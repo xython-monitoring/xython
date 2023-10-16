@@ -8,7 +8,7 @@ Source: xython-%{version}.tar.gz
 Summary: Xython network monitor
 BuildRoot: /tmp/xymon-root
 # gcc and g++ are here to make cmake happy
-BuildRequires: python3-devel cmake gcc g++
+BuildRequires: python3-devel cmake gcc g++ python3-setuptools
 Requires: python3 python3-setuptools python3-celery python3-pytz python3-requests
 
 %global debug_package %{nil}
@@ -90,6 +90,34 @@ fi
 
 %post
 chkconfig --add xythond
+if ! test -e /etc/xython/hosts.cfg ; then
+	if test -e /etc/default/xython-client ; then
+		. /etc/default/xython-client || true
+	fi
+	cat > /etc/xython/hosts.cfg <<EOF
+#
+# Master configuration file for Xython
+#
+# This file defines several things:
+#
+# 1) By adding hosts to this file, you define hosts that are monitored by Xython
+# 2) By adding "page", "subpage", "group" definitions, you define the layout
+#    of the Xython webpages, and how hosts are divided among the various webpages
+#    that Xython generates.
+# 3) Several other definitions can be done for each host, see the hosts.cfg(5)
+#    man-page.
+#
+# You need to define at least the Xython server itself here.
+
+#0.0.0.0	.default.	# NOPROPRED:+apt,+libs
+
+#group Servers
+127.0.0.1	$(hostname)	# bbd http://$(hostname)/
+
+#group Dialup
+#0.0.0.0	notebook.bla.net # noconn dialup
+EOF
+fi
 
 %post client
 chkconfig --add xython-client
@@ -114,14 +142,14 @@ chkconfig --del xython-client
 %attr(644, root, root) %config /etc/xython/*
 #%attr(644, root, root) %config /etc/httpd/conf.d/xymon-apache.conf
 %attr(755, root, root) %dir /etc/xython 
-%attr(-, root, root) %dir /etc/xython/web
+#%attr(-, root, root) %dir /etc/xython/web
 %attr(755, xython, xython) %dir /var/log/xython
 %attr(755, root, root) /etc/init.d/xythond
 %attr(-, root, root) /usr/bin/*
 %attr(-, xython, xython) /var/lib/xython
 %attr(755, root, root) /usr/lib/xython/cgi-bin/xythoncgi.py
 %attr(750, root, xython) /usr/share/xython
-%attr(-, root, root) /usr/lib/python3.9
+%attr(-, root, root) %{python3_sitelib}/
 
 %files client
 %attr(-, root, root) /usr/bin/xython-client
@@ -130,3 +158,6 @@ chkconfig --del xython-client
 %attr(-, root, root) /usr/lib/systemd/system/xython-client.xython-client.service
 %attr(755, root, root) /etc/init.d/xython-client
 
+%changelog
+* Tue Oct 17 2023 Corentin Labbe <clabbe.montjoie@gmail.com> - 0.1.10
+ - Initial
