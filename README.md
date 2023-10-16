@@ -65,17 +65,18 @@ The ebuild for gentoo could be found at <https://github.com/montjoie/montjoiegen
 I plan to support freeBSD, openBSD and netBSD
 
 #### other distro
-Packaging for RPM is near done, I target fedora(38 and 39) and rockylinux.
+Packaging for RPM is near done, I target fedora 39 and rockylinux9. (Please ask for more if needed)
 
 For xython server, python3-celery is missing in thoses OS and also in EPEL:9, so the situation is blocked for the moment.
 We need to wait on <https://bugzilla.redhat.com/show_bug.cgi?id=2032543>
-
-But xython-client could be already used.
+But I have packaged missing ones in the xython repository
 
 > Add <https://www.xython.fr/mirror/xython.repo> in /etc/yum.repos.d/
-You need to edit it and replace __OSNAME__ by either fedora38, fedora39 or rockylinux9
+You need to edit it and replace __OSNAME__ by either fedora39 or rockylinux9
 
 Then you just have to
+> yum install xython
+or for the client only
 > yum install xython-client
 
 ### source install
