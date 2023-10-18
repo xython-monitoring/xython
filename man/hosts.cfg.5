@@ -922,6 +922,25 @@ ifstat;eth0;iso.3.6.1.2.1.2.2.1.16.234;bytesSent;DS:bytesSent:DERIVE:600:0:U
 .br
 ifstat;eth0;iso.3.6.1.2.1.2.2.1.10.234;bytesReceived;DS:bytesReceived:DERIVE:600:0:U
 .br
+
+Example 2:
+.br
+bandwidth;vlan4;iso.3.6.1.2.1.2.2.1.10.10;incoming;DS:incoming:DERIVE:600:0:U
+.br
+And you need to add in graphs.cfg
+.br
+[bandwidth]
+.br
+	FNPATTERN ^bandwidth.vlan4.rrd
+	TITLE bandwidth
+	YAXIS bytes
+	DEF:in=@RRDFN@:incoming:AVERAGE
+	AREA:in#00CC00:bandwith
+	GPRINT:in:LAST: \: %5.1lf (cur)
+	GPRINT:in:MAX: \: %5.1lf (max)
+	GPRINT:in:MIN: \: %5.1lf (min)
+	GPRINT:in:AVERAGE: \: %5.1lf (avg)\n
+
 This is only supported by xython
 
 
