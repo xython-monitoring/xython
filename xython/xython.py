@@ -755,7 +755,11 @@ class xythonsrv:
 # return RET_ERR on error
 # return RET_NEW if hosts.cfg was read
     def read_hosts(self):
-        mtime = os.path.getmtime(self.etcdir + "/hosts.cfg")
+        try:
+            mtime = os.path.getmtime(self.etcdir + "/hosts.cfg")
+        except:
+            self.error("ERROR: cannot get mtime of hosts.cfg")
+            return RET_ERR
         self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
@@ -1664,7 +1668,7 @@ class xythonsrv:
         try:
             fgraphs = open(self.etcdir + "/graphs.cfg", 'r')
         except:
-            self.error("ERROR: cannot open hosts.cfg")
+            self.error("ERROR: cannot open graphs.cfg")
             return RET_ERR
         lines = fgraphs.readlines()
         section = None
