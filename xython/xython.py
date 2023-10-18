@@ -1705,7 +1705,8 @@ class xythonsrv:
     def gen_rrd2(self, hostname):
         #self.debug(f"GENERATE RRD FOR {hostname}")
         for graph in self.graphscfg:
-            if graph not in ['connrtt', 'disk', 'ifstat', 'inode', 'memory', 'la']:
+            # TODO find how xymon uses multi
+            if "-multi" in graph:
                 continue
             rrdlist = []
             if 'FNPATTERN' in self.graphscfg[graph]:
@@ -1719,6 +1720,8 @@ class xythonsrv:
                     rrdlist.append(f"{graph}.rrd")
             if len(rrdlist) == 0:
                 continue
+            if graph not in self.rrd_column:
+                self.rrd_column[graph] = [graph]
             #self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
             basedir = f"{self.wwwdir}/{hostname}"
             if not os.path.exists(basedir):

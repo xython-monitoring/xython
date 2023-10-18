@@ -195,9 +195,9 @@ def do_snmpd(X):
         for rrd in H.oids:
             rrdcolor = 'green'
             rrdbuf = ''
-            X.debug(f"DEBUG: handle SNMP OID {rrd}")
+            X.debug(f"DEBUG: handle SNMP rrd={rrd}")
             for obj in H.oids[rrd]:
-                X.debug(f"DEBUG: handle SNMP custom {rrd} {obj}")
+                X.debug(f"DEBUG: handle SNMP rrd={rrd} obj={obj}")
                 dsnames = []
                 values = []
                 dsspecs = []
@@ -214,8 +214,8 @@ def do_snmpd(X):
                         rrdbuf += f"&red did {oid['oid']} {ret['errmsg']}\n"
                         color = 'red'
                         rrdcolor = 'red'
-                X.do_rrd(H.name, "ifstat", obj, ":".join(dsnames), ":".join(values), dsspecs)
-            rrdbuf = f"status+10m {H.name}.{rrd} {rrdcolor}\n" + buf
+                X.do_rrd(H.name, rrd, obj, ":".join(dsnames), ":".join(values), dsspecs)
+            rrdbuf = f"status+10m {H.name}.{rrd} {rrdcolor}\n" + rrdbuf
             X.unet_send(rrdbuf)
         buf = f"status+10m {H.name}.snmp {color}\n" + buf
         X.unet_send(buf)
