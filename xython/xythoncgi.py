@@ -60,7 +60,7 @@ if "dservice" in POST:
     dsvc = POST["dservice"]
 
 #timebuf = arguments.getvalue("TIMEBUF")
-if "TIMEBUG" in POST:
+if "TIMEBUF" in POST:
     timebuf = POST["TIMEBUF"]
 else:
     timebuf = None
