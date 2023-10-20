@@ -24,6 +24,8 @@ xythond \fP\- xython core server
 .IR PATH ]
 .RB [\-\-logdir
 .IR PATH ]
+.RB [\-\-debugs
+.IR dbg1,dbg2 ]
 
 .SH "DESCRIPTION"
 
@@ -46,6 +48,12 @@ Use PATH for search xython config directory
 .TP
 .B \-\-logdir PATH
 Use PATH for storing log instead of default (TODO)
+
+.TP
+.B \-\-debugs dbg1,dbg2,...
+Enable extra debug for a list of topic separated by comma.
+.br
+Example: --debugs rrd,loadgraph will add extra debug for rrd and loadgraph topic
 
 .SH "EXAMPLES"
 .B xythond --netport 2023 --etcdir /etc/tests

@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--wwwdir", help="Override xython www directory")
     parser.add_argument("--xymonvardir", help="Override xymon var directory")
     parser.add_argument("--vardir", help="Override xython var directory")
+    parser.add_argument("--debugs", help="Extra debug section separated by comma")
     parser.add_argument("--quit", help="Quit after x seconds", type=int, default=0)
     args = parser.parse_args()
 
@@ -54,6 +55,8 @@ def main():
     if args.wwwdir:
         X.wwwdir = args.wwwdir
         X.log("main", f"WWW directory is now {X.wwwdir}")
+    if args.debugs:
+        X.debugs = args.debugs.split(",")
     X.init()
     if args.dump:
         X.print()
