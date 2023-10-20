@@ -217,7 +217,7 @@ class xythonsrv:
         self.rrd_column["memory"] = ['memory']
         self.rrd_column["snmp"] = ['snmp']
         self.rrd_column["conn"] = ['connrtt']
-        self.rrd_column["ifstat"] = ['ifstat']
+        self.rrd_column["sensor"] = ['sensor']
         # timings
         self.RRD_INTERVAL = 5 * 60
         # at which interval state/client send their status
@@ -1665,10 +1665,11 @@ class xythonsrv:
         return '000000'
 
     def load_graphs_cfg(self):
+        pgraphs = f"{self.etcdir}/graphs.cfg"
         try:
-            fgraphs = open(self.etcdir + "/graphs.cfg", 'r')
+            fgraphs = open(pgraphs, 'r')
         except:
-            self.error("ERROR: cannot open graphs.cfg")
+            self.error("ERROR: cannot open {pgraphs}")
             return RET_ERR
         lines = fgraphs.readlines()
         section = None
@@ -1681,7 +1682,7 @@ class xythonsrv:
                 continue
             if line[0] == '[':
                 if ']' not in line:
-                    #error
+                    self.error(f"ERROR: invalid line in {pgraphs} {line}")
                     continue
                 section = line.split('[')[1]
                 section = section.split(']')[0]
@@ -1702,12 +1703,28 @@ class xythonsrv:
             if keyword == 'FNPATTERN':
                 self.graphscfg[section]['FNPATTERN'] = tokens[0]
                 continue
-            #print(f"{section} {line}")
+            self.debugdev("loadgraph", f"DEBUG: load_graphs: {section} {line}")
             self.graphscfg[section]["info"].append(line)
 
     # TODO we can generate RRD while writing to it https://www.mail-archive.com/rrd-users@lists.oetiker.ch/msg13016.html
     def gen_rrd2(self, hostname):
-        #self.debug(f"GENERATE RRD FOR {hostname}")
+        basedir = f"{self.xt_rrd}/{hostname}"
+        rrdbuf = ""
+        color = 'green'
+        allrrds = os.listdir(basedir)
+        if 'sensor' in allrrds:
+            adapters = os.listdir(f"{basedir}/sensor/")
+            for adapter in adapters:
+                rrd_sensors = os.listdir(f"{basedir}/sensor/{adapter}/")
+                for rrd_sensor in rrd_sensors:
+                    allrrds.append(f"sensor/{adapter}/{rrd_sensor}")
+        now = time.time()
+        for rrd in allrrds:
+            mtime = os.path.getmtime(f"{basedir}/{rrd}")
+            tdiff = now - mtime
+            if tdiff > 3600:
+                rrdbuf += f"&yellow {rrd} is not updated since {xydhm(mtime, now)}\n"
+        self.debugdev("rrd", f"GENERATE RRD FOR {hostname}")
         for graph in self.graphscfg:
             # TODO find how xymon uses multi
             if "-multi" in graph:
@@ -1722,6 +1739,10 @@ class xythonsrv:
                 rrdpath = f'{self.xt_rrd}/{hostname}/{graph}.rrd'
                 if os.path.exists(rrdpath):
                     rrdlist.append(f"{graph}.rrd")
+            if graph == 'sensor':
+                for rrd in allrrds:
+                    if 'sensor/' in rrd:
+                        rrdlist.append(rrd)
             if len(rrdlist) == 0:
                 continue
             if graph not in self.rrd_column:
@@ -1746,13 +1767,28 @@ class xythonsrv:
             else:
                 base.append(f'--title={graph} on {hostname}')
             i = 0
+            sensor_adapter = None
             for rrd in rrdlist:
+                allrrds.remove(rrd)
                 fname = str(rrd.replace(".rrd", ""))
                 rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
                 label = self.rrd_label(fname, graph)
                 info = rrdtool.info(rrdfpath)
                 template = self.graphscfg[graph]["info"]
+                if graph == 'sensor':
+                    adapter = os.path.dirname(rrd).split('/')[-1]
+                    #print(f"DEBUG: sensor_rrd: adapter is {adapter}")
+                    # remove adapter name
+                    label = re.sub('/.*/', '', label)
+                if graph == 'sensor' and sensor_adapter != adapter:
+                    #print(f"DEBUG: sensor_rrd: add comment {adapter}")
+                    sensor_adapter = adapter
+                    base.append(f'COMMENT:{adapter}\\n')
+                label = label.ljust(20)
+                #print(f"DEBUG: label is {label}")
                 for line in template:
+                    for dsname in self.get_ds_name(info):
+                        line = line.replace('@RRDDS@', dsname)
                     line = line.replace('@COLOR@', self.rrd_color(i))
                     line = line.replace('@RRDIDX@', f"{i}")
                     line = line.replace('@RRDFN@', rrdfpath)
@@ -1764,9 +1800,24 @@ class xythonsrv:
                 i += 1
             rrdup = xytime(time.time()).replace(':', '\\:')
             base.append(f'COMMENT:Updated\\: {rrdup}')
-            ret = rrdtool.graph(base)
-            # TODO check this ret
+            try:
+                ret = rrdtool.graph(base)
+                # TODO check this ret
+                rrdbuf += f"&green generate graph from {rrd} with template={graph}\n"
+            except rrdtool.OperationalError as e:
+                rrdbuf += f"&red Failed to generate RRD from {rrd} with template={graph} {e}\n"
+                color = 'red'
             os.chmod(pngpath, 0o644)
+        # TODO try to handle sensor in a generic way
+        if "sensor" in allrrds:
+            allrrds.remove("sensor")
+        if len(allrrds) > 0:
+            for rrd in allrrds:
+                rrdbuf += f"&yellow some RRD are not handled {rrd}\n"
+            color = setcolor('yellow', color)
+        #buf = f"status+10m {hostname}.xrrd {color}\n" + rrdbuf
+        #print(buf)
+        self.column_update(hostname, "xrrd", color, int(time.time()), rrdbuf, self.RRD_INTERVAL + 60, "xython-rrd")
 
     def gen_rrds(self):
         if not has_rrdtool:
@@ -1775,8 +1826,8 @@ class xythonsrv:
         #self.debug("GEN RRDS")
         hosts = os.listdir(f"{self.xt_rrd}")
         for hostname in hosts:
-            for column in ['sensor', 'snmp']:
-                self.gen_rrd(hostname, column)
+            #for column in ['sensor']:
+            #    self.gen_rrd(hostname, column)
             self.gen_rrd2(hostname)
         self.stat("GENRRD", time.time() - ts_start)
 
@@ -1799,7 +1850,7 @@ class xythonsrv:
 
 
     def gen_rrd(self, hostname, column):
-        #self.debug(f"DEBUG: scan RRD for {hostname} for {column}")
+        self.debugdev('rrd', f"DEBUG: scan RRD for {hostname} for {column}")
         if column == 'sensor':
             rrds = list(Path(f"{self.xt_rrd}/{hostname}/sensor").rglob("*.rrd"))
         else:
@@ -1816,15 +1867,15 @@ class xythonsrv:
         base = [pngpath,
             f'--title={column} on {hostname}',
             '--width=576', '--height=140',
-            '--vertical-label="% Full"',
+            '--vertical-label="Temp or Fan"',
             '--start=end-4h'
             ]
         i = 0
         sensor_adapter = None
         for rrd in rrds:
-            #self.debug(f"DEBUG DORRD: graph {rrd} to {pngpath}")
+            self.debug(f"DEBUG DORRD: graph sensor {rrd} to {pngpath}")
             fname = str(os.path.basename(rrd)).replace(".rrd", "")
-            rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
+            rrdfpath = f"{basedir}/{rrd}"
             rrdfpath = str(rrd)
             label = self.rrd_label(fname, column)
             info = rrdtool.info(rrdfpath)
@@ -1833,20 +1884,11 @@ class xythonsrv:
                 if column == 'sensor':
                     label = dsname
                 label = label.ljust(20)
+                color = self.rrd_color(i)
                 i += 1
-                if i == 1:
-                    color = '#0000FF'
-                elif i == 2:
-                    color = '#FF0000'
-                elif i == 3:
-                    color = '#00FF00'
-                elif i == 4:
-                    color = '#F0F000'
-                else:
-                    color = '#F000F0'
-                #self.debug(f"DEBUG add DS{i} {dsname} for {label}")
+                self.debug(f"DEBUG add DS{i} {dsname} for {label}")
                 base.append(f'DEF:pct{i}={rrdfpath}:{dsname}:AVERAGE')
-                base.append(f'LINE1:pct{i}{color}')
+                base.append(f'LINE1:pct{i}#{color}')
                 if column == 'sensor' and sensor_adapter != adapter:
                     sensor_adapter = adapter
                     base.append(f'COMMENT:{adapter}\\n')
@@ -1856,7 +1898,11 @@ class xythonsrv:
                 base.append(f'GPRINT:pct{i}:AVERAGE: \\: %5.1lf (avg)\\l')
         rrdup = xytime(time.time()).replace(':', '\\:')
         base.append(f'COMMENT:Updated\\: {rrdup}')
-        ret = rrdtool.graph(base)
+        try:
+            ret = rrdtool.graph(base)
+        except rrdtool.OperationalError as e:
+            print(str(e))
+            sys.exit(0)
         # TODO check this ret
         os.chmod(pngpath, 0o644)
 
