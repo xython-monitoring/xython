@@ -1707,7 +1707,7 @@ class xythonsrv:
             self.graphscfg[section]["info"].append(line)
 
     # TODO we can generate RRD while writing to it https://www.mail-archive.com/rrd-users@lists.oetiker.ch/msg13016.html
-    def gen_rrd2(self, hostname):
+    def gen_rrd(self, hostname):
         basedir = f"{self.xt_rrd}/{hostname}"
         rrdbuf = ""
         color = 'green'
@@ -1815,8 +1815,6 @@ class xythonsrv:
             for rrd in allrrds:
                 rrdbuf += f"&yellow some RRD are not handled {rrd}\n"
             color = setcolor('yellow', color)
-        #buf = f"status+10m {hostname}.xrrd {color}\n" + rrdbuf
-        #print(buf)
         self.column_update(hostname, "xrrd", color, int(time.time()), rrdbuf, self.RRD_INTERVAL + 60, "xython-rrd")
 
     def gen_rrds(self):
@@ -1826,9 +1824,7 @@ class xythonsrv:
         #self.debug("GEN RRDS")
         hosts = os.listdir(f"{self.xt_rrd}")
         for hostname in hosts:
-            #for column in ['sensor']:
-            #    self.gen_rrd(hostname, column)
-            self.gen_rrd2(hostname)
+            self.gen_rrd(hostname)
         self.stat("GENRRD", time.time() - ts_start)
 
     # give a DS name from a sensor name
@@ -1847,64 +1843,6 @@ class xythonsrv:
                     ds = k.split('[')[1].split(']')[0]
                     r.append(ds)
         return r
-
-
-    def gen_rrd(self, hostname, column):
-        self.debugdev('rrd', f"DEBUG: scan RRD for {hostname} for {column}")
-        if column == 'sensor':
-            rrds = list(Path(f"{self.xt_rrd}/{hostname}/sensor").rglob("*.rrd"))
-        else:
-            rrds = list(Path(f"{self.xt_rrd}/{hostname}/").rglob(f"{column}*.rrd"))
-        #rrds = [f for f in os.listdir(f"{self.xt_rrd}/{hostname}") if re.match(r'%s.*\.rrd' % column, f)]
-        if len(rrds) == 0:
-            return
-        rrds.sort()
-        basedir = f"{self.wwwdir}/{hostname}"
-        if not os.path.exists(basedir):
-            os.mkdir(basedir)
-            os.chmod(basedir, 0o755)
-        pngpath = f"{self.wwwdir}/{hostname}/{column}.png"
-        base = [pngpath,
-            f'--title={column} on {hostname}',
-            '--width=576', '--height=140',
-            '--vertical-label="Temp or Fan"',
-            '--start=end-4h'
-            ]
-        i = 0
-        sensor_adapter = None
-        for rrd in rrds:
-            self.debug(f"DEBUG DORRD: graph sensor {rrd} to {pngpath}")
-            fname = str(os.path.basename(rrd)).replace(".rrd", "")
-            rrdfpath = f"{basedir}/{rrd}"
-            rrdfpath = str(rrd)
-            label = self.rrd_label(fname, column)
-            info = rrdtool.info(rrdfpath)
-            adapter = os.path.dirname(rrd).split('/')[-1]
-            for dsname in self.get_ds_name(info):
-                if column == 'sensor':
-                    label = dsname
-                label = label.ljust(20)
-                color = self.rrd_color(i)
-                i += 1
-                self.debug(f"DEBUG add DS{i} {dsname} for {label}")
-                base.append(f'DEF:pct{i}={rrdfpath}:{dsname}:AVERAGE')
-                base.append(f'LINE1:pct{i}#{color}')
-                if column == 'sensor' and sensor_adapter != adapter:
-                    sensor_adapter = adapter
-                    base.append(f'COMMENT:{adapter}\\n')
-                base.append(f'GPRINT:pct{i}:LAST:{label} \\: %5.1lf (cur)')
-                base.append(f'GPRINT:pct{i}:MIN: \\: %5.1lf (min)')
-                base.append(f'GPRINT:pct{i}:MAX: \\: %5.1lf (max)')
-                base.append(f'GPRINT:pct{i}:AVERAGE: \\: %5.1lf (avg)\\l')
-        rrdup = xytime(time.time()).replace(':', '\\:')
-        base.append(f'COMMENT:Updated\\: {rrdup}')
-        try:
-            ret = rrdtool.graph(base)
-        except rrdtool.OperationalError as e:
-            print(str(e))
-            sys.exit(0)
-        # TODO check this ret
-        os.chmod(pngpath, 0o644)
 
     def do_rrd(self, hostname, rrdname, obj, dsname, value, dsspec):
         #self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
