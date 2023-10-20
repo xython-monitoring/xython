@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.4)
 project(xython)
 
 install(DIRECTORY xymon/gifs DESTINATION share/xython)
+install(DIRECTORY xymon/menu DESTINATION share/xython)
 
 set(XYTHON_ETC "/etc/xython")
 set(XYTHON_VAR "var/lib/xython")
