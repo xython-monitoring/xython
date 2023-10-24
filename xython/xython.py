@@ -208,6 +208,7 @@ class xythonsrv:
         self.daemon_name = "xythond"
         self.protocols = {}
         self.time_read_protocols = 0
+        self.time_read_graphs = 0
         self.graphscfg = {}
         # list rrd to display per column
         self.rrd_column = {}
@@ -495,7 +496,8 @@ class xythonsrv:
             if has_rrdtool:
                 if column in self.rrd_column:
                     for rrdname in self.rrd_column[column]:
-                        html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
+                        #html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
+                        html += f'<CENTER><img src="$XYMONSERVERCGIURL/showgraph.py?hostname={hostname}&service={rrdname}"></CENTER>'
 
 
         # history
@@ -1666,10 +1668,15 @@ class xythonsrv:
 
     def load_graphs_cfg(self):
         pgraphs = f"{self.etcdir}/graphs.cfg"
+        mtime = os.path.getmtime(pgraphs)
+        if self.time_read_graphs < mtime:
+            self.time_read_graphs = mtime
+        else:
+            return RET_OK
         try:
             fgraphs = open(pgraphs, 'r')
         except:
-            self.error("ERROR: cannot open {pgraphs}")
+            self.error(f"ERROR: cannot open {pgraphs}")
             return RET_ERR
         lines = fgraphs.readlines()
         section = None
@@ -1709,7 +1716,7 @@ class xythonsrv:
     # TODO we can generate RRD while writing to it https://www.mail-archive.com/rrd-users@lists.oetiker.ch/msg13016.html
     def gen_rrd(self, hostname):
         basedir = f"{self.xt_rrd}/{hostname}"
-        rrdbuf = ""
+        rrdbuf = f"{xytime(time.time())} - xrrd\n"
         color = 'green'
         allrrds = os.listdir(basedir)
         if 'sensor' in allrrds:
@@ -1801,13 +1808,13 @@ class xythonsrv:
             rrdup = xytime(time.time()).replace(':', '\\:')
             base.append(f'COMMENT:Updated\\: {rrdup}')
             try:
-                ret = rrdtool.graph(base)
+                #ret = rrdtool.graph(base)
                 # TODO check this ret
                 rrdbuf += f"&green generate graph from {rrd} with template={graph}\n"
             except rrdtool.OperationalError as e:
                 rrdbuf += f"&red Failed to generate RRD from {rrd} with template={graph} {e}\n"
                 color = 'red'
-            os.chmod(pngpath, 0o644)
+            #os.chmod(pngpath, 0o644)
         # TODO try to handle sensor in a generic way
         if "sensor" in allrrds:
             allrrds.remove("sensor")

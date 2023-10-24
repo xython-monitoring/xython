@@ -558,7 +558,7 @@ def test_full():
         info = rrdtool.info(rrdfpath)
         assert info
         X.gen_rrds()
-        X.gen_rrd('test1', 'test')
+        X.gen_rrd('test1')
 
     X.unixsock = './tests/run/xython.sock'
     assert X.unet_start()
@@ -612,7 +612,8 @@ def test_full():
     res = X.sqc.execute(f'SELECT * FROM columns where hostname == "test1"')
     results = X.sqc.fetchall()
     # TODO check each column (disk, cpu, etc..) exists
-    assert len(results) == 9
+    expected_cols = ['disk', 'cpu', 'coltest', 'info', 'inode', 'memory', 'ports', 'procs', 'sensor', 'xrrd']
+    assert len(results) == len(expected_cols)
 
     # test client data with bogus
     f = open("./tests/clientdata/bogus")

@@ -148,6 +148,7 @@ chkconfig --del xython-client
 %attr(-, root, root) /usr/bin/*
 %attr(-, xython, xython) /var/lib/xython
 %attr(755, root, root) /usr/lib/xython/cgi-bin/xythoncgi.py
+%attr(755, root, root) /usr/lib/xython/cgi-bin/showgraph.py
 %attr(750, root, xython) /usr/share/xython
 %attr(-, root, root) %{python3_sitelib}/
 
