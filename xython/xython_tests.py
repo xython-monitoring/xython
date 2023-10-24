@@ -44,7 +44,7 @@ def ping(hostname, t, doipv4, doipv6):
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
-        re_rtts = re.search("[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/", hdata)
+        re_rtts = re.search(r"[0-9]+.[0-9]*/[0-9]+.[0-9]*/[0-9]+.[0-9]*/", hdata)
         if re_rtts is not None:
             rtts = re_rtts.group(0)
             tokens = rtts.split('/')
@@ -58,7 +58,7 @@ def ping(hostname, t, doipv4, doipv6):
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
-        re_rtts = re.search("[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/[0-9]+\.[0-9]*/", hdata)
+        re_rtts = re.search(r"[0-9]+.[0-9]*/[0-9]+.[0-9]*/[0-9]+.[0-9]*/", hdata)
         if re_rtts is not None:
             rtts = re_rtts.group(0)
             tokens = rtts.split('/')
@@ -108,14 +108,14 @@ def dohttp(hostname, urls, column):
             if cmd == 'verify':
                 v = cmds[1]
                 if v == '0':
-                    verify=False
+                    verify = False
                 elif v == '1':
-                    verify=True
+                    verify = True
                 else:
-                    verify=cmds[1]
+                    verify = cmds[1]
                 options += f"verify={cmds[1]}"
             elif cmd == 'cont':
-                check_content = cmds[1].replace('[[:space:]]', '\s')
+                check_content = cmds[1].replace('[[:space:]]', '\\s')
             elif cmd == 'httpcode':
                 # TODO check it is an integer or regex
                 need_httpcode = cmds[1]
@@ -130,7 +130,6 @@ def dohttp(hostname, urls, column):
         try:
             r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True)
             if verify and 'https' in url:
-                #cert = r.raw.connection.sock.getpeercert()
                 cret = show_cert(r.raw.connection.sock.getpeercert(), hostname)
             hdata += f"&green {url} - OK\n\n"
             scode = str(r.status_code)
@@ -155,8 +154,6 @@ def dohttp(hostname, urls, column):
             color = "red"
             hdata += f"&red {url} - TIMEOUT\n"
             httpstate += "Timeout"
-            #httpstate += r.reason
-            #httpstate += f"REASON={r.reason}"
         except requests.exceptions.RequestException as e:
             color = "red"
             if re.search('Connection refused', str(e)):
@@ -195,12 +192,12 @@ def dohttp(hostname, urls, column):
 
 
 def hex_to_binary(hs):
-    #print("====================")
+    # print("====================")
     hexs = ""
     i = 0
     while i < len(hs):
         c = hs[i]
-        #print(f"DEBUG: current {c} i={i} len={len(hs)}")
+        # print(f"DEBUG: current {c} i={i} len={len(hs)}")
         if c == '\\':
             if i + 1 >= len(hs):
                 return None
@@ -209,7 +206,7 @@ def hex_to_binary(hs):
                 if i + 3 >= len(hs):
                     return None
                 v = hs[i+2:i+4]
-                #print(f"DEBUG: value is {v}")
+                # print(f"DEBUG: value is {v}")
                 hexs += f'{v} '
                 i += 4
                 continue
@@ -227,29 +224,31 @@ def hex_to_binary(hs):
         else:
             hexs += f'{ord(c):x} '
             i += 1
-    #print(f"DEBUG: final {hexs}")
-    #print(f"DEBUG: final {bytes.fromhex(hexs)}")
-    #print(f"DEBUG: final {bytes.fromhex(hexs).decode('UTF8')}")
+    # print(f"DEBUG: final {hexs}")
+    # print(f"DEBUG: final {bytes.fromhex(hexs)}")
+    # print(f"DEBUG: final {bytes.fromhex(hexs).decode('UTF8')}")
     return bytes.fromhex(hexs)
+
 
 # compare binary b and xython protocol binary format e
 def hex_compare(b, e):
-    #print("==========================")
+    # print("==========================")
     bh = hex_to_binary(e)
-    #print(f"DEBUG: compare {bh} and {b}")
+    # print(f"DEBUG: compare {bh} and {b}")
     # reduce lengh of b
     b = b[:len(bh)]
-    #print(f"DEBUG: compare {bh} and {b}")
+    # print(f"DEBUG: compare {bh} and {b}")
     if bh == b:
         return True
     return False
+
 
 # https://stackoverflow.com/questions/6464129/certificate-subject-x-509
 def get_cn(t):
     r = ""
     unk = ""
     for p in t:
-        #if len(p) > 1:
+        # if len(p) > 1:
         #    unk += "length "
         # TODO: does this can exists ?
         if p[0][0] == 'countryName':
@@ -286,11 +285,11 @@ def get_cn(t):
     ret["name"] = r
     return ret
 
+
 def show_cert(cert, hostname):
     cret = {}
     cret['txt'] = ''
     cret['expire'] = None
-    #print(f"DEBUG: show_cert for {hostname} {cert}")
     if 'subject' not in cert:
         print("===================================")
         print("ERROR no subject")
@@ -309,7 +308,7 @@ def show_cert(cert, hostname):
     cret["txt"] += f"\tissuer:{ret['name']}\n"
     now = time.time()
     date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
-    expire =  date.timestamp()
+    expire = date.timestamp()
     expire_days = (expire - now) / 86400
     cret["txt"] += f"expire in {expire_days} days\n"
     cret["expire"] = expire_days
@@ -318,6 +317,7 @@ def show_cert(cert, hostname):
     # TODO cipher used
 
     return cret
+
 
 def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expect, p_options):
     ts_start = time.time()
@@ -359,10 +359,8 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
             else:
                 ssock.write(p_send.encode("UTF8"))
         if p_expect or (p_options is not None and 'banner' in p_options):
-            #print("DEBUG: we have banner")
             buf = ssock.read(1024)
             banner = buf.decode("UTF8")
-            #print(f"DEBUG banner={banner}")
         if p_expect:
             if '\\x' in p_send:
                 if hex_compare(buf, p_expect):
@@ -400,6 +398,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
     print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} ret={dret}")
     return dret
 
+
 @app.task
 def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect, p_options):
     ts_start = time.time()
@@ -431,6 +430,7 @@ def do_generic_proto(hostname, address, protoname, port, urls, p_send, p_expect,
         dret["txt"] = f"{xytime(ts_start)}: KO\n" + dret["txt"]
     dret["timing"] = test_duration
     return dret
+
 
 def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_expect, p_options):
     dret = {}

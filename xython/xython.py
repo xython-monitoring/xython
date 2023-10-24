@@ -762,7 +762,7 @@ class xythonsrv:
         except:
             self.error("ERROR: cannot get mtime of hosts.cfg")
             return RET_ERR
-        self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
+        #self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
         else:
@@ -1725,6 +1725,7 @@ class xythonsrv:
                 rrd_sensors = os.listdir(f"{basedir}/sensor/{adapter}/")
                 for rrd_sensor in rrd_sensors:
                     allrrds.append(f"sensor/{adapter}/{rrd_sensor}")
+        print(f"DEBUG: allrrds={allrrds}")
         now = time.time()
         for rrd in allrrds:
             mtime = os.path.getmtime(f"{basedir}/{rrd}")
@@ -1754,7 +1755,7 @@ class xythonsrv:
                 continue
             if graph not in self.rrd_column:
                 self.rrd_column[graph] = [graph]
-            #self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
+            self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
             basedir = f"{self.wwwdir}/{hostname}"
             if not os.path.exists(basedir):
                 os.mkdir(basedir)
@@ -1776,7 +1777,10 @@ class xythonsrv:
             i = 0
             sensor_adapter = None
             for rrd in rrdlist:
-                allrrds.remove(rrd)
+                print(f"DEBUG: rrdlist={rrdlist} rrd={rrd}")
+                # a RRD coule be used more than once
+                if rrd in allrrds:
+                    allrrds.remove(rrd)
                 fname = str(rrd.replace(".rrd", ""))
                 rrdfpath = f"{self.xt_rrd}/{hostname}/{rrd}"
                 label = self.rrd_label(fname, graph)
@@ -1854,11 +1858,12 @@ class xythonsrv:
     def do_rrd(self, hostname, rrdname, obj, dsname, value, dsspec):
         #self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
         if not has_rrdtool:
-            return
+            return False
         fname = self.rrd_pathname(rrdname, obj)
         rrdpath = f"{self.xt_rrd}/{hostname}"
         if not os.path.exists(rrdpath):
             os.mkdir(rrdpath)
+            os.chmod(rrdpath, 0o755)
         rrdfpath = f"{self.xt_rrd}/{hostname}/{fname}.rrd"
         if not os.path.exists(rrdfpath):
             self.debug(f"DEBUG: do_rrd create for {hostname} {rrdname} {dsname} {value}")
@@ -1866,6 +1871,7 @@ class xythonsrv:
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
                 "RRA:AVERAGE:0.5:1:1200", dsspec);
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
+        return True
 
     def do_sensor_rrd(self, hostname, adapter, sname, value):
         #self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
@@ -1996,7 +2002,7 @@ class xythonsrv:
             return
         sline = buf.split("\n")
         for line in sline:
-            mdname = re.search("^[a-zA-Z0-9]\s:", line)
+            mdname = re.search(r"^[a-zA-Z0-9]\s:", line)
             if mdname is None:
                 continue
         if len(devices) == 0:

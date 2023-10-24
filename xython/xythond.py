@@ -80,8 +80,8 @@ def main():
             rule.dump()
         for Hh in X.xy_hosts:
             print("DUMP RULE FOR %s" % Hh.name)
-            #for rule in Hh.rules["PORT"]:
+            # for rule in Hh.rules["PORT"]:
             #    rule.dump()
-            #for rule in Hh.rules["PROC"]:
+            # for rule in Hh.rules["PROC"]:
             #    rule.dump()
         X.gen_html("all", None, None, None)
