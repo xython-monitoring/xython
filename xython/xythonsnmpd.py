@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import socket
 import time
-import os
-import re
 import sys
 from importlib.metadata import version
 from pysnmp import hlapi
@@ -12,15 +9,16 @@ from xython import xythonsrv
 from xython.common import setcolor
 import pyasn1
 
+
 def snmp_get(oid, H):
     ret = {}
     ret["err"] = -1
     iterator = hlapi.getCmd(
-    hlapi.SnmpEngine(),
-    hlapi.CommunityData(H.snmp_community, mpModel=0),
-    hlapi.UdpTransportTarget((H.gethost(), 161)),
-    hlapi.ContextData(),
-    hlapi.ObjectType(hlapi.ObjectIdentity(oid))
+        hlapi.SnmpEngine(),
+        hlapi.CommunityData(H.snmp_community, mpModel=0),
+        hlapi.UdpTransportTarget((H.gethost(), 161)),
+        hlapi.ContextData(),
+        hlapi.ObjectType(hlapi.ObjectIdentity(oid))
     )
     try:
         errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
@@ -50,28 +48,27 @@ def snmp_get(oid, H):
     ret["err"] = 0
     return ret
 
-#List NIC names: .1.3.6.1.2.1.2.2.1.2
-#Get Bytes IN: .1.3.6.1.2.1.2.2.1.10
-#Get Bytes IN for NIC 4: .1.3.6.1.2.1.2.2.1.10.4
-#Get Bytes OUT: .1.3.6.1.2.1.2.2.1.16
-#Get Bytes OUT for NIC 4: .1.3.6.1.2.1.2.2.1.16.4
+# List NIC names: .1.3.6.1.2.1.2.2.1.2
+# Get Bytes IN: .1.3.6.1.2.1.2.2.1.10
+# Get Bytes IN for NIC 4: .1.3.6.1.2.1.2.2.1.10.4
+# Get Bytes OUT: .1.3.6.1.2.1.2.2.1.16
+# Get Bytes OUT for NIC 4: .1.3.6.1.2.1.2.2.1.16.4
 #
-#CPU Statistics
+# CPU Statistics
 #
-#Load
-#1 minute Load: .1.3.6.1.4.1.2021.10.1.3.1
-#5 minute Load: .1.3.6.1.4.1.2021.10.1.3.2
-#15 minute Load: .1.3.6.1.4.1.2021.10.1.3.3
+# Load
+# 1 minute Load: .1.3.6.1.4.1.2021.10.1.3.1
+# 5 minute Load: .1.3.6.1.4.1.2021.10.1.3.2
+# 15 minute Load: .1.3.6.1.4.1.2021.10.1.3.3
 #
-#CPU times
-#percentage of user CPU time: .1.3.6.1.4.1.2021.11.9.0
-#raw user cpu time: .1.3.6.1.4.1.2021.11.50.0
-#percentages of system CPU time: .1.3.6.1.4.1.2021.11.10.0
-#raw system cpu time: .1.3.6.1.4.1.2021.11.52.0
-#percentages of idle CPU time: .1.3.6.1.4.1.2021.11.11.0
-#raw idle cpu time: .1.3.6.1.4.1.2021.11.53.0
-#raw nice cpu time: .1.3.6.1.4.1.2021.11.51.0
-#
+# CPU times
+# percentage of user CPU time: .1.3.6.1.4.1.2021.11.9.0
+# raw user cpu time: .1.3.6.1.4.1.2021.11.50.0
+# percentages of system CPU time: .1.3.6.1.4.1.2021.11.10.0
+# raw system cpu time: .1.3.6.1.4.1.2021.11.52.0
+# percentages of idle CPU time: .1.3.6.1.4.1.2021.11.11.0
+# raw idle cpu time: .1.3.6.1.4.1.2021.11.53.0
+# raw nice cpu time: .1.3.6.1.4.1.2021.11.51.0
 
 def do_snmpd_disk(X, H, buf):
     #print("============================================")
@@ -122,6 +119,7 @@ def do_snmpd_disk(X, H, buf):
         buf += f'{dname}\t{dt}\t{du}\t{df}\t{percent}%\t{dname}\n'
     return buf
 
+
 def do_snmpd_memory(X, H, buf):
     ret = {}
     ret['snmp'] = ""
@@ -150,6 +148,7 @@ def do_snmpd_memory(X, H, buf):
     ret['buf'] = f'[free]\nMem:\t{memt}\t{memu}\t{memf}\t{mems}\t{memb}\t{memf}\n'
     ret['snmp'] = 'DID memory OK\n'
     return ret
+
 
 def do_snmpd_client(X, H):
     dret = {}
@@ -180,6 +179,7 @@ def do_snmpd_client(X, H):
     dret['txt'] = status
     dret['color'] = color
     return dret
+
 
 def do_snmpd(X):
     for H in X.xy_hosts:
@@ -220,6 +220,7 @@ def do_snmpd(X):
         buf = f"status+10m {H.name}.snmp {color}\n" + buf
         X.unet_send(buf)
 
+
 def main():
     print(f'xython-snmpd v{version("xython")}')
     parser = argparse.ArgumentParser()
@@ -235,7 +236,8 @@ def main():
     X = xythonsrv()
     X.unixsock = args.xythonsock
     X.etcdir = args.etcdir
-    X.xt_data= f"/var/lib/xython/"
+    # TODO hardcoded
+    X.xt_data = f"/var/lib/xython/"
     X.xt_rrd = f"{X.xt_data}/rrd/"
     X.lldebug = args.debug
     X.daemon_name = "xython-snmpd"
