@@ -15,13 +15,12 @@ import sys
 print("Content-type: text/html\n")
 print("\n")
 
-#arguments = cgi.FieldStorage()
 POST = {}
 stdin = sys.stdin.read()
 args = stdin.split('&')
 for arg in args:
     t = arg.split('=')
-    if len(t)>1:
+    if len(t) > 1:
         k, v = arg.split('=')
         POST[k] = v
 if "QUERY_STRING" in os.environ:
@@ -29,7 +28,7 @@ if "QUERY_STRING" in os.environ:
     args = QUERY_STRING.split('&')
     for arg in args:
         t = arg.split('=')
-        if len(t)>1:
+        if len(t) > 1:
             k, v = arg.split('=')
             POST[k] = v
 
@@ -59,7 +58,6 @@ if "DSERVICE" in POST:
 if "dservice" in POST:
     dsvc = POST["dservice"]
 
-#timebuf = arguments.getvalue("TIMEBUF")
 if "TIMEBUF" in POST:
     timebuf = POST["TIMEBUF"]
 else:

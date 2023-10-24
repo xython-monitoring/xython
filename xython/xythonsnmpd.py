@@ -27,21 +27,12 @@ def snmp_get(oid, H):
         return ret
 
     if errorIndication:
-        #print(f"errorIndication={errorIndication}")
         ret["errmsg"] = str(errorIndication)
         return ret
     if errorStatus:
-        #print('%s at %s' % (errorStatus.prettyPrint(),
-        #                errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
         ret["errmsg"] = str(errorStatus.prettyPrint())
         return ret
-    #print(varBinds)
     for varBind in varBinds:
-        #print("=======================")
-        #print(type(varBind))
-        #print(varBind[0])
-        #print(varBind[1])
-        #print("=======================")
         ret["pretty"] = ' = '.join([x.prettyPrint() for x in varBind])
         ret["oid"] = varBind[0]
         ret["v"] = varBind[1]
@@ -70,8 +61,8 @@ def snmp_get(oid, H):
 # raw idle cpu time: .1.3.6.1.4.1.2021.11.53.0
 # raw nice cpu time: .1.3.6.1.4.1.2021.11.51.0
 
+
 def do_snmpd_disk(X, H, buf):
-    #print("============================================")
     if H.snmp_disk_last is None:
         i = 0
         # TODO find a goo value or a better way
@@ -166,8 +157,6 @@ def do_snmpd_client(X, H):
         status += f"&red do_snmpd_client: error with sysdscr: {sysdscr['errmsg']}\n"
     if 'memory' in H.snmp_columns:
         ret = do_snmpd_memory(X, H, buf)
-        #print("=========================")
-        #print(ret)
         if 'buf' in ret:
             buf += ret['buf']
         if 'snmp' in ret:

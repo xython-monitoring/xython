@@ -552,9 +552,10 @@ def test_full():
     lc = X.get_columns("test3")
     assert lc == ['info']
 
+    assert X.xt_rrd == f'{X.xt_data}/rrd/'
     X.do_rrd("test1", "test", "t", "t", 444, "DS:t:GAUGE:600:-280:5000")
     if has_rrdtool:
-        rrdfpath = f"{X.xt_rrd}/test1/testt.rrd"
+        rrdfpath = f"{X.xt_rrd}/test1/test.t.rrd"
         info = rrdtool.info(rrdfpath)
         assert info
         X.gen_rrds()
@@ -612,7 +613,9 @@ def test_full():
     res = X.sqc.execute(f'SELECT * FROM columns where hostname == "test1"')
     results = X.sqc.fetchall()
     # TODO check each column (disk, cpu, etc..) exists
-    expected_cols = ['disk', 'cpu', 'coltest', 'info', 'inode', 'memory', 'ports', 'procs', 'sensor', 'xrrd']
+    expected_cols = ['disk', 'cpu', 'coltest', 'info', 'inode', 'memory', 'ports', 'procs', 'sensor']
+    if has_rrdtool:
+        expected_cols.append('xrrd')
     assert len(results) == len(expected_cols)
 
     # test client data with bogus
@@ -626,6 +629,17 @@ def test_full():
 def test_snmpd():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    X.daemon_name = "xython-snmpd"
+    X.read_hosts()
+    X.hosts_check_snmp_tags()
+    # test community
+    #do_snmpd(X)
+
+def test_snmpd2():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/snmp/'
     X.xt_data = './tests/data/'
     X.xt_logdir = './tests/logs/'
     X.daemon_name = "xython-snmpd"
