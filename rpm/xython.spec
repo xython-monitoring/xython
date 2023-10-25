@@ -9,7 +9,7 @@ Summary: Xython network monitor
 BuildRoot: /tmp/xymon-root
 # gcc and g++ are here to make cmake happy
 BuildRequires: python3-devel cmake gcc g++ python3-setuptools
-Requires: python3 python3-setuptools python3-celery python3-pytz python3-requests
+Requires: python3 python3-setuptools python3-celery python3-pytz python3-requests python3-redis httpd redis
 
 %global debug_package %{nil}
 
@@ -44,13 +44,16 @@ rm -rf $RPM_BUILD_ROOT
 	python3 setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 	%cmake_install
 	mkdir -p $RPM_BUILD_ROOT/var/log/xython
-	mkdir -p $RPM_BUILD_ROOT/etc/init.d/
+	#mkdir -p $RPM_BUILD_ROOT/etc/init.d/
 	pwd
 	ls -l
-	cp debian/xython-client.xython-client.init $RPM_BUILD_ROOT/etc/init.d/xython-client
-	cp debian/xython.xythond.init $RPM_BUILD_ROOT/etc/init.d/xythond
+	#cp debian/xython-client.xython-client.init $RPM_BUILD_ROOT/etc/init.d/xython-client
+	#cp debian/xython.xythond.init $RPM_BUILD_ROOT/etc/init.d/xythond
 	mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system/
-	cp debian/xython-client.xython-client.service $RPM_BUILD_ROOT/usr/lib/systemd/system/
+	cp debian/xython-client.xython-client.service $RPM_BUILD_ROOT/usr/lib/systemd/system/xython-client.service
+	cp debian/xython.xythond.service $RPM_BUILD_ROOT/usr/lib/systemd/system/xythond.service
+	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
+	cp etc/apache2/xython.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/
 	mkdir -p $RPM_BUILD_ROOT/usr/bin/
 	cp client/* $RPM_BUILD_ROOT/usr/bin/
 	#%{python3_sitelib}/ ?
@@ -74,7 +77,7 @@ id xython 1>/dev/null 2>&1
 if [ $? -ne 0 ]
 then
    groupadd xython || true
-   useradd -g xython -c "Xython user" -d /usr/lib/xython xython
+   useradd -g xython -c "Xython user" -d /var/lib/xython xython
 fi
 #if [ -e /var/log/xymon/xymonlaunch.pid -a -x /etc/init.d/xymon ]
 #then
@@ -139,25 +142,33 @@ chkconfig --del xython-client
 
 
 %files
-%attr(644, root, root) %config /etc/xython/*
+%attr(644, root, root) %config /etc/xython/analysis.cfg
+%attr(644, root, root) %config /etc/xython/graphs.cfg
+%attr(644, root, root) %config /etc/xython/protocols.cfg
+%attr(644, root, root) %config /etc/xython/xymonmenu.cfg
+%attr(644, root, root) %config /etc/xython/xymonserver.cfg
+%attr(644, root, root) %config /etc/xython/xython.cfg
+%attr(644, root, root) %config /etc/xython/web/*
+%attr(644, root, root) %config /etc/httpd/conf.d/xython.conf
 #%attr(644, root, root) %config /etc/httpd/conf.d/xymon-apache.conf
 %attr(755, root, root) %dir /etc/xython 
 #%attr(-, root, root) %dir /etc/xython/web
 %attr(755, xython, xython) %dir /var/log/xython
-%attr(755, root, root) /etc/init.d/xythond
+#%attr(755, root, root) /etc/init.d/xythond
 %attr(-, root, root) /usr/bin/*
 %attr(-, xython, xython) /var/lib/xython
 %attr(755, root, root) /usr/lib/xython/cgi-bin/xythoncgi.py
 %attr(755, root, root) /usr/lib/xython/cgi-bin/showgraph.py
-%attr(750, root, xython) /usr/share/xython
+%attr(755, root, root) /usr/share/xython
 %attr(-, root, root) %{python3_sitelib}/
+%attr(-, root, root) /usr/lib/systemd/system/xythond.service
 
 %files client
 %attr(-, root, root) /usr/bin/xython-client
 %attr(-, root, root) /usr/bin/xython-client.sh
 %attr(-, root, root) /usr/bin/xython-client-looper.sh
-%attr(-, root, root) /usr/lib/systemd/system/xython-client.xython-client.service
-%attr(755, root, root) /etc/init.d/xython-client
+%attr(-, root, root) /usr/lib/systemd/system/xython-client.service
+#%attr(755, root, root) /etc/init.d/xython-client
 
 %changelog
 * Tue Oct 17 2023 Corentin Labbe <clabbe.montjoie@gmail.com> - 0.1.10
