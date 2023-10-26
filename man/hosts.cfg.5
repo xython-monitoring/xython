@@ -932,14 +932,22 @@ And you need to add in graphs.cfg
 [bandwidth]
 .br
 	FNPATTERN ^bandwidth.vlan4.rrd
+.br
 	TITLE bandwidth
+.br
 	YAXIS bytes
+.br
 	DEF:in=@RRDFN@:incoming:AVERAGE
+.br
 	AREA:in#00CC00:bandwidth
-	GPRINT:in:LAST: \: %5.1lf (cur)
-	GPRINT:in:MAX: \: %5.1lf (max)
-	GPRINT:in:MIN: \: %5.1lf (min)
-	GPRINT:in:AVERAGE: \: %5.1lf (avg)\n
+.br
+	GPRINT:in:LAST: \\: %5.1lf (cur)
+.br
+	GPRINT:in:MAX: \\: %5.1lf (max)
+.br
+	GPRINT:in:MIN: \\: %5.1lf (min)
+.br
+	GPRINT:in:AVERAGE: \\: %5.1lf (avg)\n
 
 This is only supported by xython
 
