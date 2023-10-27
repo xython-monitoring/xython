@@ -209,7 +209,9 @@ class xythonsrv:
         self.protocols = {}
         self.time_read_protocols = 0
         self.time_read_graphs = 0
+        self.time_read_rrddef = 0
         self.graphscfg = {}
+        self.rrddef = {}
         # list rrd to display per column
         self.rrd_column = {}
         self.rrd_column["cpu"] = ['la']
@@ -1667,6 +1669,51 @@ class xythonsrv:
             return RRD_COLOR[i]
         return '000000'
 
+    def load_rrddefinitions_cfg(self):
+        prrddef = f"{self.etcdir}/rrddefinitions.cfg"
+        try:
+            mtime = os.path.getmtime(prrddef)
+        except:
+            self.error(f"ERROR: fail to get mtime of {prrddef}")
+            return RET_ERR
+        if self.time_read_rrddef < mtime:
+            self.time_read_rrddef = mtime
+        else:
+            return RET_OK
+        try:
+            rrddef = open(prrddef, 'r')
+        except:
+            self.error(f"ERROR: cannot open {prrddef}")
+            return RET_ERR
+        lines = rrddef.readlines()
+        section = None
+        for line in lines:
+            line = line.rstrip()
+            line = line.lstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            if line[0] == '[':
+                if ']' not in line:
+                    self.error(f"ERROR: invalid line in {prrddef} {line}")
+                    continue
+                section = line.split('[')[1]
+                section = section.split(']')[0]
+                if section == '':
+                    section = 'default'
+                self.rrddef[section] = {}
+                self.rrddef[section]["info"] = []
+                continue
+            if section is None:
+                continue
+            self.debugdev("rrddef", f"DEBUG: load_graphs: {section} {line}")
+            self.rrddef[section]["info"].append(line)
+        if 'default' not in self.rrddef:
+            self.error("ERROR: didnt found a default section in {prrddef}")
+            return RET_ERR
+        return RET_OK
+
     def load_graphs_cfg(self):
         pgraphs = f"{self.etcdir}/graphs.cfg"
         mtime = os.path.getmtime(pgraphs)
@@ -1959,9 +2006,16 @@ class xythonsrv:
         rrdfpath = f"{self.xt_rrd}/{hostname}/{fname}.rrd"
         if not os.path.exists(rrdfpath):
             self.debug(f"DEBUG: do_rrd create for {hostname} {rrdname} {dsname} {value}")
-            # TODO get this (RRAxxx) from somewhere else
+            if rrdname in self.rrddef:
+                rras = self.rrddef[rrdname]["info"]
+            elif 'default' in self.rrddef:
+                rras = self.rrddef['default']["info"]
+            else:
+                # this should not happen
+                rras = "RRA:AVERAGE:0.5:1:1200"
+            print(rras)
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
-                "RRA:AVERAGE:0.5:1:1200", dsspec);
+                rras, dsspec);
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
         return True
 
@@ -2779,15 +2833,24 @@ class xythonsrv:
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
             (hostname text, column text, next date, UNIQUE(hostname, column))''')
         self.sqc.execute('DELETE FROM tests')
-        self.read_configs()
+        ret = self.read_configs()
+        if not ret:
+            sys.exit(1)
         self.read_acks()
-        self.sqconn.commit()
+        try:
+            self.sqconn.commit()
+        except:
+            self.error(f"ERROR: fail to commit sqlite {self.db}")
+            sys.exit(1)
         ts_end = time.time()
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
 
 # read hosts.cfg and analysis.cfg
 # check if thoses files need to be reread
     def read_configs(self):
+        ret = self.load_rrddefinitions_cfg()
+        if ret == RET_ERR:
+            return False
         self.load_graphs_cfg()
         # TODO retcode
         self.read_protocols()

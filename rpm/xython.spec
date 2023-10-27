@@ -146,6 +146,7 @@ chkconfig --del xython-client
 %attr(644, root, root) %config /etc/xython/analysis.cfg
 %attr(644, root, root) %config /etc/xython/graphs.cfg
 %attr(644, root, root) %config /etc/xython/protocols.cfg
+%attr(644, root, root) %config /etc/xython/rrddefinitions.cfg
 %attr(644, root, root) %config /etc/xython/xymonmenu.cfg
 %attr(644, root, root) %config /etc/xython/xymonserver.cfg
 %attr(644, root, root) %config /etc/xython/xython.cfg
