@@ -2,8 +2,10 @@
 
 import os
 import pytest
+import random
 import re
 import shutil
+import subprocess
 import time
 from xython.common import gcolor
 from xython.common import gif
@@ -35,6 +37,14 @@ try:
     has_rrdtool = True
 except ImportError:
     has_rrdtool = False
+
+def setup_testdir(X, name):
+    X.xt_data = f'./tests/data-{name}-' + str(random.randint(0, 32000))
+    X.xt_logdir = f'{X.xt_data}/logs/'
+    if not os.path.exists(X.xt_data):
+        os.mkdir(X.xt_data)
+    if not os.path.exists(X.xt_logdir):
+        os.mkdir(X.xt_logdir)
 
 def test_xytime():
     assert xytime(1678871776) == 'Wed Mar 15 10:16:16 2023'
@@ -465,8 +475,7 @@ def test_reload():
 2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc  ipv6\n")
     X = xythonsrv()
     X.etcdir = './tests/etc/xython-load/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'load')
     X.init()
     X.read_configs()
     H = X.find_host("donotexists")
@@ -508,6 +517,7 @@ def test_reload():
     assert len(X.xy_hosts) == 2
     X.sqc.close()
     os.remove(f"{X.xt_data}/xython.db")
+    shutil.rmtree(X.xt_data)
 
 def test_protocols_binary():
     assert hex_to_binary('\\x35\\x36') == b'56'
@@ -528,10 +538,7 @@ def test_full():
     X = xythonsrv()
     X.lldebug = True
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data2/'
-    if not os.path.exists('./tests/data2/'):
-        os.mkdir(X.xt_data)
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'full')
     X.wwwdir = './tests/www/'
     X.init()
     # TODO set webdir in config file
@@ -626,56 +633,45 @@ def test_full():
 
     X.unet_send(f"proxy: test\n{data}")
     X.unet_loop()
+    shutil.rmtree(X.xt_data)
 
 def test_snmpd():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'snmpd')
     X.daemon_name = "xython-snmpd"
     X.read_hosts()
     X.hosts_check_snmp_tags()
     # test community
     #do_snmpd(X)
+    shutil.rmtree(X.xt_data)
 
 def test_snmpd2():
     X = xythonsrv()
     X.etcdir = './tests/etc/snmp/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'snmpd2')
     X.daemon_name = "xython-snmpd"
     X.read_hosts()
     X.hosts_check_snmp_tags()
     # test community
     #do_snmpd(X)
+    shutil.rmtree(X.xt_data)
 
 def test_tests():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'tests')
     X.init()
     X.read_hosts()
     X.dump_tests()
     X.gen_tests()
 #    X.do_tests()
-
-def clean(cdir):
-    dirFiles = os.listdir(cdir)
-    for f in dirFiles:
-        path = f"{cdir}/{f}"
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
+    shutil.rmtree(X.xt_data)
 
 def test_rrd():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
-    clean(X.xt_logdir)
-    clean(X.xt_data)
+    setup_testdir(X, 'rrd')
     X.lldebug = True
     X.init()
     X.read_hosts()
@@ -688,8 +684,11 @@ def test_rrd():
     ret = X.gen_cgi_rrd("test3", "invalid", "unused")
     assert ret == 'Status: 400 Bad Request\n\nERROR: invalid not found in graphs.cfg'
     ret = X.gen_cgi_rrd("test3", "memory", "unused")
-    print(ret)
-    assert ret == 'Status: 400 Bad Request\n\nERROR: ./tests/data//rrd//test3 not found'
+    assert ret == f'Status: 400 Bad Request\n\nERROR: {X.xt_data}/rrd//test3 not found'
+    # following test could not work without rrdtool
+    if not has_rrdtool:
+        shutil.rmtree(X.xt_data)
+        return
     X.do_rrd("test3", 'la', 'la', 'la', 4, ['DS:la:GAUGE:600:0:U'])
     # now test3 directory exists
     ret = X.gen_cgi_rrd("test3", "memory", "unused")
@@ -701,10 +700,48 @@ def test_rrd():
     # TODO check we have a real image
     X.do_sensor_rrd("test3", "fakeadapter", "temp1", 42)
     ret = X.gen_cgi_rrd("test3", "sensor", "unused")
-    print(ret)
     assert len(ret) > 23
     buf = ret[0:23]
     assert 'Content-type: image/png' == buf.decode('UTF8')
+
+    # now test the unix sock
+    X.unixsock = './tests/run/xython.sock'
+    assert X.unet_start()
+    ret = X.unet_send_recv("GETRRD test3\n")
+    assert ret == b'Status: 400 Bad Request\n\nERROR: not enough arguments'
+    ret = X.unet_send_recv("GETRRD test3 memory\n")
+    assert ret == b'Status: 400 Bad Request\n\nERROR: not enough arguments'
+    ret = X.unet_send_recv("GETRRD test3 la view\n")
+    assert len(ret) > 23
+    buf = ret[0:23]
+    assert 'Content-type: image/png' == buf.decode('UTF8')
+    ret = X.unet_send_recv("GETRRD test3 sensor view\n")
+    assert len(ret) > 23
+    buf = ret[0:23]
+    assert 'Content-type: image/png' == buf.decode('UTF8')
+    # now test the CGI
+
+    ret = subprocess.run('./xython/showgraph.py', capture_output=True, env=None)
+    print(ret)
+    assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno hostname\n\n'
+
+    envi = {}
+    envi['QUERY_STRING'] = 'hostname=invalid'
+    ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
+    print(ret)
+    assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno service\n\n'
+
+    envi['QUERY_STRING'] = f'hostname=invalid&service=invalid&sockpath={X.unixsock}'
+    ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
+    print(ret)
+    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nFAIL to connect to xythond\n'
+
+    envi['QUERY_STRING'] = 'hostname=invalid&service='
+    ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
+    print(ret)
+    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nFAIL to connect to xythond\n'
+
+    shutil.rmtree(X.xt_data)
 
 def test_celery_ping():
     ret = ping("test", "-invalid", False, False)
@@ -847,8 +884,7 @@ def test_celery_protocols():
 def test_net():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'net')
     assert not X.set_netport(0)
     assert not X.set_netport(100000)
     assert X.set_netport(1000)
@@ -858,11 +894,12 @@ def test_net():
     X.unixsock = './tests/run/xython.sock'
     assert X.unet_start()
     assert X.unet_start()
+    shutil.rmtree(X.xt_data)
 
 def test_misc():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
-    X.xt_data = './tests/data/'
-    X.xt_logdir = './tests/logs/'
+    setup_testdir(X, 'misc')
     X.init()
     X.print()
+    shutil.rmtree(X.xt_data)
