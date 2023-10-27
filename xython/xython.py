@@ -817,7 +817,7 @@ class xythonsrv:
 
     def read_protocols(self):
         mtime = os.path.getmtime(self.etcdir + "/protocols.cfg")
-        self.debug(f"DEBUG: compare mtime={mtime} and time_read_protocols={self.time_read_protocols}")
+        #self.debug(f"DEBUG: compare mtime={mtime} and time_read_protocols={self.time_read_protocols}")
         if self.time_read_protocols < mtime:
             self.time_read_protocols = mtime
         else:
@@ -950,6 +950,7 @@ class xythonsrv:
         return None
 
     def column_update(self, hostname, cname, color, ts, data, expire, updater):
+        #self.debug(f"DEBUG: column_update {hostname} {cname} ts={ts} expire={expire}")
         color = gcolor(color)
         ts_start = time.time()
         expiretime = ts_start + expire
@@ -1282,7 +1283,7 @@ class xythonsrv:
             for T in H.tests:
                 self.debug("DEBUG: gentest %s %s" % (H.name, T.type))
                 # self.debug(T.urls)
-                tnext = now + randint(1, 30)
+                tnext = now + randint(1, 10)
                 res = self.sqc.execute(f'INSERT OR REPLACE INTO tests(hostname, column, next) VALUES ("{H.name}", "{T.type}", {tnext})')
 
     def dump_tests(self):
@@ -1372,7 +1373,7 @@ class xythonsrv:
                 testtype = ret["type"]
                 column = ret["column"]
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
-                self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 60, "xython-tests")
+                self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")
                 if "certs" in ret:
                     #self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
                     for url in ret["certs"]:
@@ -1725,7 +1726,7 @@ class xythonsrv:
                 rrd_sensors = os.listdir(f"{basedir}/sensor/{adapter}/")
                 for rrd_sensor in rrd_sensors:
                     allrrds.append(f"sensor/{adapter}/{rrd_sensor}")
-        print(f"DEBUG: allrrds={allrrds}")
+        #print(f"DEBUG: allrrds={allrrds}")
         now = time.time()
         for rrd in allrrds:
             mtime = os.path.getmtime(f"{basedir}/{rrd}")
@@ -1755,7 +1756,7 @@ class xythonsrv:
                 continue
             if graph not in self.rrd_column:
                 self.rrd_column[graph] = [graph]
-            self.debug(f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
+            self.debugdev('rrd', f"GENERATE RRD FOR {hostname} with {graph} {rrdlist}")
             basedir = f"{self.wwwdir}/{hostname}"
             if not os.path.exists(basedir):
                 os.mkdir(basedir)
@@ -1777,8 +1778,7 @@ class xythonsrv:
             i = 0
             sensor_adapter = None
             for rrd in rrdlist:
-                print(f"DEBUG: rrdlist={rrdlist} rrd={rrd}")
-                # a RRD coule be used more than once
+                # a RRD could be used more than once
                 if rrd in allrrds:
                     allrrds.remove(rrd)
                 fname = str(rrd.replace(".rrd", ""))
