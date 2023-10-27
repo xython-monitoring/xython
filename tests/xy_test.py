@@ -3,6 +3,7 @@
 import os
 import pytest
 import re
+import shutil
 import time
 from xython.common import gcolor
 from xython.common import gif
@@ -659,14 +660,51 @@ def test_tests():
     X.gen_tests()
 #    X.do_tests()
 
+def clean(cdir):
+    dirFiles = os.listdir(cdir)
+    for f in dirFiles:
+        path = f"{cdir}/{f}"
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
+
 def test_rrd():
     X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.xt_data = './tests/data/'
+    X.xt_logdir = './tests/logs/'
+    clean(X.xt_logdir)
+    clean(X.xt_data)
+    X.lldebug = True
+    X.init()
+    X.read_hosts()
     # test the truncating
     assert X.rrd_getdsname("01234567890123456789") == "0123456789012345678"
     # test space replacement
     assert X.rrd_getdsname("one test") == "one_test"
     assert X.rrd_pathname("disk", '/') == "disk,root"
     assert X.rrd_pathname("disk", '/test') == "disk,test"
+    ret = X.gen_cgi_rrd("test3", "invalid", "unused")
+    assert ret == 'Status: 400 Bad Request\n\nERROR: invalid not found in graphs.cfg'
+    ret = X.gen_cgi_rrd("test3", "memory", "unused")
+    print(ret)
+    assert ret == 'Status: 400 Bad Request\n\nERROR: ./tests/data//rrd//test3 not found'
+    X.do_rrd("test3", 'la', 'la', 'la', 4, ['DS:la:GAUGE:600:0:U'])
+    # now test3 directory exists
+    ret = X.gen_cgi_rrd("test3", "memory", "unused")
+    assert ret == 'Status: 400 Bad Request\n\nERROR: RRD list is empty'
+    ret = X.gen_cgi_rrd("test3", "la", "unused")
+    assert len(ret) > 23
+    buf = ret[0:23]
+    assert 'Content-type: image/png' == buf.decode('UTF8')
+    # TODO check we have a real image
+    X.do_sensor_rrd("test3", "fakeadapter", "temp1", 42)
+    ret = X.gen_cgi_rrd("test3", "sensor", "unused")
+    print(ret)
+    assert len(ret) > 23
+    buf = ret[0:23]
+    assert 'Content-type: image/png' == buf.decode('UTF8')
 
 def test_celery_ping():
     ret = ping("test", "-invalid", False, False)
