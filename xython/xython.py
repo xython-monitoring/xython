@@ -2581,6 +2581,20 @@ class xythonsrv:
         sock.close()
         return True
 
+    def unet_send_recv(self, buf):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        try:
+            sock.connect(self.unixsock)
+        except:
+            self.error(f"FAIL to connect to xythond sock {self.unixsock}")
+            return None
+        sock.send(buf.encode("UTF8"))
+        self.unet_loop()
+        buf = sock.recv(64000)
+        sock.close()
+        return buf
+
     def unet_start(self):
         if os.path.exists(self.unixsock):
             os.unlink(self.unixsock)
@@ -2667,6 +2681,10 @@ class xythonsrv:
                 self.parse_hostdata(msg)
             elif cmd == 'GETRRD':
                 self.debug(sbuf)
+                if len(sbuf) < 4:
+                    C.send(b'Status: 400 Bad Request\n\nERROR: not enough arguments')
+                    C.close()
+                    continue
                 ret = self.gen_cgi_rrd(sbuf[1], sbuf[2], sbuf[3])
                 try:
                     if type(ret) == str:
@@ -2804,6 +2822,12 @@ class xythonsrv:
         self.xt_acks = f"{self.xt_data}/acks/"
         self.xt_state = f"{self.xt_data}/state/"
         if self.xythonmode > 0:
+            if not os.path.exists(self.xt_data):
+                try:
+                    os.mkdir(self.xt_data)
+                except:
+                    self.error(f"ERROR: fail to create {self.xt_data}")
+                    sys.exit(1)
             if not os.path.exists(self.xt_histlogs):
                 os.mkdir(self.xt_histlogs)
             if not os.path.exists(self.xt_histdir):
@@ -2839,8 +2863,8 @@ class xythonsrv:
         self.read_acks()
         try:
             self.sqconn.commit()
-        except:
-            self.error(f"ERROR: fail to commit sqlite {self.db}")
+        except sqlite3.OperationalError as e:
+            self.error(f"ERROR: fail to commit sqlite {self.db} {str(e)}")
             sys.exit(1)
         ts_end = time.time()
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
