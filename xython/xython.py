@@ -1838,6 +1838,98 @@ class xythonsrv:
             self.gen_rrd(hostname)
         self.stat("GENRRD", time.time() - ts_start)
 
+    def gen_cgi_rrd(self, hostname, service, action):
+        rrdlist = []
+        basedir = f"{self.xt_rrd}/{hostname}"
+        self.debug(f"DEBUG: gen_cgi_rrd {hostname} {service}")
+        if service not in self.graphscfg:
+            return f'Status: 400 Bad Request\n\nERROR: {service} not found in graphs.cfg'
+        if not os.path.exists(basedir):
+            return f'Status: 400 Bad Request\n\nERROR: {basedir} not found'
+        if 'FNPATTERN' in self.graphscfg[service]:
+            rrdpattern = self.graphscfg[service]["FNPATTERN"]
+            for rrd in os.listdir(basedir):
+                self.debug(f"CHECK {rrd} vs {rrdpattern}<br>")
+                if re.match(rrdpattern, rrd):
+                    rrdlist.append(rrd)
+        else:
+            rrdpath = f'{basedir}/{service}.rrd'
+            #print(rrdpath)
+            if os.path.exists(rrdpath):
+                rrdlist.append(f"{service}.rrd")
+                #print("exists")
+        if service == 'sensor':
+            allrrds = os.listdir(basedir)
+            if 'sensor' in allrrds:
+                adapters = os.listdir(f"{basedir}/sensor/")
+                for adapter in adapters:
+                    rrd_sensors = os.listdir(f"{basedir}/sensor/{adapter}/")
+                    for rrd_sensor in rrd_sensors:
+                        allrrds.append(f"sensor/{adapter}/{rrd_sensor}")
+            for rrd in allrrds:
+                if 'sensor/' in rrd:
+                    rrdlist.append(rrd)
+        self.debug(rrdlist)
+        if len(rrdlist) == 0:
+            return 'Status: 400 Bad Request\n\nERROR: RRD list is empty'
+        base = ['-',
+        '--width=576', '--height=140',
+        '--vertical-label="% Full"',
+        '--start=end-96h'
+        ]
+        if 'YAXIS' in self.graphscfg[service]:
+            base.append(f'--vertical-label={self.graphscfg[service]["YAXIS"]}')
+        else:
+            base.append(f'--vertical-label="unset"')
+        if 'TITLE' in self.graphscfg[service]:
+            base.append(f'--title={self.graphscfg[service]["TITLE"]} on {hostname}')
+        else:
+            base.append(f'--title={service} on {hostname}')
+        i = 0
+        sensor_adapter = None
+        for rrd in rrdlist:
+            fname = str(rrd.replace(".rrd", ""))
+            rrdfpath = f"{basedir}/{rrd}"
+            print(f"fnam={fname}")
+            label = self.rrd_label(fname, 'conn')
+            info = rrdtool.info(rrdfpath)
+            template = self.graphscfg[service]["info"]
+            if service == 'sensor':
+                adapter = os.path.dirname(rrd).split('/')[-1]
+            #print(f"DEBUG: sensor_rrd: adapter is {adapter}")
+            # remove adapter name
+                label = re.sub('/.*/', '', label)
+            if service == 'sensor' and sensor_adapter != adapter:
+            #print(f"DEBUG: sensor_rrd: add comment {adapter}")
+                sensor_adapter = adapter
+                base.append(f'COMMENT:{adapter}\\n')
+            label = label.ljust(20)
+            #print(f"DEBUG: label is {label}<br>")
+            for line in template:
+                for dsname in self.get_ds_name(info):
+                    #print(f"DEBUG: dsname={dsname}<br>")
+                    line = line.replace('@RRDDS@', dsname)
+                    line = line.replace('@COLOR@', self.rrd_color(i))
+                    line = line.replace('@RRDIDX@', f"{i}")
+                    line = line.replace('@RRDFN@', rrdfpath)
+                if service == 'la':
+                    line = line.replace('la.rrd', rrdfpath)
+                line = line.replace('@RRDFN@', rrdfpath)
+                line = line.replace('@RRDPARAM@', f"{label}")
+                base.append(line)
+            i += 1
+            #rrdup = xytime(time.time()).replace(':', '\\:')
+            #base.append(f'COMMENT:Updated\\: {rrdup}')
+        #print("==================<br>")
+        #print(base)
+        #print('<br>')
+        try:
+            ret = rrdtool.graphv(base)
+        # TODO check this ret
+        except rrdtool.OperationalError as e:
+            return f'Status: 400 Bad Request\n\nERROR: {str(e)}'
+        return b"Content-type: image/png\r\n\r\n" + ret['image']
+
     # give a DS name from a sensor name
     def rrd_getdsname(self, sname):
         dsname = sname.replace(" ", '_')
@@ -2519,6 +2611,17 @@ class xythonsrv:
                 msg["buf"] = buf
                 msg["addr"] = f"TLS proxy for {addr}"
                 self.parse_hostdata(msg)
+            elif cmd == 'GETRRD':
+                self.debug(sbuf)
+                ret = self.gen_cgi_rrd(sbuf[1], sbuf[2], sbuf[3])
+                try:
+                    if type(ret) == str:
+                        C.send(ret.encode("UTF8"))
+                    else:
+                        C.send(ret)
+                except BrokenPipeError as error:
+                    self.error("Client get away")
+                    pass
             else:
                 self.error(f"ERROR: Unknow cmd {cmd}")
             C.close()

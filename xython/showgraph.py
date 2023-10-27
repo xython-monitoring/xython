@@ -134,7 +134,7 @@ debug = False
 if "debug" in POST:
     debug = True
 
-action = None
+action = 'view'
 if "action" in POST:
     action = POST["action"].rstrip()
 
@@ -143,116 +143,16 @@ if action == 'menu':
     print('<html>')
     sys.exit(0)
     
-
-# TODO get this
-RRDDIR = '/var/lib/xython/rrd'
-
-graphscfg = load_graphs_cfg("/home/cpp/xython/etc/xython/")
-if graphscfg is None:
-    print('Status: 400 Bad Request\n\n')
-    print("ERROR: fail to open graphs.cfg")
-    sys.exit(1)
-graph = svc
-if svc not in graphscfg:
-    print('Status: 400 Bad Request\n\n')
-    print(f"ERROR: SERVICE {graph} not found in graph<br>")
-    sys.exit(0)
-#print(graphscfg[svc])
-rrdlist = []
-basedir = f"{RRDDIR}/{hostname}"
-if 'FNPATTERN' in graphscfg[graph]:
-    rrdpattern = graphscfg[graph]["FNPATTERN"]
-    for rrd in os.listdir(basedir):
-        #print(f"CHECK {rrd} vs {rrdpattern}<br>")
-        if re.match(rrdpattern, rrd):
-            rrdlist.append(rrd)
-else:
-    rrdpath = f'{basedir}/{graph}.rrd'
-    #print(rrdpath)
-    if os.path.exists(rrdpath):
-        rrdlist.append(f"{graph}.rrd")
-        #print("exists")
-if graph == 'sensor':
-    allrrds = os.listdir(basedir)
-    if 'sensor' in allrrds:
-        adapters = os.listdir(f"{basedir}/sensor/")
-        for adapter in adapters:
-            rrd_sensors = os.listdir(f"{basedir}/sensor/{adapter}/")
-            for rrd_sensor in rrd_sensors:
-                allrrds.append(f"sensor/{adapter}/{rrd_sensor}")
-    for rrd in allrrds:
-        if 'sensor/' in rrd:
-            rrdlist.append(rrd)
-if len(rrdlist) == 0:
-    print('Status: 400 Bad Request\n\n')
-    print("ERROR: RRD list is empty")
-    sys.exit(0)
-
-#print("OK<br>")
-#print(rrdlist)
-#print('<br>')
-base = ['-',
-'--width=576', '--height=140',
-'--vertical-label="% Full"',
-'--start=end-96h'
-]
-if 'YAXIS' in graphscfg[graph]:
-    base.append(f'--vertical-label={graphscfg[graph]["YAXIS"]}')
-else:
-    base.append(f'--vertical-label="unset"')
-if 'TITLE' in graphscfg[graph]:
-    base.append(f'--title={graphscfg[graph]["TITLE"]} on {hostname}')
-else:
-    base.append(f'--title={graph} on {hostname}')
-i = 0
-sensor_adapter = None
-for rrd in rrdlist:
-    fname = str(rrd.replace(".rrd", ""))
-    rrdfpath = f"{basedir}/{rrd}"
-    #print(f"fnam={fname}<br>")
-    #print('<br>')
-    label = rrd_label(fname, 'conn')
-    info = rrdtool.info(rrdfpath)
-    template = graphscfg[graph]["info"]
-    if graph == 'sensor':
-        adapter = os.path.dirname(rrd).split('/')[-1]
-    #print(f"DEBUG: sensor_rrd: adapter is {adapter}")
-    # remove adapter name
-        label = re.sub('/.*/', '', label)
-    if graph == 'sensor' and sensor_adapter != adapter:
-    #print(f"DEBUG: sensor_rrd: add comment {adapter}")
-        sensor_adapter = adapter
-        base.append(f'COMMENT:{adapter}\\n')
-    label = label.ljust(20)
-    #print(f"DEBUG: label is {label}<br>")
-    for line in template:
-        for dsname in get_ds_name(info):
-            #print(f"DEBUG: dsname={dsname}<br>")
-            line = line.replace('@RRDDS@', dsname)
-            line = line.replace('@COLOR@', rrd_color(i))
-            line = line.replace('@RRDIDX@', f"{i}")
-            line = line.replace('@RRDFN@', rrdfpath)
-        if graph == 'la':
-            line = line.replace('la.rrd', rrdfpath)
-        line = line.replace('@RRDFN@', rrdfpath)
-        line = line.replace('@RRDPARAM@', f"{label}")
-        base.append(line)
-    i += 1
-    #rrdup = xytime(time.time()).replace(':', '\\:')
-    #base.append(f'COMMENT:Updated\\: {rrdup}')
-#print("==================<br>")
-#print(base)
-#print('<br>')
+sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
-    ret = rrdtool.graphv(base)
-# TODO check this ret
-except rrdtool.OperationalError as e:
-    print(e)
-    sys.exit(1)
-sys.stdout.buffer.write(b"Content-type: image/png\r\n\r\n")
-if debug:
-    print(ret['image'])
-else:
-    sys.stdout.buffer.write(ret['image'])
-sys.exit(0)
+    sock.connect('/run/xython/xython.sock')
+except:
+    print("FAIL to connect to xythond")
+    sys.exit(0)
+buf = f"GETRRD {hostname} {svc} {action}"
+sock.send(buf.encode("UTF8"))
+buf = sock.recv(640000)
+sys.stdout.buffer.write(buf)
+sock.close()
 
+sys.exit(0)
