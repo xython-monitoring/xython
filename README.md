@@ -51,12 +51,14 @@ And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
 Or the old way:
 > apt-key add pgp-key.public
 
+<!--
 #### manual debian setup
 Github pipelines generates a debian package, so you can download it and install it via:
 > dpkg -i xython-0-1.deb
 
 TIPS: you can find the zip of the package in the bottom of a github actions summary
 or in <https://www.xython.fr/xython-mirror/amd64/>
+-->
 
 #### Gentoo
 The ebuild for gentoo could be found at <https://github.com/montjoie/montjoiegentooportage.git>
@@ -64,15 +66,18 @@ The ebuild for gentoo could be found at <https://github.com/montjoie/montjoiegen
 #### BSD
 I plan to support freeBSD, openBSD and netBSD
 
-#### other distro
-Packaging for RPM is near done, I target fedora 39 and rockylinux9. (Please ask for more if needed)
+#### other RPM distro
+For RPM packaging, I target fedora 39 and rockylinux9. (Please ask for more if needed)
 
-For xython server, python3-celery is missing in thoses OS and also in EPEL:9, so the situation is blocked for the moment.
+For xython server, python3-celery is missing in thoses OS and also in EPEL:9, so the situation was blocked.
 We need to wait on <https://bugzilla.redhat.com/show_bug.cgi?id=2032543>
-But I have packaged missing ones in the xython repository
+But I have packaged missing ones in the xython repository.
 
 > Add <https://www.xython.fr/mirror/xython.repo> in /etc/yum.repos.d/
 You need to edit it and replace __OSNAME__ by either fedora39 or rockylinux9
+
+One package needed is present in EPEL repository
+> yum install epel-release
 
 Then you just have to
 > yum install xython
