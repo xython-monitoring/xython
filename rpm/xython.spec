@@ -52,6 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 	mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system/
 	cp debian/xython-client.xython-client.service $RPM_BUILD_ROOT/usr/lib/systemd/system/xython-client.service
 	cp debian/xython.xythond.service $RPM_BUILD_ROOT/usr/lib/systemd/system/xythond.service
+	cp debian/xython.xython-celery.service $RPM_BUILD_ROOT/usr/lib/systemd/system/xython-celery.service
 	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 	cp etc/apache2/xython.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/
 	mkdir -p $RPM_BUILD_ROOT/usr/bin/
@@ -162,6 +163,7 @@ chkconfig --del xython-client
 %attr(755, root, root) /usr/share/xython
 %attr(-, root, root) %{python3_sitelib}/
 %attr(-, root, root) /usr/lib/systemd/system/xythond.service
+%attr(-, root, root) /usr/lib/systemd/system/xython-celery.service
 
 %files client
 %attr(-, root, root) /usr/bin/xython-client
