@@ -112,6 +112,19 @@ def test_validator():
     assert not is_valid_column("teséàçö")
 
 
+def test_read_xymonserver():
+    X = xythonsrv()
+    X.etcdir = './tests/invalid/'
+    setup_testdir(X, 'xymonserver')
+
+    ret = X.load_xymonserver_cfg()
+    assert ret == X.RET_ERR
+    X.etcdir = './tests/bogus/'
+    ret = X.load_xymonserver_cfg()
+    assert ret == X.RET_OK
+
+    shutil.rmtree(X.xt_data)
+
 def test_xython_getvar():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
