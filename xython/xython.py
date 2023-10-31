@@ -1984,6 +1984,9 @@ class xythonsrv:
         '--vertical-label="% Full"',
         '--start=end-96h'
         ]
+        if 'RRDGRAPHOPTS' in self.xymonserver_cfg:
+            for rrdgopt in self.xymonserver_cfg['RRDGRAPHOPTS'].split(' '):
+                base.append(rrdgopt)
         if 'YAXIS' in self.graphscfg[service]:
             base.append(f'--vertical-label={self.graphscfg[service]["YAXIS"]}')
         else:
@@ -2034,6 +2037,7 @@ class xythonsrv:
             ret = rrdtool.graphv(base)
         # TODO check this ret
         except rrdtool.OperationalError as e:
+            self.error(f"Fail to generate RRD {str(e)}")
             return f'Status: 400 Bad Request\n\nERROR: {str(e)}'
         return b"Content-type: image/png\r\n\r\n" + ret['image']
 
