@@ -150,11 +150,11 @@ class xytest:
         print(f"TEST DUMP: {self.hostname} {self.type} {self.urls}")
 
 
-RET_OK = 0
-RET_ERR = 1
-RET_NEW = 2
 class xythonsrv:
     def __init__(self):
+        self.RET_OK = 0
+        self.RET_ERR = 1
+        self.RET_NEW = 2
         self.xy_hosts = []
         self.tests = []
         self.xythonmode = 2
@@ -763,19 +763,19 @@ class xythonsrv:
             mtime = os.path.getmtime(self.etcdir + "/hosts.cfg")
         except:
             self.error("ERROR: cannot get mtime of hosts.cfg")
-            return RET_ERR
+            return self.RET_ERR
         #self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
         else:
-            return RET_OK
+            return self.RET_OK
         self.debug(f"DEBUG: read_hosts in {self.etcdir}")
         self.read_hosts_cnt += 1
         try:
             fhosts = open(self.etcdir + "/hosts.cfg", 'r')
         except:
             self.error("ERROR: cannot open hosts.cfg")
-            return RET_ERR
+            return self.RET_ERR
         dhosts = fhosts.read()
         dhosts = dhosts.replace('\\\n', '')
         for line in dhosts.split('\n'):
@@ -815,7 +815,7 @@ class xythonsrv:
             if H.rhcnt < self.read_hosts_cnt:
                 self.debug(f"DEBUG: read_hosts: purge {H.name}")
                 self.xy_hosts.remove(H)
-        return RET_NEW
+        return self.RET_NEW
 
     def read_protocols(self):
         mtime = os.path.getmtime(self.etcdir + "/protocols.cfg")
@@ -823,12 +823,12 @@ class xythonsrv:
         if self.time_read_protocols < mtime:
             self.time_read_protocols = mtime
         else:
-            return RET_OK
+            return self.RET_OK
         try:
             fprotocols = open(self.etcdir + "/protocols.cfg", 'r')
         except:
             self.error("ERROR: cannot open protocols.cfg")
-            return RET_ERR
+            return self.RET_ERR
         dprotocols = fprotocols.read()
         cproto = None
         P = None
@@ -868,7 +868,7 @@ class xythonsrv:
                 P.send = P.send.replace('\\r', '\r')
                 continue
             self.debug(f"{cproto} unhandled {line}")
-        return RET_OK
+        return self.RET_OK
 
     def find_host(self, hostname):
         for H in self.xy_hosts:
@@ -1496,7 +1496,7 @@ class xythonsrv:
         if H.time_read_analysis < mtime:
             H.time_read_analysis = mtime
         else:
-            return RET_OK
+            return self.RET_OK
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         currhost = None
         self.rules = {}
@@ -1542,7 +1542,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     H.rules[memoryrule] = rm
             elif line[0:4] == 'LOAD' or line[0:2] == 'UP':
                 if self.rules["CPU"] is None:
@@ -1556,7 +1556,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     if H.rules["CPU"] is None:
                         rc = xy_rule_cpu()
                     else:
@@ -1572,7 +1572,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     H.rules["PORT"].append(rp)
             elif line[0:4] == 'PROC':
                 rp = xy_rule_proc()
@@ -1586,7 +1586,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     H.rules["PROC"].append(rp)
             elif line[0:4] == 'DISK':
                 if currhost == 'DEFAULT':
@@ -1596,7 +1596,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     if H.rules["DISK"] is None:
                         H.rules["DISK"] = xy_rule_disks()
                     rxd = H.rules["DISK"]
@@ -1609,7 +1609,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     if H.rules["INODE"] is None:
                         H.rules["INODE"] = xy_rule_disks()
                     rxd = H.rules["INODE"]
@@ -1623,7 +1623,7 @@ class xythonsrv:
                     H = self.find_host(hostname)
                     if H is None:
                         self.error(f"ERROR: host is None for {hostname}")
-                        return RET_ERR
+                        return self.RET_ERR
                     if H.rules["SENSOR"] is None:
                         H.rules["SENSOR"] = xy_rule_sensors()
                     H.rules["SENSOR"].add(line[7:])
@@ -1646,7 +1646,7 @@ class xythonsrv:
         if self.rules["SENSOR"] is None:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
-        return RET_NEW
+        return self.RET_NEW
 
     def rrd_pathname(self, cname, ds):
         if ds == 'la':
@@ -1675,16 +1675,16 @@ class xythonsrv:
             mtime = os.path.getmtime(prrddef)
         except:
             self.error(f"ERROR: fail to get mtime of {prrddef}")
-            return RET_ERR
+            return self.RET_ERR
         if self.time_read_rrddef < mtime:
             self.time_read_rrddef = mtime
         else:
-            return RET_OK
+            return self.RET_OK
         try:
             rrddef = open(prrddef, 'r')
         except:
             self.error(f"ERROR: cannot open {prrddef}")
-            return RET_ERR
+            return self.RET_ERR
         lines = rrddef.readlines()
         section = None
         for line in lines:
@@ -1711,8 +1711,8 @@ class xythonsrv:
             self.rrddef[section]["info"].append(line)
         if 'default' not in self.rrddef:
             self.error("ERROR: didnt found a default section in {prrddef}")
-            return RET_ERR
-        return RET_OK
+            return self.RET_ERR
+        return self.RET_OK
 
     def load_graphs_cfg(self):
         pgraphs = f"{self.etcdir}/graphs.cfg"
@@ -1720,12 +1720,12 @@ class xythonsrv:
         if self.time_read_graphs < mtime:
             self.time_read_graphs = mtime
         else:
-            return RET_OK
+            return self.RET_OK
         try:
             fgraphs = open(pgraphs, 'r')
         except:
             self.error(f"ERROR: cannot open {pgraphs}")
-            return RET_ERR
+            return self.RET_ERR
         lines = fgraphs.readlines()
         section = None
         for line in lines:
@@ -2341,7 +2341,7 @@ class xythonsrv:
             # TODO XYMONTMP
             f = open("/var/tmp/xymon/xymond.chk")
         except:
-            return RET_ERR
+            return self.RET_ERR
         data = f.readlines()
         f.close()
         for line in data:
@@ -2873,23 +2873,24 @@ class xythonsrv:
 # check if thoses files need to be reread
     def read_configs(self):
         ret = self.load_rrddefinitions_cfg()
-        if ret == RET_ERR:
+        if ret == self.RET_ERR:
             return False
+        self.load_xymonserver_cfg()
         self.load_graphs_cfg()
         # TODO retcode
         self.read_protocols()
         ret = self.read_hosts()
-        if ret == RET_ERR:
+        if ret == self.RET_ERR:
             self.error("ERROR: failed to read hosts")
             return False
-        if ret == RET_NEW:
+        if ret == self.RET_NEW:
             self.hosts_check_tags()
         for H in self.xy_hosts:
             #self.debug(f"DEBUG: init FOUND: {H.name}")
             if not self.read_hist(H.name):
                 self.error(f"ERROR: failed to read hist for {H.name}")
             self.read_analysis(H.name)
-        if ret == RET_NEW:
+        if ret == self.RET_NEW:
             self.gen_tests()
         return True
 
