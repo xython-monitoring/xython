@@ -210,6 +210,8 @@ class xythonsrv:
         self.time_read_protocols = 0
         self.time_read_graphs = 0
         self.time_read_rrddef = 0
+        self.time_read_xserver_cfg = 0
+        self.xymonserver_cfg = {}
         self.graphscfg = {}
         self.rrddef = {}
         # list rrd to display per column
@@ -313,6 +315,64 @@ class xythonsrv:
         if results[0][0] == None:
             return None
         return results
+
+    def load_xymonserver_cfg(self):
+        pxserver = f"{self.etcdir}/xymonserver.cfg"
+        try:
+            mtime = os.path.getmtime(pxserver)
+        except:
+            self.error(f"ERROR: fail to get mtime of {pxserver}")
+            return self.RET_ERR
+        if self.time_read_xserver_cfg < mtime:
+            self.time_read_xserver_cfg = mtime
+        else:
+            return self.RET_OK
+        try:
+            xserver = open(pxserver, 'r')
+        except:
+            self.error(f"ERROR: cannot open {pxserver}")
+            return self.RET_ERR
+        lines = xserver.readlines()
+        section = None
+        for line in lines:
+            line = line.rstrip()
+            line = line.lstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            if '=' not in line:
+                self.debug(f"DEBUG: invalid line {line}")
+                continue
+            tok = line.split('=')
+            if len(tok) < 2:
+                self.error(f"ERROR: invalid line {line}")
+                continue
+            var = tok.pop(0)
+            raw = "=".join(tok)
+            if len(raw) == 0:
+                self.error(f"ERROR: invalid line {line}")
+                continue
+            value = ""
+            if raw[0] != '"':
+                i = 0
+                while i < len(raw) and raw[i] != ' ':
+                    # grab until space
+                    value += raw[i]
+                    i += 1
+            else:
+                i = 1
+                while i < len(raw):
+                    if raw[i] == '\\':
+                        i += 1
+                    if raw[i] == '"':
+                        if raw[i-1] != '\\':
+                            break
+                    value += raw[i]
+                    i += 1
+            self.xymonserver_cfg[var] = value
+            self.debug(f"DEBUG: {var} = {value}")
+        return self.RET_OK
 
     # get variables from /etc/xymon
     def xymon_getvar(self, varname):
