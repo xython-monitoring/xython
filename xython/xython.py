@@ -225,6 +225,8 @@ class xythonsrv:
         self.rrd_column["sensor"] = ['sensor']
         # timings
         self.RRD_INTERVAL = 5 * 60
+        self.RRDWIDTH = 576
+        self.RRDHEIGHT = 140
         # at which interval state/client send their status
         # default 5 minute
         self.ST_INTERVAL = 5 * 60
@@ -1869,8 +1871,16 @@ class xythonsrv:
                 os.mkdir(basedir)
                 os.chmod(basedir, 0o755)
             pngpath = f"{self.wwwdir}/{hostname}/{graph}.png"
+            if 'RRDWIDTH' in self.xymonserver_cfg:
+                width = self.xymonserver_cfg['RRDWIDTH']
+            else:
+                width = self.RRDWIDTH
+            if 'RRDHEIGHT' in self.xymonserver_cfg:
+                height = self.xymonserver_cfg['RRDHEIGHT']
+            else:
+                width = self.RRDHEIGHT
             base = [pngpath,
-                '--width=576', '--height=140',
+                f'--width={width}', f'--height={height}',
                 '--vertical-label="% Full"',
                 '--start=end-96h'
                 ]
@@ -1979,10 +1989,18 @@ class xythonsrv:
         self.debug(rrdlist)
         if len(rrdlist) == 0:
             return 'Status: 400 Bad Request\n\nERROR: RRD list is empty'
+        if 'RRDWIDTH' in self.xymonserver_cfg:
+            width = self.xymonserver_cfg['RRDWIDTH']
+        else:
+            width = self.RRDWIDTH
+        if 'RRDHEIGHT' in self.xymonserver_cfg:
+            height = self.xymonserver_cfg['RRDHEIGHT']
+        else:
+            height = self.RRDHEIGHT
         base = ['-',
-        '--width=576', '--height=140',
-        '--vertical-label="% Full"',
-        '--start=end-96h'
+                f'--width={width}', f'--height={height}',
+            '--vertical-label="% Full"',
+            '--start=end-96h'
         ]
         if 'RRDGRAPHOPTS' in self.xymonserver_cfg:
             for rrdgopt in self.xymonserver_cfg['RRDGRAPHOPTS'].split(' '):
