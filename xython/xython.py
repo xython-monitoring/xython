@@ -373,45 +373,38 @@ class xythonsrv:
                     value += raw[i]
                     i += 1
             self.xymonserver_cfg[var] = value
-            self.debug(f"DEBUG: {var} = {value}")
+        ret = 1
+        while ret > 0:
+            ret = self.xymonserver_cfg_resolve()
+            self.debug(f"RESOLVE RET={ret}")
         return self.RET_OK
+
+    # replace variables
+    # return number of replaced variable
+    def xymonserver_cfg_resolve(self):
+        c = 0
+        for name in self.xymonserver_cfg:
+            value = self.xymonserver_cfg[name]
+            dvars = re.findall(r"\$[A-Z]+", value)
+            print(f"DEBUG: {name} = {value}")
+            for var in dvars:
+                vname = var[1:]
+                if vname in self.xymonserver_cfg:
+                    c += 1
+                    v = self.xymonserver_cfg[vname]
+                    self.xymonserver_cfg[name] = self.xymonserver_cfg[name].replace(var, v)
+                else:
+                    self.error(f"WARNING: xymonserver.cfg: {vname} not found")
+        return c
 
     # get variables from /etc/xymon
     def xymon_getvar(self, varname):
         if varname in self.vars:
             return self.vars[varname]
-        # TODO handle fail
-        f = open(f"{self.etcdir}/xymonserver.cfg", 'r')
-        for line in f:
-            line = line.rstrip()
-            if len(line) == 0:
-                continue
-            if line[0] == '#':
-                continue
-            sline = line.split("=")
-            if len(sline) < 1:
-                continue
-            if sline[0] == varname:
-                found = sline[1].split('"')[1]
-                #self.debug(f"getvar {varname}={found}")
-                return found
+        if varname in self.xymonserver_cfg:
+            return self.xymonserver_cfg[varname]
         self.debugdev('vars', "DEBUG: did not found %s" % varname)
         return ""
-
-    def xymon_replace(self, buf):
-        #self.debug(f"REPLACE {buf}")
-        ireplace = 0
-        while ireplace < 10:
-            self.debugdev('vars', f"REPLACE {ireplace} {buf}")
-            toreplace = re.findall(r"\$[A-Z][A-Z_]*", buf)
-            if len(toreplace) == 0:
-                return buf
-            for xvar in toreplace:
-                xvarbase = xvar.replace("$", "")
-                self.debugdev('vars', f"XVARBASE=={xvarbase} from {xvar}")
-                buf = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), buf)
-            ireplace += 1
-        return buf
 
     # TODO template jinja ?
     def gen_html(self, kind, hostname, column, ts):
@@ -1509,6 +1502,8 @@ class xythonsrv:
         res = self.sqc.execute('SELECT count(next) FROM tests')
         results = self.sqc.fetchall()
         buf += f"Active tests: {results[0][0]}\n"
+        buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
+        buf += f"xymonserver.cfg mtime {xytime(self.time_read_xserver_cfg)}\n"
         self.column_update(socket.gethostname(), "xythond", "green", now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
     def scheduler(self):
@@ -2881,13 +2876,14 @@ class xythonsrv:
             if not self.init_pika():
                 self.has_pika = False
         ts_start = time.time()
+        self.load_xymonserver_cfg()
         if self.xy_data is None:
-            self.xy_data = self.xymon_replace("$XYMONVAR")
-        self.histdir = self.xymon_replace("$XYMONHISTDIR/")
+            self.xy_data = self.xymon_getvar("XYMONVAR")
+        self.histdir = self.xymon_getvar("XYMONHISTDIR")
         self.xy_hostdata = self.xy_data + 'hostdata/'
-        self.histlogs = self.xymon_replace("$XYMONHISTLOGS")
-        self.serverdir = self.xymon_replace("$XYMONHOME")
-        webdir = self.xymon_replace("$XYTHON_WEB")
+        self.histlogs = self.xymon_getvar("XYMONHISTLOGS")
+        self.serverdir = self.xymon_getvar("XYMONHOME")
+        webdir = self.xymon_getvar("XYTHON_WEB")
         if webdir == '':
             self.webdir = self.serverdir + "/web/"
         else:
