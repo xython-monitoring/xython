@@ -927,3 +927,44 @@ def test_misc():
     X.init()
     X.print()
     shutil.rmtree(X.xt_data)
+
+def test_clientlocal():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'misc')
+    X.init()
+    X.load_client_local_cfg()
+
+    ret = X.parse_collector("")
+    assert ret is None
+    ret = X.parse_collector("[collector:]")
+    assert ret is None
+    # we should have an hostname
+    ret = X.parse_collector("[collector:]\nclient ")
+    assert ret is None
+    # we should have host.ostype
+    ret = X.parse_collector("[collector:]\nclient hostname")
+    assert ret is None
+    # test without class
+    ret = X.parse_collector("[collector:]\nclient hostname.linux")
+    assert ret == ["hostname", "linux", None]
+    # test with class
+    ret = X.parse_collector("[collector:]\nclient hostname.linux class")
+    assert ret == ["hostname", "linux", "class"]
+    # test handling of fqdn with dots
+    ret = X.parse_collector("[collector:]\nclient fqdn.hostname.linux class")
+    assert ret == ["fqdn.hostname", "linux", "class"]
+    ret = X.parse_collector("[collector:]\nclient fqdn.hostname.linux class")
+    assert ret == ["fqdn.hostname", "linux", "class"]
+
+    ret = X.send_client_local("[collector:]\nclient fqdn.hostname.linux class")
+    assert ret == ['log:/var/log/messages:10240', 'ignore MARK']
+    # check priority of hostname
+    ret = X.send_client_local("[collector:]\nclient test1.linux class")
+    assert ret == ['datatest1']
+    # check priority of class
+    ret = X.send_client_local("[collector:]\nclient test4.linux test2")
+    assert ret == ['data', 'test2']
+
+
+    shutil.rmtree(X.xt_data)

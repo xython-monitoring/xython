@@ -9,6 +9,8 @@ USE_TLS=0
 FORCE_TLS=0
 CAFILE=""
 NC_OPTS=""
+# either systemd or init script should create it
+XYTHON_TMP="/run/xython-client"
 
 debug()
 {
@@ -88,7 +90,7 @@ if [ -e /etc/xymon-client/xymonclient.cfg ];then
 	debug "DEBUG: from $F got XYMSERVERS=$XYMSERVERS"
 fi
 
-# xython conf has mor priority than xymon
+# xython conf has more priority than xymon
 get_value USE_TLS /etc/xython/xython-client.cfg && USE_TLS=$V
 get_value XYTHON_SRV /etc/xython/xython-client.cfg && XYTHON_SRV=$V
 get_value XYTHON_PORT /etc/xython/xython-client.cfg && XYTHON_PORT=$V
@@ -113,18 +115,22 @@ case $USE_TLS in
 	# TODO there a re multiple version of netcat
 	if [ -x /usr/bin/nc ];then
 		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT"
-		xython-client | nc $NC_OPTS -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT
+		xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
+		# TODO send error as part of message
+		cat $XYTHON_TMP/xython.msg | nc $NC_OPTS -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT > $XYTHON_TMP/logfetch.$(hostname).cfg
 		exit $?
 	fi
 ;;
 1)
 	# TODO if no openssl, fall back to something else
 	# TODO -servername
-	xython-client | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT
+	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
+	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT
 	exit $?
 ;;
 *)
 	echo "ERROR"
+	exit 1
 ;;
 esac
 

@@ -21,6 +21,7 @@ configure_file(etc/xymonserver.cfg.in ${PROJECT_SOURCE_DIR}/etc/xymonserver.cfg)
 	#)
 
 install(FILES etc/analysis.cfg DESTINATION ${XYTHON_ETC})
+install(FILES etc/client-local.cfg DESTINATION ${XYTHON_ETC})
 install(FILES etc/xymonmenu.cfg DESTINATION ${XYTHON_ETC})
 install(FILES etc/xymonserver.cfg DESTINATION ${XYTHON_ETC})
 install(FILES etc/xython.cfg DESTINATION ${XYTHON_ETC})
