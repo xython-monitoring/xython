@@ -2,6 +2,6 @@
 
 while [ true ];
 do
-	/usr/bin/xython-client.sh
-	sleep 50
+	/usr/bin/xython-client.sh || exit $?
+	sleep 120
 done

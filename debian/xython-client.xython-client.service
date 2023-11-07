@@ -8,6 +8,7 @@ WorkingDirectory=/tmp
 Restart=always
 User=root
 Group=root
+RuntimeDirectory=xython-client
 
 [Install]
 WantedBy=multi-user.target

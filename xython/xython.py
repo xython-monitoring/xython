@@ -211,9 +211,11 @@ class xythonsrv:
         self.time_read_graphs = 0
         self.time_read_rrddef = 0
         self.time_read_xserver_cfg = 0
+        self.time_read_client_local_cfg = 0
         self.xymonserver_cfg = {}
         self.graphscfg = {}
         self.rrddef = {}
+        self.client_local_cfg = {}
         # list rrd to display per column
         self.rrd_column = {}
         self.rrd_column["cpu"] = ['la']
@@ -317,6 +319,89 @@ class xythonsrv:
         if results[0][0] == None:
             return None
         return results
+
+    def parse_collector(self, buf):
+        lines = buf.split("\n")
+        if len(lines) < 2:
+            return None
+        if lines[0].rstrip() != '[collector:]':
+            return None
+        line = lines[1].rstrip()
+        if line[:7] != 'client ':
+            return None
+        # parse hostname.ostype hostclass
+        tokens = line.split(" ")
+        if len(tokens) > 3 or len(tokens) < 2:
+            return None
+        if len(tokens) == 3:
+            hostclass = tokens[2]
+        else:
+            hostclass = None
+        hist_os = tokens[1]
+        tokens = hist_os.split(".")
+        if len(tokens) < 2:
+            return None
+        ostype = tokens.pop(-1)
+        hostname = ".".join(tokens)
+        return [hostname, ostype, hostclass]
+
+
+    def send_client_local(self, buf):
+        ret = self.parse_collector(buf)
+        if ret is None:
+            return
+        # now seek hostname in client local
+        if ret[0] in self.client_local_cfg:
+            return self.client_local_cfg[ret[0]]
+        # check hostclass
+        if ret[2] in self.client_local_cfg:
+            return self.client_local_cfg[ret[2]]
+        # check ostype
+        if ret[1] in self.client_local_cfg:
+            return self.client_local_cfg[ret[1]]
+        return None
+
+    def load_client_local_cfg(self):
+        pclientlocalcfg = f"{self.etcdir}/client-local.cfg"
+        try:
+            mtime = os.path.getmtime(pclientlocalcfg)
+        except:
+            self.error(f"ERROR: fail to get mtime of {pclientlocalcfg}")
+            return self.RET_ERR
+        #self.debug(f"DEBUG: read {pclientlocalcfg} mtime={mtime}")
+        if self.time_read_client_local_cfg < mtime:
+            self.time_read_client_local_cfg = mtime
+        else:
+            return self.RET_OK
+        #self.debug(f"DEBUG: read {pclientlocalcfg}")
+        try:
+            clientlocalcfg = open(pclientlocalcfg, 'r')
+        except:
+            self.error(f"ERROR: cannot open {pclientlocalcfg}")
+            return self.RET_ERR
+        lines = clientlocalcfg.readlines()
+        section = None
+        for line in lines:
+            line = line.rstrip()
+            line = line.lstrip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            if line[0] == '[':
+                line = line[1:]
+                tokens = line.split(']')
+                if len(tokens) == 0:
+                    continue
+                section = tokens[0]
+                if section in self.client_local_cfg:
+                    self.error(f"ERROR: section {section} present twice in {pclientlocalcfg}")
+                else:
+                    self.client_local_cfg[section] = []
+                continue
+            self.client_local_cfg[section].append(line)
+            #print(f"DEBUG {section} {line}")
+        return self.RET_OK
 
     def load_xymonserver_cfg(self):
         pxserver = f"{self.etcdir}/xymonserver.cfg"
@@ -2841,7 +2926,12 @@ class xythonsrv:
                 self.clients.remove(C)
             else:
                 # self.debug(f"DEBUG: got data len={len(buf)}")
-                C["buf"] += buf.decode("UTF8")
+                dbuf = buf.decode("UTF8")
+                if C["buf"] == "":
+                    data = self.send_client_local(dbuf)
+                    if data:
+                        client.send("\n".join(data).encode("UTF8"))
+                C["buf"] += dbuf
         return True
 
     def set_xymonvar(self, p):
@@ -2877,6 +2967,7 @@ class xythonsrv:
                 self.has_pika = False
         ts_start = time.time()
         self.load_xymonserver_cfg()
+        self.load_client_local_cfg()
         if self.xy_data is None:
             self.xy_data = self.xymon_getvar("XYMONVAR")
         self.histdir = self.xymon_getvar("XYMONHISTDIR")
