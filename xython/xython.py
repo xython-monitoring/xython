@@ -266,10 +266,12 @@ class xythonsrv:
         res = self.sqc.execute(req)
 
     # used only at start, expire is set to let enough time to arrive before purpleing
-    def column_set(self, hostname, cname, color, ts, expire):
+    def column_set(self, hostname, cname, color, ts, expire, ts_expire):
         color = gcolor(color)
         now = time.time()
-        req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {now} + {expire}, "{color}")'
+        if ts_expire is None:
+            ts_expire = now + expire
+        req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts_expire}, "{color}")'
         res = self.sqc.execute(req)
 
     def debug(self, buf):
@@ -1095,7 +1097,7 @@ class xythonsrv:
         #self.debug(f"DEBUG: column_update {hostname} {cname} ts={ts} expire={expire}")
         color = gcolor(color)
         ts_start = time.time()
-        expiretime = ts_start + expire
+        expiretime = int(ts_start + expire)
         H = self.find_host(hostname)
         if not H:
             #self.debug("DEBUG: %s not exists" % hostname)
@@ -1134,7 +1136,7 @@ class xythonsrv:
             color = 'blue'
             # keep old expire
             self.debug(f"DEBUG: BLUE {cname} expire={expiretime} {xytime(expiretime)} oexpire={result[3]} {xytime(result[3])}")
-            expiretime = result[3]
+            expiretime = int(result[3])
             # get reason
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
@@ -1293,9 +1295,9 @@ class xythonsrv:
                     continue
                 color = tokens[0]
                 ts_start = int(tokens[1])
-                expire = int(tokens[2])
+                ts_expire = int(tokens[2])
                 #self.debug(f"DEBUG: expire of {hostname}.{cname} is {expire} {xytime(expire)}")
-                self.column_set(hostname, cname, color, ts_start, expire)
+                self.column_set(hostname, cname, color, ts_start, None, ts_expire)
             except:
                 self.error(f"ERROR: fail to load {expdir}/{cname}")
                 continue
@@ -1380,7 +1382,7 @@ class xythonsrv:
             if self.readonly:
                 self.column_update(H.name, column, st_new, int(tsb), None, 3 * 60, "xython")
             else:
-                self.column_set(H.name, column, st_new, tsb, expire)
+                self.column_set(H.name, column, st_new, tsb, expire, None)
         for column in hostcols:
             if not hostcols[column]:
                 self.error(f"ERROR: remains of {name} {column}")
@@ -1556,7 +1558,7 @@ class xythonsrv:
             else:
                 cdata += f"&green expire in {expire} days (WARN={H.sslwarn} CRIT={H.sslalarm})\n"
             cdata += f"</fieldset>\n"
-        self.column_update(hostname, "sslcert", color, int(time.time()), cdata, 365 * 24 * 3600, "sslcert")
+        self.column_update(hostname, "sslcert", color, int(time.time()), cdata, self.NETTEST_INTERVAL + 120, "sslcert")
 
     # TODO hardcoded hostname
     def do_xythond(self):
@@ -2316,7 +2318,7 @@ class xythonsrv:
         if len(devices) == 0:
             return
         sbuf += buf
-        self.column_update(hostname, "raid", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        self.column_update(hostname, "raid", color, now, sbuf, self.ST_INTERVAL + 120, sender)
 
     #TODO
     def parse_ports(self, hostname, buf, sender):
