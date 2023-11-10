@@ -493,15 +493,135 @@ class xythonsrv:
         self.debugdev('vars', "DEBUG: did not found %s" % varname)
         return ""
 
+    def html_history(self, now, history_extra):
+        html = ""
+        res = self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
+        results = self.sqc.fetchall()
+        hcount = len(results)
+        if hcount > 0:
+            lastevent = results[hcount - 1]
+            minutes = (now - lastevent[2]) // 60 + 1
+        else:
+            minutes = 0
+        html += '<center>'
+        html += '<TABLE SUMMARY="$EVENTSTITLE" BORDER=0>\n<TR BGCOLOR="#333333">'
+        # TODO minutes
+        html += f'<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR="#33ebf4">{hcount}&nbsp;events&nbsp;received&nbsp;in&nbsp;the&nbsp;past&nbsp;{minutes}&nbsp;minutes</FONT></TD></TR>\n'
+        for change in results:
+            hhostname = change[0]
+            hcol = change[1]
+            hts = change[2]
+            hduration = change[3]
+            hcolor = change[4]
+            hocolor = change[5]
+            html += '<TR BGCOLOR=#000000>'
+            html += '<TD ALIGN=CENTER>%s</TD>' % xytime(hts)
+            html += '<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>' % (hcolor, hhostname)
+            html += '<TD ALIGN=LEFT>%s</TD>' % hcol
+            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts - hduration)}">'
+            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hocolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hocolor}" TITLE="{hocolor}"></A>'
+            html += '<IMG SRC="$XYMONSERVERWWWURL/gifs/arrow.gif" BORDER=0 ALT="From -&gt; To">'
+            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts)}">'
+            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hcolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hcolor}" TITLE="{hcolor}"></A>'
+            html += '</TR>'
+        html += '</center>'
+        return html
+
+    def html_header(self, header):
+        #self.debug(f"DEBUG: read {self.webdir}/{header}")
+        try:
+            fh = open(self.webdir + header, "r")
+            html = fh.read()
+            fh.close()
+        except:
+            return "ERROR"
+        return html
+
+    def html_footer(self, footer):
+        try:
+            fh = open(self.webdir + footer, "r")
+            html = fh.read()
+            fh.close()
+        except:
+            return "ERROR"
+        return html
+
+    # replace all variables in HTML
+    # this means also adding xymonmenu
+    def html_finalize(self, color, html):
+        fh = open(self.etcdir + "/xymonmenu.cfg")
+        body_header = fh.read()
+        fh.close()
+        html = re.sub("&XYMONBODYHEADER", body_header, html)
+        html = re.sub("&XYMONBODYFOOTER", "", html)
+        html = re.sub("&XYMONDREL", f'{version("xython")}', html)
+        html = re.sub("&XYMWEBREFRESH", "60", html)
+        html = re.sub("&XYMWEBBACKGROUND", color, html)
+        html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
+        html = re.sub("&HTMLCONTENTTYPE", self.xymon_getvar("HTMLCONTENTTYPE"), html)
+        # find remaining variables
+        ireplace = 0
+        while ireplace < 20:
+            toreplace = re.findall(r"\&XY[A-Z][A-Z]*", html)
+            for xvar in toreplace:
+                xvarbase = xvar.replace("&", "")
+                html = re.sub(xvar, self.xymon_getvar(xvarbase), html)
+            toreplace = re.findall(r"\$XY[A-Z][A-Z]*", html)
+            for xvar in toreplace:
+                xvarbase = xvar.replace("$", "")
+                html = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), html)
+            ireplace += 1
+        return html
+
+
+    def html_page(self, name):
+        color = 'blue'
+        if name == 'acknowledgements':
+            header = 'acknowledge_header'
+            footer = 'acknowledge_footer'
+        elif name == 'topchanges':
+            header = 'topchanges_header'
+            footer = 'topchanges_footer'
+        else:
+            header = 'stdnormal_header'
+            footer = 'stdnormal_footer'
+        now = time.time()
+        html = self.html_header(header)
+        if name == 'acknowledgements':
+            req = f"SELECT hostname, column, ackend, ackcause FROM columns WHERE ackend != 0"
+            res = self.sqc.execute(req)
+            results = self.sqc.fetchall()
+            for res in results:
+                print(res)
+                hostname = res[0]
+                column = res[1]
+                ackend = res[2]
+                ackcause = res[3]
+                html += f"{hostname} {column} {ackcause} {ackend} {xytime(ackend)}\n<br>"
+        if name == 'expires':
+            req = f"SELECT hostname, column, expire FROM columns ORDER BY expire ASC"
+            res = self.sqc.execute(req)
+            results = self.sqc.fetchall()
+            for res in results:
+                print(res)
+                hostname = res[0]
+                column = res[1]
+                expire = res[2]
+                html += f"{hostname} {column} {expire} {xytime(expire)}\n<br>"
+        if name == 'topchanges':
+            fh = open(self.webdir + "topchanges_form", "r")
+            html += fh.read()
+            fh.close()
+        html += self.html_footer(footer)
+        html = self.html_finalize(color, html)
+        return html
+
     # TODO template jinja ?
     def gen_html(self, kind, hostname, column, ts):
         now = time.time()
-        gcolor = 'green'
-        html = ""
+        color = 'green'
+        html = self.html_header('stdnormal_header')
         # concat
-        fh = open(self.webdir + "/stdnormal_header", "r")
-        html += fh.read()
-        fh.close()
 
         if kind == 'nongreen' or kind == 'all':
             # dump hosts
@@ -572,6 +692,7 @@ class xythonsrv:
                 html += '</TR>\n'
 
             html += '</TABLE></CENTER><BR>'
+        # end nongreen
 
         history_extra = ""
         if kind == 'svcstatus':
@@ -645,63 +766,12 @@ class xythonsrv:
 
 
         # history
-        res = self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
-        results = self.sqc.fetchall()
-        hcount = len(results)
-        if hcount > 0:
-            lastevent = results[hcount - 1]
-            minutes = (now - lastevent[2]) // 60 + 1
-        else:
-            minutes = 0
-        html += '<center>'
-        html += '<TABLE SUMMARY="$EVENTSTITLE" BORDER=0>\n<TR BGCOLOR="#333333">'
-        # TODO minutes
-        html += f'<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR="#33ebf4">{hcount}&nbsp;events&nbsp;received&nbsp;in&nbsp;the&nbsp;past&nbsp;{minutes}&nbsp;minutes</FONT></TD></TR>\n'
-        for change in results:
-            hhostname = change[0]
-            hcol = change[1]
-            hts = change[2]
-            hduration = change[3]
-            hcolor = change[4]
-            hocolor = change[5]
-            html += '<TR BGCOLOR=#000000>'
-            html += '<TD ALIGN=CENTER>%s</TD>' % xytime(hts)
-            html += '<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>' % (hcolor, hhostname)
-            html += '<TD ALIGN=LEFT>%s</TD>' % hcol
-            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts - hduration)}">'
-            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hocolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hocolor}" TITLE="{hocolor}"></A>'
-            html += '<IMG SRC="$XYMONSERVERWWWURL/gifs/arrow.gif" BORDER=0 ALT="From -&gt; To">'
-            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts)}">'
-            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hcolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hcolor}" TITLE="{hcolor}"></A>'
-            html += '</TR>'
-        html += '</center>'
+        if kind in ["svcstatus", "nongreen", "all"]:
+            html += self.html_history(now, history_extra)
 
-        fh = open(self.webdir + "/stdnormal_footer", "r")
-        html += fh.read()
-        fh.close()
+        html += self.html_footer('stdnormal_footer')
 
-        fh = open(self.etcdir + "/xymonmenu.cfg")
-        body_header = fh.read()
-        fh.close()
-        html = re.sub("&XYMONBODYHEADER", body_header, html)
-        html = re.sub("&XYMONBODYFOOTER", "", html)
-        html = re.sub("&XYMONDREL", f'{version("xython")}', html)
-        html = re.sub("&XYMWEBREFRESH", "60", html)
-        html = re.sub("&XYMWEBBACKGROUND", gcolor, html)
-        html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
-        html = re.sub("&HTMLCONTENTTYPE", self.xymon_getvar("HTMLCONTENTTYPE"), html)
-        # find remaining variables
-        ireplace = 0
-        while ireplace < 20:
-            toreplace = re.findall(r"\&XY[A-Z][A-Z]*", html)
-            for xvar in toreplace:
-                xvarbase = xvar.replace("&", "")
-                html = re.sub(xvar, self.xymon_getvar(xvarbase), html)
-            toreplace = re.findall(r"\$XY[A-Z][A-Z]*", html)
-            for xvar in toreplace:
-                xvarbase = xvar.replace("$", "")
-                html = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), html)
-            ireplace += 1
+        html = self.html_finalize(color, html)
 
         if kind == 'nongreen':
             fhtml = open(self.wwwdir + '/nongreen.html', 'w')
@@ -716,6 +786,12 @@ class xythonsrv:
             fhtml.close()
             # TODO find a better solution
             os.chmod(self.wwwdir + "/xython.html", 0o644)
+            if self.xythonmode > 0:
+                fhtml = open(self.wwwdir + '/xymon.html', 'w')
+                fhtml.write(html)
+                fhtml.close()
+                # TODO find a better solution
+                os.chmod(self.wwwdir + "/xymon.html", 0o644)
             return
         return html
 
@@ -2812,6 +2888,14 @@ class xythonsrv:
                         continue
                     ts = results[0][0]
                 data = self.gen_html("svcstatus", hostname, service, ts)
+                try:
+                    C.send(data.encode("UTF8"))
+                except BrokenPipeError as error:
+                    self.error("Client get away")
+                    pass
+            elif cmd == 'GETPAGE':
+                page = sbuf[1]
+                data = self.html_page(page)
                 try:
                     C.send(data.encode("UTF8"))
                 except BrokenPipeError as error:
