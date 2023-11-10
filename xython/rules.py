@@ -375,15 +375,15 @@ class xy_rule_cpu():
         if self.xuptime <= self.bootlimit:
             ret["UP"] = {}
             ret["UP"]["color"] = self.upcolor
-            ret["UP"]["txt"] = f'&yellow uptime {self.xuptime} < {self.bootlimit}'
+            ret["UP"]["txt"] = f'&yellow uptime (in minutes) {self.xuptime} < {self.bootlimit}'
         elif self.toolonglimit != -1 and self.xuptime >= self.toolonglimit:
             ret["UP"] = {}
             ret["UP"]["color"] = self.upcolor
-            ret["UP"]["txt"] = f'&yellow uptime {self.xuptime} > {self.toolonglimit}'
+            ret["UP"]["txt"] = f'&yellow uptime (in minutes) {self.xuptime} > {self.toolonglimit}'
         else:
             ret["UP"] = {}
             ret["UP"]["color"] = 'green'
-            ret["UP"]["txt"] = f'&green uptime {self.xuptime} < {self.toolonglimit}'
+            ret["UP"]["txt"] = f'&green uptime (in minutes) {self.xuptime} < {self.toolonglimit}'
         return ret
 
 
