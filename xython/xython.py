@@ -637,7 +637,7 @@ class xythonsrv:
             if kind == 'nongreen':
                 res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' ORDER BY column")
                 # TODO
-                gcolor = 'red'
+                color = 'red'
             else:
                 res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
             results = self.sqc.fetchall()
@@ -700,7 +700,7 @@ class xythonsrv:
             if rdata is None:
                 html = "HIST not found"
                 return html
-            gcolor = rdata["first"]
+            color = rdata["first"]
             html += '<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY="Detail Status">'
             # TODO replace with first line of status (without color)
             html += '<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"]
@@ -734,7 +734,7 @@ class xythonsrv:
             else:
                 print(f"ackinfo is len={len(ackinfo)}")
             # TODO acknowledge is only for non-history and non-green
-            #if gcolor != 'green':
+            #if color != 'green':
             html += f'<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
             html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
             html += '<input type="text" placeholder="ack message" name="cause" required>\n'
