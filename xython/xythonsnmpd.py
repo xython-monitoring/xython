@@ -191,6 +191,7 @@ def do_snmpd(X):
                 values = []
                 dsspecs = []
                 for oid in H.oids[rrd][obj]:
+                    X.debug(f"DEBUG: handle rrd={rrd} oid={oid}")
                     dsnames.append(oid['dsname'])
                     dsspecs.append(oid['dsspec'])
                     ret = snmp_get(oid['oid'], H)
@@ -203,7 +204,9 @@ def do_snmpd(X):
                         rrdbuf += f"&red did {oid['oid']} {ret['errmsg']}\n"
                         color = 'red'
                         rrdcolor = 'red'
-                X.do_rrd(H.name, rrd, obj, ":".join(dsnames), ":".join(values), dsspecs)
+                print(f"DEBUG: value={values}")
+                if len(values) > 0:
+                    X.do_rrd(H.name, rrd, obj, ":".join(dsnames), ":".join(values), dsspecs)
             rrdbuf = f"status+10m {H.name}.{rrd} {rrdcolor}\n" + rrdbuf
             X.unet_send(rrdbuf)
         buf = f"status+10m {H.name}.snmp {color}\n" + buf
@@ -220,6 +223,7 @@ def main():
     parser.add_argument("--xythonsock", help="Override xython socker patch", default="/run/xython/xython.sock")
     parser.add_argument("--vardir", help="Override xython var directory")
     parser.add_argument("--quit", help="Quit after x seconds", type=int, default=0)
+    parser.add_argument("--debugs", help="Extra debug section separated by comma")
     args = parser.parse_args()
 
     X = xythonsrv()
@@ -229,9 +233,12 @@ def main():
     X.xt_data = f"/var/lib/xython/"
     X.xt_rrd = f"{X.xt_data}/rrd/"
     X.lldebug = args.debug
+    if args.debugs:
+        X.debugs = args.debugs.split(",")
     X.daemon_name = "xython-snmpd"
     X.read_hosts()
     X.hosts_check_snmp_tags()
+    X.load_rrddefinitions_cfg()
     while True:
         ts_start = time.time()
         do_snmpd(X)
