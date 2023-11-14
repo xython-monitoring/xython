@@ -994,6 +994,9 @@ def test_clientlocal():
     # check priority of class
     ret = X.send_client_local("[collector:]\nclient test4.linux test2")
     assert ret == ['data', 'test2']
+    # test non-linux
+    ret = X.send_client_local("client test4.freebsd test2")
+    assert ret == ['data', 'test2']
 
 
     shutil.rmtree(X.xt_data)

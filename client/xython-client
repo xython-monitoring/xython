@@ -2,9 +2,11 @@
 
 export LANG=C
 export LC_ALL=C
+SERVEROSTYPE="$(uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]')"	# This systems operating system in lowercase
+MACHINEDOTS="$(uname -n)"
 
 echo "[collector:]"
-echo "client $(hostname).linux linux"
+echo "client $MACHINEDOTS.$SERVEROSTYPE linux"
 echo "[date]"
 date
 echo "[uname]"
