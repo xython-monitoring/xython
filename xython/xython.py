@@ -2037,7 +2037,7 @@ class xythonsrv:
             if 'RRDHEIGHT' in self.xymonserver_cfg:
                 height = self.xymonserver_cfg['RRDHEIGHT']
             else:
-                width = self.RRDHEIGHT
+                height = self.RRDHEIGHT
             base = [pngpath,
                 f'--width={width}', f'--height={height}',
                 '--vertical-label="% Full"',
