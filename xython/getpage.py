@@ -48,7 +48,7 @@ sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
     sock.connect('/run/xython/xython.sock')
 except:
-    print("FAIL to connect to xythond")
+    print("getpage: FAIL to connect to xythond")
     sys.exit(0)
 buf = f"GETPAGE {page}"
 sock.send(buf.encode("UTF8"))

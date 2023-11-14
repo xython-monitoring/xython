@@ -93,7 +93,7 @@ sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
     sock.connect('/run/xython/xython.sock')
 except:
-    print("FAIL to connect to xythond")
+    print("xythoncgi: FAIL to connect to xythond")
     sys.exit(0)
 if timebuf is None:
     buf = "GETSTATUS %s %s" % (hostname, svc)

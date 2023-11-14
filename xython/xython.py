@@ -473,7 +473,7 @@ class xythonsrv:
         for name in self.xymonserver_cfg:
             value = self.xymonserver_cfg[name]
             dvars = re.findall(r"\$[A-Z]+", value)
-            print(f"DEBUG: {name} = {value}")
+            self.debugdev('vars', f"DEBUG: {name} = {value}")
             for var in dvars:
                 vname = var[1:]
                 if vname in self.xymonserver_cfg:
@@ -1143,6 +1143,8 @@ class xythonsrv:
         cdata += f"TAGS={H.tags_known}\n"
         cdata += f"TAGS not handled {H.tags_unknown}\n"
         cdata += f"TAGS with error {H.tags_error}\n"
+        for test in H.tests:
+            cdata += f"TESTS {test.type}\n"
         if len(H.tags_unknown):
             color = 'yellow'
         if len(H.tags_error):
@@ -1211,7 +1213,7 @@ class xythonsrv:
             # keep it blue
             color = 'blue'
             # keep old expire
-            self.debug(f"DEBUG: BLUE {cname} expire={expiretime} {xytime(expiretime)} oexpire={result[3]} {xytime(result[3])}")
+            self.debug(f"DEBUG: BLUE {hostname} {cname} expire={expiretime} {xytime(expiretime)} oexpire={result[3]} {xytime(result[3])}")
             expiretime = int(result[3])
             # get reason
             rdata = self.get_histlogs(hostname, cname, ots)
@@ -1446,15 +1448,11 @@ class xythonsrv:
             # check color, if blue read histlogs
             if st_new == 'blue' or st_new == 'bl':
                 self.debug(f"DEBUG: BLUE CASE {sline}")
-                #print(xytime(int(tsa)))
-                #bbuf = self.get_histlogs(H.name, column, tsa)
-                #print(xytime(int(tsb)))
                 bbuf = self.get_histlogs(H.name, column, tsb)
                 edate = bbuf['first'].replace('blue Disabled until ', '').rstrip()
                 #self.debug(f"DEBUG: disable date is {edate}X")
                 ets = xyts(edate, None)
                 expire = ets - int(time.time())
-                #print(expire)
             if self.readonly:
                 self.column_update(H.name, column, st_new, int(tsb), None, 3 * 60, "xython")
             else:
@@ -1556,6 +1554,7 @@ class xythonsrv:
         for test in results:
             hostname = test[0]
             ttype = test[1]
+            self.debugdev("test", f"DEBUG: dotests {hostname} {ttype}")
             H = self.find_host(hostname)
             for T in H.tests:
                 if T.type == ttype:
@@ -2124,7 +2123,7 @@ class xythonsrv:
         if 'FNPATTERN' in self.graphscfg[service]:
             rrdpattern = self.graphscfg[service]["FNPATTERN"]
             for rrd in os.listdir(basedir):
-                self.debug(f"CHECK {rrd} vs {rrdpattern}<br>")
+                self.debugdev("rrd", f"CHECK {rrd} vs {rrdpattern}<br>")
                 if re.match(rrdpattern, rrd):
                     rrdlist.append(rrd)
         else:
@@ -2144,7 +2143,6 @@ class xythonsrv:
             for rrd in allrrds:
                 if 'sensor/' in rrd:
                     rrdlist.append(rrd)
-        self.debug(rrdlist)
         if len(rrdlist) == 0:
             return 'Status: 400 Bad Request\n\nERROR: RRD list is empty'
         if 'RRDWIDTH' in self.xymonserver_cfg:
@@ -2176,7 +2174,6 @@ class xythonsrv:
         for rrd in rrdlist:
             fname = str(rrd.replace(".rrd", ""))
             rrdfpath = f"{basedir}/{rrd}"
-            print(f"fnam={fname}")
             label = self.rrd_label(fname, 'conn')
             info = rrdtool.info(rrdfpath)
             template = self.graphscfg[service]["info"]
@@ -2245,17 +2242,22 @@ class xythonsrv:
             os.chmod(rrdpath, 0o755)
         rrdfpath = f"{self.xt_rrd}/{hostname}/{fname}.rrd"
         if not os.path.exists(rrdfpath):
-            self.debug(f"DEBUG: do_rrd create for {hostname} {rrdname} {dsname} {value}")
+            self.debug(f"DEBUG: do_rrd create for {hostname} rrdname={rrdname} dsname={dsname} value={value}")
             if rrdname in self.rrddef:
+                self.debugdev("rrd", f"DEBUG: got RRA from {rrdname}")
                 rras = self.rrddef[rrdname]["info"]
             elif 'default' in self.rrddef:
+                self.debugdev("rrd", f"DEBUG: got RRA from default")
                 rras = self.rrddef['default']["info"]
             else:
+                self.error(f"DEBUG: RRD create this should not happen")
+                self.debugdev("rrd", f"DEBUG: {self.rrddef}")
                 # this should not happen
                 rras = "RRA:AVERAGE:0.5:1:1200"
-            print(rras)
+            self.debug(f"Create RRD with {rras}")
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
                 rras, dsspec);
+        self.debugdev("rrd", f"DEBUG: update RRD {rrdpath} for {dsname} value={value}")
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
         return True
 
@@ -2504,7 +2506,7 @@ class xythonsrv:
         return
 
     def parse_status(self, msg):
-        self.debug(f"DEBUG: parse_status from {msg['addr']}")
+        #self.debug(f"DEBUG: parse_status from {msg['addr']}")
         hdata = msg["buf"]
         column = None
         # only first line is important

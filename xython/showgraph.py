@@ -84,7 +84,7 @@ try:
     sock.connect(SOCKPATH)
 except:
     print('Status: 500 Internal Server Error\n\n')
-    print("FAIL to connect to xythond")
+    print("showgraph: FAIL to connect to xythond")
     sys.exit(0)
 buf = f"GETRRD {hostname} {svc} {action}"
 sock.send(buf.encode("UTF8"))
