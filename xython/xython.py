@@ -1710,6 +1710,8 @@ class xythonsrv:
     # read analysis.cfg
     def read_analysis(self, hostname):
         H = self.find_host(hostname)
+        H.rules["PROC"] = []
+        H.rules["PORT"] = []
         mtime = os.path.getmtime(f"{self.etcdir}/analysis.cfg")
         #self.debug(f"DEBUG: read_analysis: compare mtime={mtime} and {H.time_read_analysis}")
         if H.time_read_analysis < mtime:
