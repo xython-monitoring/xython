@@ -539,6 +539,35 @@ def test_reload():
     #print(results)
     assert len(results) == 1
     assert len(X.xy_hosts) == 2
+
+    # backup to have a clean git diff
+    # TODO find better
+    with open("./tests/etc/xython-load/hosts.cfg") as f:
+        bh = f.read()
+    with open("./tests/etc/xython-load/analysis.cfg") as f:
+        ba = f.read()
+
+    with open("./tests/etc/xython-load/hosts.cfg", "a") as f:
+        f.write("0.0.0.0 test0\n")
+    with open("./tests/etc/xython-load/analysis.cfg", "a") as f:
+        f.write("HOST=test0\n\tPROC test\n")
+    X.read_configs()
+    # verify new hosts is detected
+    H = X.find_host("test0")
+    assert H is not None
+    with open("./tests/etc/xython-load/analysis.cfg", "a") as f:
+        f.write("\tPROC test2\n")
+    X.read_configs()
+    H = X.find_host("test0")
+    assert H is not None
+    # verify PROC rules are correctly reseted
+    assert len(H.rules["PROC"]) == 2
+
+    with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
+        f.write(bh)
+    with open("./tests/etc/xython-load/analysis.cfg", "w") as f:
+        f.write(ba)
+
     X.sqc.close()
     os.remove(f"{X.xt_data}/xython.db")
     shutil.rmtree(X.xt_data)
