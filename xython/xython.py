@@ -324,11 +324,13 @@ class xythonsrv:
 
     def parse_collector(self, buf):
         lines = buf.split("\n")
-        if len(lines) < 2:
-            return None
-        if lines[0].rstrip() != '[collector:]':
-            return None
-        line = lines[1].rstrip()
+        line = lines[0].rstrip()
+        if line[:7] != 'client ':
+            if len(lines) < 2:
+                return None
+            if lines[0].rstrip() != '[collector:]':
+                return None
+            line = lines[1].rstrip()
         if line[:7] != 'client ':
             return None
         # parse hostname.ostype hostclass
@@ -2730,6 +2732,10 @@ class xythonsrv:
             self.parse_disable(hdata)
             return
         #self.debug("THIS IS HISTDATA")
+        ret = self.parse_collector(hdata)
+        if ret is None:
+            return
+        hostname = ret[0]
         hdata += "\n[end]\n"
         for line in hdata.split("\n"):
             line = line.rstrip()
@@ -2741,19 +2747,6 @@ class xythonsrv:
                     handled = False
                     if section == '[collector:]':
                         handled = True
-                        for cline in buf.split("\n"):
-                            if len(cline) == 0:
-                                continue
-                            if cline[0:6] == 'client':
-                                scline = cline.split(" ")
-                                if len(scline) < 2:
-                                    continue
-                                cname = scline[1]
-                                if cname.endswith(".linux"):
-                                    hostname = cname.replace(".linux", "")
-                        if hostname is None:
-                            self.error("ERROR: no hostname in collector")
-                            return
                     if section == '[free]':
                         handled = True
                         self.parse_free(hostname, buf, msg["addr"])
