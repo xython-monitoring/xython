@@ -758,12 +758,12 @@ def test_rrd():
     envi['QUERY_STRING'] = f'hostname=invalid&service=invalid&sockpath={X.unixsock}'
     ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
     print(ret)
-    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nFAIL to connect to xythond\n'
+    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
 
     envi['QUERY_STRING'] = 'hostname=invalid&service='
     ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
     print(ret)
-    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nFAIL to connect to xythond\n'
+    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
 
     shutil.rmtree(X.xt_data)
 
