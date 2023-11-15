@@ -576,12 +576,12 @@ class xythonsrv:
         return html
 
 
-    def html_page(self, name):
+    def html_page(self, pagename):
         color = 'blue'
-        if name == 'acknowledgements':
+        if pagename == 'acknowledgements':
             header = 'acknowledge_header'
             footer = 'acknowledge_footer'
-        elif name == 'topchanges':
+        elif pagename == 'topchanges':
             header = 'topchanges_header'
             footer = 'topchanges_footer'
         else:
@@ -589,7 +589,15 @@ class xythonsrv:
             footer = 'stdnormal_footer'
         now = time.time()
         html = self.html_header(header)
-        if name == 'acknowledgements':
+        if pagename == 'nongreen':
+            ret = self.html_hostlist(pagename)
+            html += ret["html"]
+            color = ret["color"]
+        if pagename == 'all':
+            ret = self.html_hostlist(pagename)
+            html += ret["html"]
+            color = ret["color"]
+        if pagename == 'acknowledgements':
             req = f"SELECT hostname, column, ackend, ackcause FROM columns WHERE ackend != 0"
             res = self.sqc.execute(req)
             results = self.sqc.fetchall()
@@ -600,7 +608,7 @@ class xythonsrv:
                 ackend = res[2]
                 ackcause = res[3]
                 html += f"{hostname} {column} {ackcause} {ackend} {xytime(ackend)}\n<br>"
-        if name == 'expires':
+        if pagename == 'expires':
             req = f"SELECT hostname, column, expire FROM columns ORDER BY expire ASC"
             res = self.sqc.execute(req)
             results = self.sqc.fetchall()
@@ -610,7 +618,7 @@ class xythonsrv:
                 column = res[1]
                 expire = res[2]
                 html += f"{hostname} {column} {expire} {xytime(expire)}\n<br>"
-        if name == 'topchanges':
+        if pagename == 'topchanges':
             fh = open(self.webdir + "topchanges_form", "r")
             html += fh.read()
             fh.close()
@@ -618,86 +626,95 @@ class xythonsrv:
         html = self.html_finalize(color, html)
         return html
 
+    def html_hostlist(self, pagename):
+        self.debug(f"DEBUG: html_hostlist for {pagename}")
+        now = time.time()
+        html = ""
+        color = 'green'
+        # dump hosts
+        html += "<center>\n"
+        html += '<A NAME=begindata>&nbsp;</A>\n'
+        html += '<A NAME="hosts-blk">&nbsp;</A>\n'
+        html += '<A NAME=hosts-blk-1>&nbsp;</A>\n'
+
+        html += '<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n'
+        html += '<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>'
+        if pagename == 'nongreen':
+            res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' ORDER BY column")
+        else:
+            res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
+        results = self.sqc.fetchall()
+        cols = []
+        for col in results:
+            colname = col[0]
+            cols.append(colname)
+        # for each column
+            html += '<TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n<A HREF="$XYMONSERVERCGIURL/columndoc.sh?%s"><FONT COLOR="#87a9e5" SIZE="-1"><B>%s</B></FONT></A> </TD>\n' % (colname, colname)
+        html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
+
+        if pagename == 'nongreen':
+            res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green" and color != "blue") ORDER by ackend, hostname')
+        else:
+            res = self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
+        hostlist = self.sqc.fetchall()
+        # TODO results up is not used
+        for host in hostlist:
+            H = self.find_host(host[0])
+            if H is None:
+                continue
+            res = self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
+            results = self.sqc.fetchall()
+            hcols = {}
+            hts = {}
+            for col in results:
+                hcols[col[0]] = col[2]
+                hts[col[0]] = col[1]
+            html += '<TR class=line>\n'
+            html += '<TD NOWRAP ALIGN=LEFT><A NAME="%s">&nbsp;</A>\n' % H.name
+            html += '<A HREF="/xython/xython.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">%s</FONT></A>' % H.name
+            for Cname in cols:
+                if Cname not in hcols:
+                    html += '<TD ALIGN=CENTER>-</TD>\n'
+                else:
+                    html += '<TD ALIGN=CENTER>'
+                    lcolor = hcols[Cname]
+                    if lcolor in ["red", "yellow"]:
+                        color = setcolor(lcolor, color)
+                    lts = hts[Cname]
+                    dhm = xydhm(lts, now)
+                    acki = self.xython_is_ack(H.name, Cname)
+                    if acki == None or lcolor == 'green':
+                        isack = False
+                    else:
+                        isack = True
+                    if self.xythonmode > 0:
+                        html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xython/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
+                    else:
+                        html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
+            html += '</TR>\n'
+
+        html += '</TABLE></CENTER><BR>'
+        # end nongreen
+        html += self.html_history(now, "")
+        ret = {}
+        ret["color"] = color
+        ret["html"] = html
+        return ret
+
     # TODO template jinja ?
-    def gen_html(self, kind, hostname, column, ts):
+    def gen_html(self, pagename, hostname, column, ts):
         now = time.time()
         color = 'green'
         html = self.html_header('stdnormal_header')
         # concat
 
-        if kind == 'nongreen' or kind == 'all':
-            # dump hosts
-            html += "<center>\n"
-            html += '<A NAME=begindata>&nbsp;</A>\n'
-            html += '<A NAME="hosts-blk">&nbsp;</A>\n'
-            html += '<A NAME=hosts-blk-1>&nbsp;</A>\n'
-
-            html += '<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n'
-            html += '<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>'
-
-            # TODO handle all green column
-            if kind == 'nongreen':
-                res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' ORDER BY column")
-                # TODO
-                color = 'red'
-            else:
-                res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
-            results = self.sqc.fetchall()
-            cols = []
-            for col in results:
-                colname = col[0]
-                cols.append(colname)
-            # for each column
-                html += '<TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n<A HREF="$XYMONSERVERCGIURL/columndoc.sh?%s"><FONT COLOR="#87a9e5" SIZE="-1"><B>%s</B></FONT></A> </TD>\n' % (colname, colname)
-            html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
-
-            if kind == 'nongreen':
-                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green" and color != "blue") ORDER by ackend, hostname')
-            else:
-                res = self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
-            hostlist = self.sqc.fetchall()
-            # TODO results up is not used
-            for host in hostlist:
-                H = self.find_host(host[0])
-                if H is None:
-                    continue
-                # if kind == 'nongreen':
-                res = self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
-                #else:
-                #    res = self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
-                results = self.sqc.fetchall()
-                hcols = {}
-                hts = {}
-                for col in results:
-                    hcols[col[0]] = col[2]
-                    hts[col[0]] = col[1]
-                html += '<TR class=line>\n'
-                html += '<TD NOWRAP ALIGN=LEFT><A NAME="%s">&nbsp;</A>\n' % H.name
-                html += '<A HREF="/xython/xython.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">%s</FONT></A>' % H.name
-                for Cname in cols:
-                    if Cname not in hcols:
-                        html += '<TD ALIGN=CENTER>-</TD>\n'
-                    else:
-                        html += '<TD ALIGN=CENTER>'
-                        lcolor = hcols[Cname]
-                        lts = hts[Cname]
-                        dhm = xydhm(lts, now)
-                        acki = self.xython_is_ack(H.name, Cname)
-                        if acki == None or lcolor == 'green':
-                            isack = False
-                        else:
-                            isack = True
-                        if self.xythonmode > 0:
-                            html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xython/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
-                        else:
-                            html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
-                html += '</TR>\n'
-
-            html += '</TABLE></CENTER><BR>'
-        # end nongreen
+        if pagename == 'nongreen' or pagename == 'all':
+            ret = self.html_hostlist(pagename)
+            html += ret["html"]
+            color = ret["color"]
 
         history_extra = ""
-        if kind == 'svcstatus':
+        if pagename == 'svcstatus':
             rdata = self.get_histlogs(hostname, column, ts)
             if rdata is None:
                 html = "HIST not found"
@@ -768,21 +785,21 @@ class xythonsrv:
 
 
         # history
-        if kind in ["svcstatus", "nongreen", "all"]:
+        if pagename in ["svcstatus", "nongreen", "all"]:
             html += self.html_history(now, history_extra)
 
         html += self.html_footer('stdnormal_footer')
 
         html = self.html_finalize(color, html)
 
-        if kind == 'nongreen':
+        if pagename == 'nongreen':
             fhtml = open(self.wwwdir + '/nongreen.html', 'w')
             fhtml.write(html)
             fhtml.close()
             # TODO find a better solution
             os.chmod(self.wwwdir + "/nongreen.html", 0o644)
             return
-        if kind == 'all':
+        if pagename == 'all':
             fhtml = open(self.wwwdir + '/xython.html', 'w')
             fhtml.write(html)
             fhtml.close()
