@@ -2,4 +2,35 @@ services:
   xythond:
     build:
       context: xythond
+    ports:
+      - 10080:80
+    hostname: xython-server
+  apache:
+    build:
+      context: apache
+    hostname: apache
+    ports:
+      - 10082:80
+  protocols:
+    build:
+      context: protocols
+    hostname: protocols
+    ports:
+      - "21:21"
+      - "8009:8009"
+      - "389:389"
+      - "110:110"
+      - "993:993"
+      - "25:25"
+      - "143:143"
+  snmpd:
+    build:
+      context: snmpd
+    ports:
+      - "161:161/udp"
+    hostname: snmpd
+  xymon-client:
+    build:
+      context: xymon-client
+    hostname: xymon-client
 version: '3'
