@@ -28,10 +28,17 @@ ps aux |grep xython-tlsd
 /etc/init.d/xythond start || exit $?
 #sudo /usr/bin/xython-client-looper.sh
 /etc/init.d/xython-client start || exit $?
-sleep 120
+
+echo "=================================================================="
+echo "=================================================================="
+
+sleep 15
 cd /tmp
 wget http://127.0.0.1/xython/ || exit $?
 wget http://127.0.0.1/xython/nongreen.html || exit $?
+
+cd /tests
+pytest livetest.py
 
 wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=$(hostname)&SERVICE=memory" -O memory.html
 grep -q 'Real/Physical' memory.html
@@ -52,6 +59,8 @@ wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=xtrahosts&SERVICE=conn" -O c
 grep -q 'ERROR: no service' conn.html
 if [ $? -ne 0 ];then
 	echo "ERROR: service conn for xtrahosts is present"
+	cat conn.html
+	cat /tmp/xython.debug
 	exit 1
 fi
 
@@ -69,5 +78,5 @@ if [ $? -eq 0 ];then
 	exit 1
 fi
 cat conn.html
-
+exit 0
 sleep 365d
