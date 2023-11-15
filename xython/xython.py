@@ -531,21 +531,25 @@ class xythonsrv:
 
     def html_header(self, header):
         #self.debug(f"DEBUG: read {self.webdir}/{header}")
+        fname = f"{self.webdir}/{header}"
         try:
-            fh = open(self.webdir + header, "r")
+            fh = open(fname, "r")
             html = fh.read()
             fh.close()
-        except:
-            return "ERROR"
+        except FileNotFoundError as e:
+            self.error(f"ERROR: fail to open {fname}")
+            return f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
         return html
 
     def html_footer(self, footer):
+        fname = f"{self.webdir}/{footer}"
         try:
-            fh = open(self.webdir + footer, "r")
+            fh = open(fname, "r")
             html = fh.read()
             fh.close()
-        except:
-            return "ERROR"
+        except FileNotFoundError as e:
+            self.error(f"ERROR: fail to open {fname}")
+            return f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
         return html
 
     # replace all variables in HTML
@@ -619,9 +623,14 @@ class xythonsrv:
                 expire = res[2]
                 html += f"{hostname} {column} {expire} {xytime(expire)}\n<br>"
         if pagename == 'topchanges':
-            fh = open(self.webdir + "topchanges_form", "r")
-            html += fh.read()
-            fh.close()
+            fname = f"{self.webdir}/topchanges_form"
+            try:
+                fh = open(fname, "r")
+                html += fh.read()
+                fh.close()
+            except FileNotFoundError as e:
+                html += f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
+                self.error(f"ERROR: fail to open {fname}")
         html += self.html_footer(footer)
         html = self.html_finalize(color, html)
         return html
