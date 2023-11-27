@@ -94,6 +94,7 @@ jobs:
           python setup.py install
       - name: install xymon and rabbitmq-server
         run: |
+          sudo apt-get update
           sudo apt-get -y install xymon rabbitmq-server
       - name: start rabbitMQ
         run: |
