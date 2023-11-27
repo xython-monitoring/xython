@@ -11,6 +11,7 @@ import time
 import re
 import sys
 from random import randint
+import shutil
 import socket
 from importlib.metadata import version
 from pathlib import Path
@@ -321,6 +322,111 @@ class xythonsrv:
         if results[0][0] == None:
             return None
         return results
+
+    # delete all data about a column
+    def drop_column(self, hostname, column):
+        self.debug(f"DROP COLUMN {hostname} {column}")
+        ret = ""
+        # delete internal state
+        req = f'DELETE FROM columns WHERE hostname = "{hostname}" AND column = "{column}"'
+        self.debug(f"REQ {req}")
+        res = self.sqc.execute(req)
+        # verify it is clean
+        req = f'SELECT * FROM columns WHERE hostname = "{hostname}" AND column = "{column}"'
+        res = self.sqc.execute(req)
+        results = self.sqc.fetchall()
+        for res in results:
+            self.debug(f"DEBUG: DROP REMAIN {res}")
+        # drop hist
+        dropfile = f"{self.xt_histdir}/{hostname}.{column}"
+        if os.path.exists(dropfile):
+            self.debug(f"DEBUG: remove {dropfile}")
+            os.unlink(dropfile)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropfile}")
+        # drop histlogs
+        dropfile = f"{self.xt_histlogs}/{hostname}/{column}"
+        if os.path.exists(dropfile):
+            self.debug(f"DEBUG: remove {dropfile}")
+            shutil.rmtree(dropfile)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropfile}")
+        # remove xython state
+        dropfile = f"{self.xt_state}/{hostname}/{column}"
+        if os.path.exists(dropfile):
+            self.debug(f"DEBUG: remove {dropfile}")
+            os.unlink(dropfile)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropfile}")
+        return ret
+
+    def handle_drop(self, buf):
+        # DROP HOSTNAME
+        # DROP HOSTNAME TEST
+        sbuf = buf.rstrip().split(" ")
+        if len(sbuf) < 2 or len(sbuf) > 3:
+            self.error(f"ERROR: invalid drop command")
+            return False
+        column = None
+        hostname = sbuf[1]
+        if len(sbuf) == 3:
+            column = sbuf[2].rstrip()
+        H = self.find_host(hostname)
+        if H is None:
+            self.debug(f"DEBUG: drop unknow hostname")
+        self.debug(f"DEBUG: DROP {hostname} {column}")
+        if column is not None:
+            self.drop_column(hostname, column)
+            return
+        # drop all columns
+        dropdir = f"{self.xt_histlogs}/{hostname}/"
+        try:
+            dirFiles = os.listdir(dropdir)
+        except:
+            self.error(f"ERROR: fail to open {dropdir}")
+            return False
+        for col in dirFiles:
+            self.debug(f"DEBUG: will remove {col}")
+            self.drop_column(hostname, col)
+        req = f'DELETE FROM columns WHERE hostname = "{hostname}"'
+        res = self.sqc.execute(req)
+        req = f'SELECT * FROM columns WHERE hostname = "{hostname}"'
+        res = self.sqc.execute(req)
+        results = self.sqc.fetchall()
+        for res in results:
+            self.debug(f"DEBUG: DROP REMAIN {res}")
+        # drop hostdata
+        dropdir = f"{self.xt_hostdata}/{hostname}"
+        if os.path.exists(dropdir):
+            self.debug(f"DEBUG: remove {dropdir}")
+            shutil.rmtree(dropdir)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropdir}")
+        # drop histlogs
+        dropdir = f"{self.xt_histlogs}/{hostname}/"
+        if os.path.exists(dropdir):
+            self.debug(f"DEBUG: remove directory {dropdir}")
+            shutil.rmtree(dropdir)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropdir}")
+        # remove xython state
+        dropdir = f"{self.xt_state}/{hostname}/"
+        if os.path.exists(dropdir):
+            self.debug(f"DEBUG: remove directory {dropdir}")
+            shutil.rmtree(dropdir)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropdir}")
+        # drop hist
+        dropfile = f"{self.xt_histdir}/{hostname}"
+        if os.path.exists(dropfile):
+            self.debug(f"DEBUG: remove {dropfile}")
+            os.unlink(dropfile)
+        else:
+            self.debug(f"DEBUG: Cannot remove non-existent {dropfile}")
+
+        # reload hosts.cfg
+        self.read_hosts()
+        return True
 
     def parse_collector(self, buf):
         lines = buf.split("\n")
@@ -2744,20 +2850,6 @@ class xythonsrv:
         hostname = None
         section = None
         buf = ""
-        # non hostdata begin with status
-        # hostdata begin with an empty line ?
-        firstchars = hdata[0:6]
-        #self.debug(firstchars)
-        if firstchars == 'status':
-            self.parse_status(msg)
-            return
-        if firstchars == 'acknow':
-            self.parse_acknowledge(hdata)
-            return
-        if firstchars == 'disabl':
-            self.parse_disable(hdata)
-            return
-        #self.debug("THIS IS HISTDATA")
         ret = self.parse_collector(hdata)
         if ret is None:
             return
@@ -2871,17 +2963,123 @@ class xythonsrv:
         self.debug("DEBUG: create unix socket")
         return True
 
+    def handle_net_message(self, C, buf, final):
+        ret = {}
+        if buf is None:
+            buf = C["buf"]
+        sbuf = buf.split(" ")
+        cmd = sbuf[0]
+        ret["cmd"] = cmd
+        #print(f"DEBUG: cmd={cmd}")
+        if cmd[0:4] == 'PING':
+            self.debug("PING PONG")
+            ret["send"] = "PONG\n"
+            ret["done"] = 1
+        if cmd[0:4] == 'DROP' or cmd[0:4] == 'drop':
+            self.debug("DEBUG: DROP action")
+            self.handle_drop(buf)
+            ret["done"] = 1
+        elif cmd == 'GETPAGE':
+            page = sbuf[1]
+            data = self.html_page(page)
+            ret["send"] = data
+            ret["done"] = 1
+            #try:
+            #    C.send(data.encode("UTF8"))
+            #except BrokenPipeError as error:
+            #    self.error("Client get away")
+            #    pass
+        elif cmd == 'GETSTATUS':
+            hostname = sbuf[1]
+            service = sbuf[2].rstrip()
+            if not is_valid_column(service):
+                ret["send"] = f"ERROR: service has invalid name {service}\n"
+                ret["done"] = 1
+                return ret
+            if len(sbuf) > 3:
+                ts = xyts_(sbuf[3], None)
+            else:
+                res = self.sqc.execute('SELECT ts FROM columns WHERE hostname == ? AND column == ?', (hostname, service))
+                results = self.sqc.fetchall()
+                if len(results) != 1:
+                    ret["send"] = f"ERROR: no service named {service}\n"
+                    ret["done"] = 1
+                    return ret
+                ts = results[0][0]
+            data = self.gen_html("svcstatus", hostname, service, ts)
+            ret["send"] = data
+            ret["done"] = 1
+        elif cmd[0:6] == "status":
+            msg = {}
+            msg["buf"] = buf
+            msg["addr"] = 'local'
+            self.parse_status(msg)
+            ret["done"] = 1
+        elif cmd == "acknowledge":
+            self.parse_acknowledge(buf)
+            ret["done"] = 1
+        elif cmd == "disable":
+            self.parse_disable(buf)
+            ret["done"] = 1
+        elif cmd == 'GETRRD':
+            self.debug(sbuf)
+            if len(sbuf) < 4:
+                ret["send"] = 'Status: 400 Bad Request\n\nERROR: not enough arguments'
+                ret["done"] = 1
+                return ret
+            r = self.gen_cgi_rrd(sbuf[1], sbuf[2], sbuf[3])
+            if type(r) == str:
+                ret["send"] = r
+            else:
+                ret["bsend"] = r
+            ret["done"] = 1
+        elif cmd[0:6] == "proxy:":
+            lines = buf.split("\n")
+            line = lines.pop(0)
+            buf = "\n".join(lines)
+            msg = {}
+            msg["buf"] = buf
+            msg["addr"] = line.split(':')[1]
+            self.parse_hostdata(msg)
+        elif cmd == "TLSproxy":
+            lines = buf.split("\n")
+            line = lines.pop(0)
+            addr = line.split(" ")[1]
+            buf = "\n".join(lines)
+            msg = {}
+            msg["buf"] = buf
+            msg["addr"] = f"TLS proxy for {addr}"
+            ret = self.handle_net_message(msg, None, final)
+            print(f"TLS {ret}")
+        elif cmd == "client":
+            data = self.send_client_local(buf)
+            if data:
+                ret["send"] = "\n".join(data)
+            # nothing
+            if final:
+                self.parse_hostdata(C)
+        else:
+            if len(sbuf) > 1:
+                self.debug(f"DEBUG: handle_net_message do not handle {cmd} {sbuf[1]}X")
+            else:
+                self.debug(f"DEBUG: handle_net_message do not handle {cmd}X")
+        return ret
+
+    # Unix sock seems to always send data in one packet, it ease handling
     def unet_loop(self):
         try:
             c, addr = self.us.accept()
-            self.uclients.append(c)
+            print(f"UNIX {addr}")
             c.setblocking(0)
+            C = {}
+            C["s"] = c
+            self.uclients.append(C)
         except socket.error:
             #self.debug("DEBUG: nobody")
             pass
         for C in self.uclients:
             try:
-                rbuf = C.recv(64000)
+                rbuf = C["s"].recv(64000)
                 if not rbuf:
                     self.uclients.remove(C)
                     continue
@@ -2889,85 +3087,26 @@ class xythonsrv:
                 #self.debug("DEBUG: nothing to recv")
                 continue
             buf = rbuf.decode("UTF8")
+            C["buf"] = buf
+            C["addr"] = 'unix'
+            r = self.handle_net_message(C, None, True)
             sbuf = buf.split(" ")
             cmd = sbuf[0]
-            if cmd == 'GETSTATUS':
-                hostname = sbuf[1]
-                service = sbuf[2].rstrip()
-                if not is_valid_column(service):
-                    smsg = f"ERROR: service has invalid name {service}\n"
-                    C.send(smsg.encode("UTF8"))
-                    C.close()
-                    continue
-                if len(sbuf) > 3:
-                    ts = xyts_(sbuf[3], None)
-                else:
-                    res = self.sqc.execute('SELECT ts FROM columns WHERE hostname == ? AND column == ?', (hostname, service))
-                    results = self.sqc.fetchall()
-                    if len(results) != 1:
-                        smsg = f"ERROR: no service named {service}\n"
-                        C.send(smsg.encode("UTF8"))
-                        C.close()
-                        continue
-                    ts = results[0][0]
-                data = self.gen_html("svcstatus", hostname, service, ts)
+            if "send" in r:
+                self.debug(f"DEBUG: answer from {cmd}")
+                smsg = r["send"]
                 try:
-                    C.send(data.encode("UTF8"))
-                except BrokenPipeError as error:
-                    self.error("Client get away")
+                    C["s"].send(smsg.encode("UTF8"))
+                except BrokenPipeError:
                     pass
-            elif cmd == 'GETPAGE':
-                page = sbuf[1]
-                data = self.html_page(page)
+            if "bsend" in r:
+                self.debug(f"DEBUG: answer from {cmd}")
+                smsg = r["bsend"]
                 try:
-                    C.send(data.encode("UTF8"))
-                except BrokenPipeError as error:
-                    self.error("Client get away")
+                    C["s"].send(smsg)
+                except BrokenPipeError:
                     pass
-            elif cmd == "acknowledge":
-                self.parse_acknowledge(buf)
-            elif cmd == "disable":
-                self.parse_disable(buf)
-            elif cmd[0:6] == "proxy:":
-                lines = buf.split("\n")
-                line = lines.pop(0)
-                buf = "\n".join(lines)
-                msg = {}
-                msg["buf"] = buf
-                msg["addr"] = line.split(':')[1]
-                self.parse_hostdata(msg)
-            elif cmd[0:6] == "status":
-                msg = {}
-                msg["buf"] = buf
-                msg["addr"] = 'local'
-                self.parse_status(msg)
-            elif cmd == "TLSproxy":
-                lines = buf.split("\n")
-                line = lines.pop(0)
-                addr = line.split(" ")[1]
-                buf = "\n".join(lines)
-                msg = {}
-                msg["buf"] = buf
-                msg["addr"] = f"TLS proxy for {addr}"
-                self.parse_hostdata(msg)
-            elif cmd == 'GETRRD':
-                self.debug(sbuf)
-                if len(sbuf) < 4:
-                    C.send(b'Status: 400 Bad Request\n\nERROR: not enough arguments')
-                    C.close()
-                    continue
-                ret = self.gen_cgi_rrd(sbuf[1], sbuf[2], sbuf[3])
-                try:
-                    if type(ret) == str:
-                        C.send(ret.encode("UTF8"))
-                    else:
-                        C.send(ret)
-                except BrokenPipeError as error:
-                    self.error("Client get away")
-                    pass
-            else:
-                self.error(f"ERROR: Unknow cmd {cmd}")
-            C.close()
+            C["s"].close()
 
     def set_netport(self, port):
         if port <= 0 or port > 65535:
@@ -3019,8 +3158,11 @@ class xythonsrv:
             except socket.error as e:
                 if C["t"] + 30 < now:
                     self.debug(f'TIMEOUT client len={len(C["buf"])} addr={C["addr"]}')
+                    r = self.handle_net_message(C, None, True)
+                    if "send" in r:
+                        client.send(r["send"].encode("UTF8"))
                     client.close()
-                    self.parse_hostdata(C)
+                    #self.parse_hostdata(C)
                     self.clients.remove(C)
                 # else:
                 #    self.debug("DEBUG: nothing to recv")
@@ -3031,15 +3173,25 @@ class xythonsrv:
             if not buf:
                 # self.debug("DEBUG: client disconnected")
                 client.close()
-                self.parse_hostdata(C)
+                r = self.handle_net_message(C, None, True)
+                if "send" in r:
+                    self.debug(f'DEBUG client {C["addr"]} disconnected, cannot answer for cmd={r["cmd"]}')
+                #self.parse_hostdata(C)
                 self.clients.remove(C)
             else:
                 # self.debug(f"DEBUG: got data len={len(buf)}")
                 dbuf = buf.decode("UTF8")
                 if C["buf"] == "":
-                    data = self.send_client_local(dbuf)
-                    if data:
-                        client.send("\n".join(data).encode("UTF8"))
+                    r = self.handle_net_message(C, dbuf, False)
+                    if "send" in r:
+                        client.send(r["send"].encode("UTF8"))
+                    #data = self.send_client_local(dbuf)
+                    #if data:
+                    #    client.send("\n".join(data).encode("UTF8"))
+                    if "done" in r:
+                        #self.parse_hostdata(C)
+                        self.clients.remove(C)
+                        continue
                 C["buf"] += dbuf
         return True
 
