@@ -898,9 +898,8 @@ class xythonsrv:
                         #html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
                         html += f'<CENTER><img src="$XYMONSERVERCGIURL/showgraph.py?hostname={hostname}&service={rrdname}"></CENTER>'
 
-
         # history
-        if pagename in ["svcstatus", "nongreen", "all"]:
+        if pagename in ["svcstatus"]:
             html += self.html_history(now, history_extra)
 
         html += self.html_footer('stdnormal_footer')
