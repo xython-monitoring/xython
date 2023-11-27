@@ -125,7 +125,7 @@ case $USE_TLS in
 	# TODO if no openssl, fall back to something else
 	# TODO -servername
 	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
-	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT
+	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT > $XYTHON_TMP/logfetch.$(hostname).cfg
 	exit $?
 ;;
 *)
