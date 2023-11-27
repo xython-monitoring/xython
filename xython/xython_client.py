@@ -10,12 +10,27 @@ from importlib.metadata import version
 import socket
 import sys
 
+lldebug = 0
+
+def debug(msg):
+    if lldebug > 0:
+        print(msg)
+
 
 def send(host, port, data):
-    #print(f"SEND TO {host}:{port}")
+    debug(f"SEND TO {host}:{port}")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
+    try:
+        s.connect((host, port))
+    except socket.gaierror as e:
+        print(f"ERROR: fail to connect on {host}:{port} {str(e)}")
+        return
+    except ConnectionRefusedError as e:
+        print(f"ERROR: fail to connect on {host}:{port} {str(e)}")
+        return
     s.sendall(data.encode("UTF8"))
+    #r = s.recv(64000)
+    #print(r)
     s.close()
 
 
@@ -27,32 +42,39 @@ def usage():
 
 
 def main():
+    global lldebug
     X_HOST = None
     X_PORT = 12346
 
     e = 0
-    i = 1
-    while i < len(sys.argv):
-        if sys.argv[i] == '-h':
+    print(f"DEBUG: argv={len(sys.argv)}")
+    args = sys.argv
+    args.pop(0)
+    while len(args) > 0:
+        arg = args.pop(0)
+        if arg == '-h':
             usage()
             sys.exit(0)
+        if arg == '--debug':
+            lldebug = 1
+            continue
+        debug(f"DEBUG: check {arg}")
         if X_HOST is None:
-            x = sys.argv[i]
-            if ':' in x:
-                print("split")
-                xs = x.split(":")
+            if ':' in arg:
+                debug("DEBUG: split {x}")
+                xs = arg.split(":")
                 X_HOST = xs[0]
                 X_PORT = xs[1]
             else:
-                X_HOST = x
-            i += 1
+                X_HOST = arg
             continue
-        else:
-            # X_HOST is not None so we have data
-            send(X_HOST, X_PORT, sys.argv[i])
-            sys.exit(0)
-        print(f"ERROR: unknown argument {sys.argv[i]}")
-        sys.exit(1)
+        # X_HOST is not None so we have data
+        data = arg
+        for arg in args:
+            data += f" {arg}"
+        data += "\n"
+        send(X_HOST, int(X_PORT), data)
+        sys.exit(0)
     usage()
     sys.exit(0)
 
