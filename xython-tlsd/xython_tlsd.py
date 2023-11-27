@@ -74,16 +74,30 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
     with context.wrap_socket(sock, server_side=True) as ssock:
         while True:
             conn, addr = ssock.accept()
+            conn.settimeout(2)
             ipaddr = addr[0]
             debug(f"Got connection from {ipaddr}")
-            data = conn.recv(64384)
-            conn.close()
-            debug(f"DEBUG: Received {len(data)} bytes")
+            total = b""
+            theend = False
+            while not theend:
+                try:
+                    data = conn.recv(64384)
+                    debug(f"DEBUG: Received {len(data)} bytes")
+                    total += data
+                except TimeoutError:
+                    theend = True
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             sock.connect(XYTHON_SOCK)
             sock.send(f"TLSproxy {ipaddr}\n".encode("UTF8"))
-            sock.send(data)
+            sock.send(total)
+            try:
+                ret = sock.recv(64000)
+                print(f"DEBUG: getback {ret}")
+                conn.send(ret)
+            except ConnectionResetError:
+                pass
             sock.close()
+            conn.close()
             debug("DEBUG: proxyfied!")
 
 sys.exit(0)
