@@ -25,7 +25,7 @@ get_value() {
 		return 1
 	fi
 	debug "DEBUG: seek $1 in $2"
-	V=$(grep -o "^$1=[\"a-z0-9A-Z_: \.-]*" "$2" | cut -d= -f2 | sed 's,",,g')
+	V=$(grep -o "^$1=[\"a-z0-9A-Z_: /\.-]*" "$2" | cut -d= -f2 | sed 's,",,g')
 	if [ -z "$V" ];then
 		return 1
 	fi
@@ -117,7 +117,7 @@ case $USE_TLS in
 		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT"
 		xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
 		# TODO send error as part of message
-		cat $XYTHON_TMP/xython.msg | nc $NC_OPTS -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT > $XYTHON_TMP/logfetch.$(hostname).cfg
+		cat $XYTHON_TMP/xython.msg | nc $NC_OPTS -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT > $XYTHON_TMP/logfetch.$(uname -n).cfg
 		exit $?
 	fi
 ;;
@@ -125,8 +125,9 @@ case $USE_TLS in
 	# TODO if no openssl, fall back to something else
 	# TODO -servername
 	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
-	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT > $XYTHON_TMP/logfetch.$(hostname).cfg
-	exit $?
+	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT > $XYTHON_TMP/logfetch.$(uname -n).cfg
+	# TODO openssl dont like TLSD closing its connection
+	# exit $?
 ;;
 *)
 	echo "ERROR"
