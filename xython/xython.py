@@ -1393,8 +1393,19 @@ class xythonsrv:
             status += data
             status += '\n@@'
             self.msgn += 1
+            # TODO handle error
             properties = pika.BasicProperties(expiration=str(10000))
-            self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
+            try:
+                self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
+            # pika.exceptions.StreamLostError: Stream connection lost: ConnectionResetError(104, 'Connection reset by peer')
+            # pika.exceptions.ChannelWrongStateError: Channel is closed.
+            except pika.exceptions.ChannelWrongStateError as e:
+                # TODO what to do ?
+                self.error(f"ERROR: pika connection closed")
+                if self.channel.is_closed:
+                    self.debug("DEBUG: closed")
+                self.init_pika()
+                self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
 
         #req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
         res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color, ackend, ackcause) VALUES (?, ?, ?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color, ackend, ackcause))
