@@ -159,12 +159,14 @@ def test_port_rule():
     rp.init_from('LOCAL=:22 state=LISTEN TEXT=SSH')
     assert rp.local == ':22'
     assert rp.state == 'LISTEN'
+    assert rp.rstate == None
     assert rp.text == 'SSH'
 
     rp = xy_rule_port()
     rp.init_from('LOCAL=%:22 state=LISTEN TEXT=SSH')
     assert rp.local == ':22'
     assert rp.state == 'LISTEN'
+    assert rp.rstate == None
     assert rp.text == 'SSH'
 
     rp = xy_rule_port()
