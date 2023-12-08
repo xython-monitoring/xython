@@ -3067,7 +3067,7 @@ class xythonsrv:
             msg["buf"] = buf
             msg["addr"] = line.split(':')[1]
             self.parse_hostdata(msg)
-        elif cmd == "TLSproxy":
+        elif cmd == "TLSproxy" or cmd == "HTTPTLSproxy":
             lines = buf.split("\n")
             line = lines.pop(0)
             addr = line.split(" ")[1]

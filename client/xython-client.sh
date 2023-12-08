@@ -6,11 +6,15 @@ XYTHON_SRV=127.0.0.1
 XYTHON_PORT=1984
 XYTHON_TLS_PORT=1985
 USE_TLS=0
+TLS_MODE="auto"
 FORCE_TLS=0
 CAFILE=""
 NC_OPTS=""
 # either systemd or init script should create it
 XYTHON_TMP="/run/xython-client"
+CURLOPTS=""
+OPENSSLOPTS=""
+PROXYCGI="xython-cgi/proxy.py"
 
 debug()
 {
@@ -33,6 +37,24 @@ get_value() {
 	return 0
 }
 
+tls_curl() {
+	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
+	if [ ! -z "$CAFILE" ];then
+		CURLOPTS="--cacert $CAFILE"
+	fi
+	curl $CURLOPTS --no-progress-meter -F "data=@$XYTHON_TMP/xython.msg" https://$XYTHON_SRV/$PROXYCGI --output $XYTHON_TMP/logfetch.$(uname -n).cfg
+}
+
+tls_openssl() {
+	if [ ! -z "$CAFILE" ];then
+		OPENSSLOPTS="--CAfile $CAFILE"
+	fi
+	# TODO -servername
+	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
+	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $OPENSSLOPTS -connect $XYTHON_SRV:$XYTHON_TLS_PORT > $XYTHON_TMP/logfetch.$(uname -n).cfg
+	# TODO openssl dont like TLSD closing its connection
+}
+
 while [ $# -ge 1 ];
 do
 case $1 in
@@ -48,6 +70,11 @@ case $1 in
 	shift
 	# for testing in cmdline
 	FORCE_TLS=1
+;;
+--tlsmode)
+	shift
+	TLS_MODE="$1"
+	shift
 ;;
 *)
 	echo "ERROR: unknow argument"
@@ -92,10 +119,12 @@ fi
 
 # xython conf has more priority than xymon
 get_value USE_TLS /etc/xython/xython-client.cfg && USE_TLS=$V
+get_value TLS_MODE /etc/xython/xython-client.cfg && TLS_MODE=$V
 get_value XYTHON_SRV /etc/xython/xython-client.cfg && XYTHON_SRV=$V
 get_value XYTHON_PORT /etc/xython/xython-client.cfg && XYTHON_PORT=$V
 get_value XYTHON_TLS_PORT /etc/xython/xython-client.cfg && XYTHON_TLS_PORT=$V
-get_value CAFILE /etc/xython/xython-client.cfg && CAFILE="-CAfile $V"
+get_value CAFILE /etc/xython/xython-client.cfg && CAFILE="$V"
+get_value PROXYCGI /etc/xython/xython-client.cfg && PROXYCGI="$V"
 
 # check if the address is IPV6
 # TODO do not handle yet a DNS resolving to ipv6
@@ -122,12 +151,28 @@ case $USE_TLS in
 	fi
 ;;
 1)
-	# TODO if no openssl, fall back to something else
-	# TODO -servername
-	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
-	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $CAFILE -connect $XYTHON_SRV:$XYTHON_TLS_PORT > $XYTHON_TMP/logfetch.$(uname -n).cfg
-	# TODO openssl dont like TLSD closing its connection
-	# exit $?
+	debug "DEBUG: Use TLS ($TLS_MODE)"
+	case $TLS_MODE in
+	auto)
+		# first try curl
+		tls_curl
+		exit $?
+		# fall back to openssl
+		# TODO
+	;;
+	openssl)
+		tls_openssl
+		exit $?
+	;;
+	curl)
+		tls_curl
+		exit $?
+	;;
+	*)
+		echo "ERROR: unknown $TLS_MODE"
+		exit 1
+	;;
+	esac
 ;;
 *)
 	echo "ERROR"
