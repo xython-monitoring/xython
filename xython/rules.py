@@ -527,6 +527,7 @@ class xy_rule_port():
         self.state = None
         self.rstate = None
         self.text = None
+        self.otext = ""
         self.min = 1
         self.max = -1
         self._count = 0
@@ -535,6 +536,7 @@ class xy_rule_port():
         print(f"PORT RULE {self.local} {self.state} {self.rstate} TEXT={self.text} min={self.min} max={self.max}")
 
     def init_from(self, portruleline):
+        self.otext = portruleline
         tokens = tokenize(portruleline)
         for token in tokens:
             toks = token.split("=")
@@ -566,40 +568,53 @@ class xy_rule_port():
             if self.state:
                 self.text += self.state + " "
         self._count = 0
+        lcount = 0
+        iSTATE = 5
         # test matching against data
         for line in data:
             line = re.sub(r"\s+", ' ', line)
             line = line.rstrip()
             sline = line.split(" ")
+            if lcount == 0:
+                # check ss vs netstat
+                if sline[0] == 'State':
+                    iSTATE = 0
+            lcount += 1
             if len(sline) >= 5:
                 # proto = sline[0]
                 if self.local:
                     local = sline[3]
+                    #print(f"DEBUG: PORTRULE local {self.local} vs {local}")
                     ret = re.search(self.local, local)
                     if not ret:
                         continue
                 if self.rstate and len(sline) == 6:
-                    state = sline[5]
+                    state = sline[iSTATE]
+                    #print(f"DEBUG: PORTRULE rstate {self.rstate} vs {state}")
                     ret = re.search(self.rstate, state)
                     if not ret:
                         continue
                 if self.state and len(sline) == 6:
-                    state = sline[5]
+                    state = sline[iSTATE]
+                   # print(f"DEBUG: PORTRULE state {self.state} vs {state}")
                     if self.state != state:
                         continue
                 if self.state and len(sline) != 6:
+                    #print(f"DEBUG: PORTRULE {self.state} {len(sline)}")
                     continue
                 if self.rstate and len(sline) != 6:
+                    #print(f"DEBUG: PORTRULE {self.rstate} {len(sline)}")
                     continue
                 self._count += 1
+                #print(f"DEBUG: {self.text} count={self._count}")
         ret = {}
         txt = f"&green {self.text} (found {self._count}, req. {self.min} or more)"
         color = 'green'
         if self._count < self.min:
-            txt = f"&red {self.text} (found {self._count}, req. {self.min} or more)"
+            txt = f"&red {self.text} {self.otext} (found {self._count}, req. {self.min} or more)"
             color = 'red'
         if self.max >= 0 and self._count > self.max:
-            txt = f"&red {self.text} (found {self._count}, req. {self.max} or less)"
+            txt = f"&red {self.text} {self.otext} (found {self._count}, req. {self.max} or less)"
             color = 'red'
         ret["txt"] = txt
         ret["color"] = color
