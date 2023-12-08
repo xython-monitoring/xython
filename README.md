@@ -147,10 +147,15 @@ The configuration directive in /etc/xython/xython-client.cfg take priority again
 
 You can change the xymon fqdn and port via XYMSRV and XYTHON_PORT.
 
-You can enable TLS for client by setting USE_TLS=1, you will need to change port to the one used by xython-tlsd.
-You will need also so set the CAfile path.
+## TLS communication between server and client
+Xython allow to have a secure communication between client and server.
 
-## TLS server
+You have 2 choices:
+### Use HTTPS proxy
+You can enable push of client data via the xython HTTP proxy by setting USE_TLS=1
+If you use a custom CA (or self-signed certificate), dont forget to set CAFILE
+
+### USE xython-tlsd
 TLS communication with the client is handled by xython-tlsd.
 You need to have a working PKI (CA + key + cert).
 The key and cert used by xython-tlsd could be configured by:
@@ -163,6 +168,10 @@ You can generate a self signed certificate with:
 > openssl req -x509 -newkey rsa:4096 -keyout /etc/xython/xython.key -out /etc/xython/xython.crt -sha256 -days 3650 -nodes -subj "/C=FR/ST=France/L=Paris/O=xython/OU=tests/CN=xython"
 
 TODO: authentification of client will be done later
+
+You can enable TLS for client by setting USE_TLS=1 and set TLS_MODE="openssl"
+You will need to change port to the one used by xython-tlsd.
+You will need also so set the CAfile path.
 
 # Architecture
 All active tests are handled by celery workers.
@@ -244,6 +253,7 @@ This is a uncomplete list
 * use PINGCOLUMN
 * add conn by default on hosts
 * rename pgp public key
+* ACL on commands
 
 # List of xython install path (FHS)
 
