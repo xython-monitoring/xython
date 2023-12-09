@@ -2554,15 +2554,31 @@ class xythonsrv:
             self.error(f"ERROR: parse_ports: host is None for {hostname}")
             return
         sline = buf.split("\n")
-        for port in self.rules["PORT"]:
+        texts = []
+        for port in H.rules["PORT"]:
+            text = port.text
+            #self.debug(f"DEBUG: handle port {text} {texts}")
+            if text is not None:
+                if text in texts:
+                    sbuf += f"Ignore {text}\n"
+                    continue
+                texts.append(text)
             ret = port.check(sline)
             sbuf += ret["txt"] + '\n'
             color = setcolor(ret["color"], color)
-        for port in H.rules["PORT"]:
+        for port in self.rules["PORT"]:
+            text = port.text
+            #self.debug(f"DEBUG: handle port {text} {texts}")
+            if text is not None:
+                if text in texts:
+                    sbuf += f"Ignore {text}\n"
+                    continue
+                texts.append(text)
             ret = port.check(sline)
             sbuf += ret["txt"] + '\n'
             color = setcolor(ret["color"], color)
         sbuf += buf
+        sbuf += f'RULES {H.rules["PORT"]}'
         self.column_update(hostname, "ports", color, now, sbuf, self.ST_INTERVAL + 60, sender)
 
 # TODO self detect high/crit min/max from output
