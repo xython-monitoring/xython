@@ -1854,14 +1854,14 @@ class xythonsrv:
     # read analysis.cfg
     def read_analysis(self, hostname):
         H = self.find_host(hostname)
-        H.rules["PROC"] = []
-        H.rules["PORT"] = []
         mtime = os.path.getmtime(f"{self.etcdir}/analysis.cfg")
         #self.debug(f"DEBUG: read_analysis: compare mtime={mtime} and {H.time_read_analysis}")
         if H.time_read_analysis < mtime:
             H.time_read_analysis = mtime
         else:
             return self.RET_OK
+        H.rules["PROC"] = []
+        H.rules["PORT"] = []
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         currhost = None
         self.rules = {}
