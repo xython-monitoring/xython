@@ -569,6 +569,7 @@ class xy_rule_port():
                 self.text += self.state + " "
         self._count = 0
         lcount = 0
+        iLOCAL = 3
         iSTATE = 5
         # test matching against data
         for line in data:
@@ -577,34 +578,33 @@ class xy_rule_port():
             sline = line.split(" ")
             if lcount == 0:
                 # check ss vs netstat
-                if sline[0] == 'State':
-                    iSTATE = 0
+                if sline[0] == 'Netid':
+                    iSTATE = 1
+                    iLOCAL = 4
             lcount += 1
             if len(sline) >= 5:
                 # proto = sline[0]
                 if self.local:
-                    local = sline[3]
+                    local = sline[iLOCAL]
                     #print(f"DEBUG: PORTRULE local {self.local} vs {local}")
                     ret = re.search(self.local, local)
                     if not ret:
                         continue
-                if self.rstate and len(sline) == 6:
+                if self.rstate:
+                    if len(sline) <= iSTATE:
+                        continue
                     state = sline[iSTATE]
                     #print(f"DEBUG: PORTRULE rstate {self.rstate} vs {state}")
                     ret = re.search(self.rstate, state)
                     if not ret:
                         continue
-                if self.state and len(sline) == 6:
+                if self.state:
+                    if len(sline) <= iSTATE:
+                        continue
                     state = sline[iSTATE]
-                   # print(f"DEBUG: PORTRULE state {self.state} vs {state}")
+                    #print(f"DEBUG: PORTRULE state {self.state} vs {state}")
                     if self.state != state:
                         continue
-                if self.state and len(sline) != 6:
-                    #print(f"DEBUG: PORTRULE {self.state} {len(sline)}")
-                    continue
-                if self.rstate and len(sline) != 6:
-                    #print(f"DEBUG: PORTRULE {self.rstate} {len(sline)}")
-                    continue
                 self._count += 1
                 #print(f"DEBUG: {self.text} count={self._count}")
         ret = {}

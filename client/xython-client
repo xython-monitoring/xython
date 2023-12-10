@@ -65,7 +65,7 @@ PORTS_DONE=0
 # /usr/bin/ss on bookworm
 if [ -x /sbin/ss -o -x /usr/bin/ss ];then
 	echo "[ss]"
-	ss -tlpn
+	ss -antup
 	PORTS_DONE=1
 fi
 

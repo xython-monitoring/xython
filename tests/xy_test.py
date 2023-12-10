@@ -192,6 +192,27 @@ def test_port_rule_smtps():
     assert rp.rstate is None
     assert rp.text == 'smtps'
 
+def test_ss_netstat():
+    rp = xy_rule_port()
+    rp.init_from('LOCAL=%:2049 state=LISTEN TEXT=NFS')
+    rp631 = xy_rule_port()
+    rp631.init_from('LOCAL=%:631 state=LISTEN TEXT=CUPS')
+
+    f = open("./tests/ports/ss")
+    data = f.readlines()
+    f.close()
+    rp.check(data)
+    assert rp._count == 1
+    rp631.check(data)
+    assert rp631._count == 2
+
+    f = open("./tests/ports/netstat")
+    data = f.readlines()
+    f.close()
+    rp.check(data)
+    assert rp._count == 1
+    rp631.check(data)
+    assert rp631._count == 2
 
 def test_port_check():
     f = open("./tests/ports/1678699830")
@@ -203,17 +224,27 @@ def test_port_check():
     assert rp._count == 2
 
     rp = xy_rule_port()
+    rp.init_from('LOCAL=:69 TEXT=TFTP')
+    rp.check(data)
+    assert rp._count == 2
+
+    rp = xy_rule_port()
+    rp.init_from('LOCAL=0.0.0.0:69 TEXT=TFTP')
+    rp.check(data)
+    assert rp._count == 1
+
+    rp = xy_rule_port()
     rp.init_from('LOCAL=0.0.0.0:69 state=LISTEN TEXT=TFTP')
     rp.check(data)
     assert rp._count == 0
 
     rp = xy_rule_port()
-    rp.init_from('LOCAL=:111 state=LISTEN TEXT=TFTP')
+    rp.init_from('LOCAL=:111 state=LISTEN TEXT=NFS')
     rp.check(data)
     assert rp._count == 2
 
     rp = xy_rule_port()
-    rp.init_from('LOCAL=:111 TEXT=TFTP')
+    rp.init_from('LOCAL=:111 TEXT=NFS2')
     rp.check(data)
     assert rp._count == 4
 
