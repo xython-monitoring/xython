@@ -12,16 +12,20 @@ import re
 import socket
 import sys
 
+
+XYTHON_SOCK = '/run/xython/xython.sock'
 ipaddr = None
 
-print("Content-type: text/html\n")
-print("\n")
+if "XYTHON_SOCK" in os.environ:
+    XYTHON_SOCK = os.environ["XYTHON_SOCK"]
+
+print("Content-type: text/plain\n")
 
 if 'REQUEST_METHOD' not in os.environ:
     print("ERROR: no REQUEST_METHOD")
     sys.exit(0)
 if os.environ['REQUEST_METHOD'] != 'POST':
-    # TODO
+    print("ERROR: REQUEST_METHOD is not POST")
     sys.exit(0)
 
 if 'CONTENT_TYPE' not in os.environ:
@@ -29,10 +33,10 @@ if 'CONTENT_TYPE' not in os.environ:
     sys.exit(0)
 contype = os.environ['CONTENT_TYPE']
 if 'multipart/form-data' not in contype:
-    print("ERROR: no multipart/form-data")
+    print("ERROR: CONTENT_TYPE is not multipart/form-data")
     sys.exit(0)
 if 'boundary' not in contype:
-    print("ERROR: no boundary")
+    print("ERROR: no boundary in CONTENT_TYPE")
     sys.exit(0)
 ret = re.search(r"(boundary=)([a-zA-Z0-9-]*)", contype)
 boundary = ret.group(2).rstrip()
@@ -47,7 +51,7 @@ header = True
 line = lines.pop(0)
 line = line.rstrip()
 if line != "--" + boundary:
-    print("ERROR: no boundary")
+    print("ERROR: no boundary in content")
     sys.exit(0)
 
 # now remove header
@@ -56,6 +60,10 @@ while header:
     line = line.rstrip()
     if line == "":
         header = False
+    if len(lines) == 0:
+        # we are still in header, but nothing to eat
+        print("ERROR: wrong format")
+        sys.exit(0)
 
 # now seek the boundary
 end = None
@@ -65,6 +73,10 @@ for line in lines:
         #print(f"END found at {i}")
         end = i
     i += 1
+if end is None:
+    print("ERROR: no end")
+    sys.exit(0)
+
 total = len(lines)
 i = total - 1
 while i >= end:
@@ -78,20 +90,28 @@ if "REMOTE_ADDR" in os.environ:
     ipaddr = os.environ["REMOTE_ADDR"]
 # TODO PROXY FOR ADDR
 if data is None or ipaddr is None:
-    print('Status: 400 Bad Request\n')
-    print("\n")
+    print("ERROR: no REMOTE_ADDR")
     sys.exit(0)
 
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
-    sock.connect('/run/xython/xython.sock')
-except:
-    print("FAIL to connect to xythond")
+    sock.connect(XYTHON_SOCK)
+except FileNotFoundError:
+    print(f"FAIL to connect to xythond, no such file or directory")
     sys.exit(0)
-sock.send(f"HTTPTLSproxy {ipaddr}\n".encode("UTF8"))
-sock.send(data.encode("UTF8"))
-buf = sock.recv(640000)
-print(buf.decode("UTF8"))
+except ConnectionRefusedError:
+    print(f"FAIL to connect to xythond")
+    sys.exit(0)
+try:
+    sock.send(f"HTTPTLSproxy {ipaddr}\n".encode("UTF8"))
+    sock.send(data.encode("UTF8"))
+    buf = sock.recv(640000)
+    print(buf.decode("UTF8"))
+except ConnectionResetError:
+    # either we fail to write or read
+    # cannot do anything
+    print("ERROR: fail to communicate with xython")
+    pass
 sock.close()
 
 sys.exit(0)
