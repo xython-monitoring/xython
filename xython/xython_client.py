@@ -12,6 +12,7 @@ import sys
 
 lldebug = 0
 
+
 def debug(msg):
     if lldebug > 0:
         print(msg)
@@ -29,14 +30,14 @@ def send(host, port, data):
         print(f"ERROR: fail to connect on {host}:{port} {str(e)}")
         return
     s.sendall(data.encode("UTF8"))
-    #r = s.recv(64000)
-    #print(r)
+    # r = s.recv(64000)
+    # print(r)
     s.close()
 
 
 def usage():
     print(f'xython v{version("xython")}')
-    print("Usage: /usr/xymon/client/bin/xymon [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA")
+    print("Usage: xythonc [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA")
     print("\tRECIPIENT: IP-address, hostname or URL")
     print('\tDATA: Message to send, or "-" to read from stdin')
 
@@ -46,7 +47,6 @@ def main():
     X_HOST = None
     X_PORT = 12346
 
-    e = 0
     print(f"DEBUG: argv={len(sys.argv)}")
     args = sys.argv
     args.pop(0)
@@ -61,7 +61,7 @@ def main():
         debug(f"DEBUG: check {arg}")
         if X_HOST is None:
             if ':' in arg:
-                debug("DEBUG: split {x}")
+                debug(f"DEBUG: split {arg}")
                 xs = arg.split(":")
                 X_HOST = xs[0]
                 X_PORT = xs[1]
