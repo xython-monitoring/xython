@@ -524,6 +524,22 @@ def test_lmsensors():
     ret = xs.check("fake2", "AUXTIN:         -29.5 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor")
     assert ret["color"] == 'green'
 
+    # test ignore
+    xs = xy_rule_sensors()
+    xs.add("DEFAULT C 20 30 0 -10")
+    ret = xs.check("fake2", "temp0: -40.7°C")
+    assert ret["color"] == 'red'
+    xs.add("fake2 temp0 IGNORE")
+    print(xs.rules)
+    ret = xs.check("fake2", "temp0: -40.7°C")
+    assert ret["color"] == 'clear'
+    ret = xs.check("fake2", "temp1: -40.7°C")
+    assert ret["color"] == 'red'
+    # TODO ignore whole adapter
+    # xs.add("fake2 IGNORE")
+    # ret = xs.check("fake2", "temp1: -40.7°C")
+    # assert ret["color"] == 'clear'
+
 def test_reload():
     # we should have 2 hosts with conn on each
     # test that conn is added by default
