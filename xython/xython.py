@@ -723,7 +723,6 @@ class xythonsrv:
             res = self.sqc.execute(req)
             results = self.sqc.fetchall()
             for res in results:
-                print(res)
                 hostname = res[0]
                 column = res[1]
                 expire = res[2]
@@ -742,7 +741,7 @@ class xythonsrv:
         return html
 
     def html_hostlist(self, pagename):
-        self.debug(f"DEBUG: html_hostlist for {pagename}")
+        #self.debug(f"DEBUG: html_hostlist for {pagename}")
         now = time.time()
         html = ""
         color = 'green'
@@ -3076,7 +3075,6 @@ class xythonsrv:
             msg["buf"] = buf
             msg["addr"] = f"TLS proxy for {addr}"
             ret = self.handle_net_message(msg, None, final)
-            print(f"TLS {ret}")
         elif cmd == "client":
             data = self.send_client_local(buf)
             if data:
@@ -3095,7 +3093,7 @@ class xythonsrv:
     def unet_loop(self):
         try:
             c, addr = self.us.accept()
-            print(f"UNIX {addr}")
+            #print(f"UNIX {addr}")
             c.setblocking(0)
             C = {}
             C["s"] = c
@@ -3105,7 +3103,9 @@ class xythonsrv:
             pass
         for C in self.uclients:
             try:
-                rbuf = C["s"].recv(64000)
+                # TODO does this value is good enough
+                # handle better bigger message via a loop
+                rbuf = C["s"].recv(200000)
                 if not rbuf:
                     self.uclients.remove(C)
                     continue
@@ -3119,14 +3119,14 @@ class xythonsrv:
             sbuf = buf.split(" ")
             cmd = sbuf[0]
             if "send" in r:
-                self.debug(f"DEBUG: answer from {cmd}")
+                #self.debug(f"DEBUG: answer from {cmd}")
                 smsg = r["send"]
                 try:
                     C["s"].send(smsg.encode("UTF8"))
                 except BrokenPipeError:
                     pass
             if "bsend" in r:
-                self.debug(f"DEBUG: answer from {cmd}")
+                #self.debug(f"DEBUG: answer from {cmd}")
                 smsg = r["bsend"]
                 try:
                     C["s"].send(smsg)

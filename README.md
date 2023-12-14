@@ -254,6 +254,7 @@ This is a uncomplete list
 * add conn by default on hosts
 * rename pgp public key
 * ACL on commands
+* compressed messages/status
 
 # List of xython install path (FHS)
 
@@ -268,6 +269,8 @@ TODO
 * /var/lib/xython/hostdata  xymon like hostdata
 * /var/lib/xython/rrd       base directory for RRD
 * /var/lib/xython/state     xython store current state of all status in this directory, used when starting xython to restore all status to a sane state
+* /run/xython/              Directory containing the xython UNIX socket file. Used for communication with apache/TLSd/xython-snmpd
+* /run/xython-client/       Directory for storing temporary files for the client
 
 # Documentation
 You could see online documentation at <https://www.xython.fr/hosts.cfg.5.html>

@@ -552,7 +552,7 @@ class xy_rule_port():
         for token in tokens:
             toks = token.split("=")
             if len(toks) != 2:
-                print("ERROR: rule_port: init")
+                print(f"ERROR: rule_port: init toklen={len(toks)} token={token}")
                 return None
             left = toks[0]
             right = toks[1]
