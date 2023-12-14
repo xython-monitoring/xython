@@ -164,8 +164,12 @@ class xy_rule_sensors():
         if len(tokens) == 0:
             print("ERROR: sensor:")
             return False
+        # if sname == 'IGNORE':
+        # TODO ignore a whole adapter
+        #    return True
         if tokens[0] == 'IGNORE':
-            self.rules[adapter]["ignore"] = True
+            self.rules[adapter]["rules"][sname] = {}
+            self.rules[adapter]["rules"][sname]["ignore"] = True
             return True
         if len(tokens) < 2:
             print(f"ERROR: sensor: not enough tokens got {tokens}")
@@ -252,10 +256,17 @@ class xy_rule_sensors():
         rawv = ret[1]
         sunit = ret[2]
 
-        #print(f"DEBUG: {sname} has value {rawv}")
+        # print(f"DEBUG: {sname} has value {rawv}")
         if adapter in self.rules:
-            #print(f"DEBUG: adapter direct match for {adapter}")
+            # print(f"DEBUG: adapter direct match for {adapter} seeking {sname}")
             rule = self.rules[adapter]
+            if sname in rule["rules"] and "ignore" in rule["rules"][sname]:
+                ret = {}
+                ret["txt"] = f"&clear ignore {sname}"
+                ret["color"] = "clear"
+                ret['v'] = 0
+                ret['sname'] = sname
+                return ret
             rs = self.find_rule_for_adapter(rule, sname)
             if rs is not None:
                 return rs.check(sname, float(rawv))
