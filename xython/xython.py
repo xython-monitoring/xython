@@ -237,6 +237,8 @@ class xythonsrv:
         self.NETTEST_INTERVAL = 2 * 60
         self.XYTHOND_INTERVAL = 2 * 60
         self.GENPAGE_INTERVAL = 30
+        # xymon use 512K by default
+        self.MAX_MSG_SIZE = 512 * 1024
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -3117,10 +3119,14 @@ class xythonsrv:
             try:
                 # TODO does this value is good enough
                 # handle better bigger message via a loop
-                rbuf = C["s"].recv(200000)
+                # TODO alert when max is reached
+                rbuf = C["s"].recv(self.MAX_MSG_SIZE)
                 if not rbuf:
                     self.uclients.remove(C)
                     continue
+                rbuflen = len(rbuf)
+                if rbuflen >= self.MAX_MSG_SIZE:
+                    self.error(f"ERROR: received oversized message len={rbuflen}")
             except socket.error:
                 #self.debug("DEBUG: nothing to recv")
                 continue
