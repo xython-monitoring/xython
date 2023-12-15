@@ -1319,7 +1319,11 @@ class xythonsrv:
             return results[0]
         return None
 
+    # return 0 if no color change
+    # return 1 if color change
+    # return 2 for errors
     def column_update(self, hostname, cname, color, ts, data, expire, updater):
+        color_changed = False
         #self.debug(f"DEBUG: column_update {hostname} {cname} ts={ts} expire={expire}")
         color = gcolor(color)
         ts_start = time.time()
@@ -1340,11 +1344,11 @@ class xythonsrv:
         results = self.sqc.fetchall()
         if len(results) > 1:
             self.error("ERROR: this is impossible")
-            return
+            return 2
         if len(results) == 0:
             if color == 'purple':
                 self.error("ERROR: creating a purple column")
-                return
+                return 2
             #self.debug("DEBUG: create column %s on %s" % (cname, hostname))
         else:
             result = results[0]
@@ -1367,7 +1371,7 @@ class xythonsrv:
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
                 self.error("ERROR: keeping blue without status")
-                return
+                return 2
             odata = ''.join(rdata["raw"])
             lodata = odata.split("\n\n")
             firsts = lodata[0].split(" ", 1)[1]
@@ -1377,7 +1381,7 @@ class xythonsrv:
         if color == 'purple':
             if ocolor == 'purple':
                 self.error("ERROR: cannot go from purple to purple")
-                return
+                return 2
         #self.debug("%s %s color=%s ocolor=%s ts=%s ots=%s" % (hostname, cname, ocolor, color, ts, ots))
         if color == ocolor:
             ts = ots
@@ -1385,6 +1389,7 @@ class xythonsrv:
             duration = ts - ots
             self.save_hist(hostname, cname, color, ocolor, ts, ots, duration)
             self.history_update(hostname, cname, ts, duration, color, ocolor)
+            color_changed = True
         if color == 'purple':
             if data is not None:
                 print("ERROR")
@@ -1392,7 +1397,7 @@ class xythonsrv:
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
                 self.error("ERROR: cannot purple without status")
-                return
+                return 2
             data = ''.join(rdata["raw"])
         # TODO not @@XYMONDCHK-V1
         # @@status#62503/karnov|1684156989.403184|172.16.1.22||karnov|lr|1684243389|red||red|1682515389|0||0||1684156916|linux||0|
@@ -1429,12 +1434,15 @@ class xythonsrv:
             #duplicate
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
-                return
+                return 2
             data = ''.join(rdata["data"])
         self.save_histlogs(hostname, cname, data, ts, color, updater)
         self.save_state(hostname, cname, color, int(ts), int(expiretime))
         ts_end = time.time()
         self.stat("COLUPDATE", ts_end - ts_start)
+        if color_changed:
+            return 1
+        return 0
 
     def save_state(self, hostname, cname, color, ts_start, ts_expire):
         if self.xythonmode == 0:
@@ -2458,12 +2466,15 @@ class xythonsrv:
                 rrdtool.tune(rrdfpath, f"DS:{dsname}:GAUGE:600:-280:5000")
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
 
+    # return 0 if no color change
+    # return 1 on color change
+    # return 2 on error
     def parse_free(self, hostname, buf, sender):
         ts_start = time.time()
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_free: host is None for {hostname}")
-            return False
+            return 2
         now = int(time.time())
         #self.debug(f"DEBUG: parse_free for {hostname}")
         # TODO handle other OS case
@@ -2486,9 +2497,9 @@ class xythonsrv:
             self.do_rrd(hostname, 'memory', rrdmemtype, 'realmempct', ret['v'], ['DS:realmempct:GAUGE:600:0:U'])
 
         sbuf += buf
-        self.column_update(hostname, "memory", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        ret = self.column_update(hostname, "memory", color, now, sbuf, self.ST_INTERVAL + 60, sender)
         self.stat("PARSEFREE", time.time() - ts_start)
-        return True
+        return ret
 
     # TODO Machine has been up more than 0 days
     def parse_uptime(self, hostname, buf, sender):
@@ -2497,7 +2508,7 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_uptime: host is None for {hostname}")
-            return
+            return 2
         udisplay = re.sub(r"^.*up ", "up", buf)
         sbuf = f"{xytime(now)} {udisplay}\n"
         # Check with global rules
@@ -2520,7 +2531,8 @@ class xythonsrv:
             color = setcolor(gret["UP"]["color"], color)
             sbuf += gret["UP"]["txt"]
         sbuf += buf
-        self.column_update(hostname, "cpu", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        ret = self.column_update(hostname, "cpu", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        return ret
 
     def parse_ps(self, hostname, buf, sender):
         now = int(time.time())
@@ -2529,7 +2541,7 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_ps: host is None for {hostname}")
-            return
+            return 2
         sline = buf.split("\n")
         for procrule in self.rules["PROC"]:
             ret = procrule.check(sline)
@@ -2544,7 +2556,8 @@ class xythonsrv:
         sbuf += buf
         ts_end = time.time()
         self.stat("parseps", ts_end - now)
-        self.column_update(hostname, "procs", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        ret = self.column_update(hostname, "procs", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        return ret
 
     # TODO
     def parse_mdstat(self, hostname, buf, sender):
@@ -2555,18 +2568,19 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_mdstat: host is None for {hostname}")
-            return
+            return 2
         sline = buf.split("\n")
         for line in sline:
             mdname = re.search(r"^[a-zA-Z0-9]\s:", line)
             if mdname is None:
                 continue
         if len(devices) == 0:
-            return
+            return 0
         sbuf += buf
-        self.column_update(hostname, "raid", color, now, sbuf, self.ST_INTERVAL + 120, sender)
+        ret = self.column_update(hostname, "raid", color, now, sbuf, self.ST_INTERVAL + 120, sender)
+        return ret
 
-    #TODO
+    # TODO
     def parse_ports(self, hostname, buf, sender):
         now = int(time.time())
         color = 'clear'
@@ -2574,7 +2588,7 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_ports: host is None for {hostname}")
-            return
+            return 2
         sline = buf.split("\n")
         texts = []
         for port in H.rules["PORT"]:
@@ -2601,7 +2615,8 @@ class xythonsrv:
             color = setcolor(ret["color"], color)
         sbuf += buf
         sbuf += f'RULES {H.rules["PORT"]}'
-        self.column_update(hostname, "ports", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        ret = self.column_update(hostname, "ports", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        return ret
 
 # TODO self detect high/crit min/max from output
 # like Core 0:        +46.0 C  (high = +82.0 C, crit = +102.0 C)
@@ -2613,7 +2628,7 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             self.error("ERROR: parse_sensors: host is None")
-            return
+            return 2
         sline = buf.split("\n")
         for line in sline:
             if len(line) == 0:
@@ -2640,7 +2655,8 @@ class xythonsrv:
                     self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
         ts_end = time.time()
         self.stat("parsesensor", ts_end - now)
-        self.column_update(hostname, "sensor", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        ret = self.column_update(hostname, "sensor", color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        return ret
 
     def parse_df(self, hostname, buf, inode, sender):
         now = int(time.time())
@@ -2656,7 +2672,7 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             self.error("ERROR: parse_ports: host is None")
-            return
+            return 2
         sline = buf.split("\n")
         for line in sline:
             pct = None
@@ -2686,8 +2702,8 @@ class xythonsrv:
             if pct is not None:
                 self.do_rrd(hostname, column, mnt, 'pct', pct, ['DS:pct:GAUGE:600:0:100'])
         sbuf += buf
-        self.column_update(hostname, column, color, now, sbuf, self.ST_INTERVAL + 60, sender)
-        return
+        ret = self.column_update(hostname, column, color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        return ret
 
     def parse_status(self, msg):
         #self.debug(f"DEBUG: parse_status from {msg['addr']}")
@@ -2897,6 +2913,7 @@ class xythonsrv:
         hdata = msg["buf"]
         hostname = None
         section = None
+        save_hostdata = False
         buf = ""
         ret = self.parse_collector(hdata)
         if ret is None:
@@ -2915,31 +2932,49 @@ class xythonsrv:
                         handled = True
                     if section == '[free]':
                         handled = True
-                        self.parse_free(hostname, buf, msg["addr"])
+                        ret = self.parse_free(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[uptime]':
                         handled = True
-                        self.parse_uptime(hostname, buf, msg["addr"])
+                        ret = self.parse_uptime(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[df]':
                         handled = True
-                        self.parse_df(hostname, buf, False, msg["addr"])
+                        ret = self.parse_df(hostname, buf, False, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[inode]':
                         handled = True
-                        self.parse_df(hostname, buf, True, msg["addr"])
+                        ret = self.parse_df(hostname, buf, True, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[ports]':
                         handled = True
-                        self.parse_ports(hostname, buf, msg["addr"])
+                        ret = self.parse_ports(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[ss]':
                         handled = True
-                        self.parse_ports(hostname, buf, msg["addr"])
+                        ret = self.parse_ports(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[ps]':
                         handled = True
-                        self.parse_ps(hostname, buf, msg["addr"])
+                        ret = self.parse_ps(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[lmsensors]':
                         handled = True
-                        self.parse_sensors(hostname, buf, msg["addr"])
+                        ret = self.parse_sensors(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[mdstat]':
                         handled = True
-                        self.parse_mdstat(hostname, buf, msg["addr"])
+                        ret = self.parse_mdstat(hostname, buf, msg["addr"])
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[clientversion]':
                         handled = True
                         H = self.find_host(hostname)
@@ -2967,7 +3002,8 @@ class xythonsrv:
                 buf += line
                 buf += '\n'
         if hostname is not None:
-            self.save_hostdata(hostname, hdata, time.time())
+            if save_hostdata:
+                self.save_hostdata(hostname, hdata, time.time())
         else:
             self.error("ERROR: invalid client data without hostname")
             if self.debug:
