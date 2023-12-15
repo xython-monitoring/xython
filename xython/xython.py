@@ -6,6 +6,7 @@
     SPDX-License-Identifier: GPL-2.0
 """
 
+import bz2
 import os
 import time
 import re
@@ -1236,13 +1237,21 @@ class xythonsrv:
     def save_hostdata(self, hostname, buf, ts):
         if self.readonly:
             return
+        # TODO: like xymon check free space
         hdir = "%s/%s" % (self.xt_hostdata, hostname)
         if not os.path.exists(hdir):
             os.mkdir(hdir)
-        hfile = "%s/%d" % (hdir, ts)
-        f = open(hfile, 'w')
-        f.write(buf)
-        f.close()
+        if self.xythonmode == 0:
+            hfile = "%s/%d" % (hdir, ts)
+            f = open(hfile, 'w')
+            f.write(buf)
+            f.close()
+        else:
+            comp = bz2.compress(buf.encode("UTF8"))
+            hfile = "%s/%d.bz2" % (hdir, ts)
+            f = open(hfile, 'wb')
+            f.write(comp)
+            f.close()
 
     # initial status conn 1675773637 1675773637 0 gr - -1
     # tatus conn 1675796496 1675773637 22859 re gr 2
