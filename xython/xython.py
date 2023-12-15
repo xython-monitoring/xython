@@ -200,6 +200,7 @@ class xythonsrv:
         self.xt_state = None
         self.vars = {}
         self.debugs = []
+        self.errors = []
         self.msgn = 0
         # to be compared with mtime of hosts.cfg
         self.time_read_hosts = 0
@@ -291,6 +292,10 @@ class xythonsrv:
     def error(self, buf):
         print(buf)
         self.log("error", buf)
+        elog = {}
+        elog["ts"] = time.time()
+        elog["msg"] = buf
+        self.errors.append(elog)
 
     # get configuration values from xython
     def xython_getvar(self, varname):
@@ -1780,6 +1785,7 @@ class xythonsrv:
 
     # TODO hardcoded hostname
     def do_xythond(self):
+        ccolor = 'green'
         now = int(time.time())
         buf = f"{xytime(now)} - xythond\n"
         for stat in self.stats:
@@ -1809,7 +1815,13 @@ class xythonsrv:
         buf += f"Active tests: {results[0][0]}\n"
         buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
         buf += f"xymonserver.cfg mtime {xytime(self.time_read_xserver_cfg)}\n"
-        self.column_update(socket.gethostname(), "xythond", "green", now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
+        for elog in self.errors:
+            if elog["ts"] + 300 < now:
+                self.errors.remove(elog)
+                continue
+            buf += f'&red ERROR: {elog["msg"]}\n'
+            ccolor = 'red'
+        self.column_update(socket.gethostname(), "xythond", ccolor, now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
     def scheduler(self):
         #self.debug("====================")
