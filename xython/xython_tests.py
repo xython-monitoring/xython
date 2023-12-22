@@ -309,8 +309,8 @@ def show_cert(cert, hostname):
     now = time.time()
     date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
     expire = date.timestamp()
-    expire_days = (expire - now) / 86400
-    cret["txt"] += f"expire in {expire_days} days\n"
+    expire_days = int((expire - now) / 86400)
+    cret["txt"] += f"Expire in {expire_days} days\n"
     cret["expire"] = expire_days
     # TODO key size
     # TODO signature used
