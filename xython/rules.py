@@ -509,7 +509,6 @@ class xy_rule_proc():
         self._count = 0
         # test matching against data
         for line in data:
-            line = re.sub(r"\s+", ' ', line)
             line = line.rstrip()
             ret = re.search(self.name, line)
             if not ret:
