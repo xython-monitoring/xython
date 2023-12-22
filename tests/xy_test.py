@@ -16,6 +16,15 @@ from xython.common import xytime_
 from xython.common import xyts
 from xython.common import xyts_
 from xython.common import xydelay
+from xython.common import xyevent
+from xython.common import event_thisyear
+from xython.common import event_lastyear
+from xython.common import event_thismonth
+from xython.common import event_lastmonth
+from xython.common import event_thisweek
+from xython.common import event_lastweek
+from xython.common import event_yesterday
+from xython.common import event_today
 from xython.common import setcolor
 from xython.common import is_valid_hostname
 from xython.common import is_valid_column
@@ -54,6 +63,17 @@ def test_xytime():
     assert xytime_(1328630692) == 'Tue_Feb_7_17:04:52_2012'
     assert xyts_('Tue_Feb_7_17:04:52_2012', 'CET') == 1328630692
     assert xyts('Tue Feb 7 17:04:52 2012', 'CET') == 1328630692
+    assert xyevent(1702846434) == '2023/12/17@21:53:54'
+    assert event_thisyear(1702846434) == '2023/01/01@00:00:00'
+    assert event_lastyear(1702846434) == '2022/01/01@00:00:00'
+    assert event_thismonth(1702846434) == '2023/12/01@00:00:00'
+    assert event_lastmonth(1702846434) == '2023/11/01@00:00:00'
+    # 1672828414 is 2023 01 day=04 week=wed
+    assert event_lastmonth(1672828414) == '2022/12/01@00:00:00'
+    assert event_thisweek(1672828414) == '2023/01/02@00:00:00'
+    assert event_lastweek(1672828414) == '2022/12/26@00:00:00'
+    assert event_yesterday(1672828414) == '2023/01/03@00:00:00'
+    assert event_today(1672828414) == '2023/01/04@00:00:00'
 
 
 def test_git():

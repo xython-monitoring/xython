@@ -7,6 +7,7 @@
 import time
 import re
 from datetime import datetime
+from datetime import timedelta
 from pytz import timezone
 
 
@@ -39,6 +40,59 @@ def xyts_(sts, tz):
     if tz is not None:
         date = date.replace(tzinfo=timezone(tz))
     return date.timestamp()
+
+
+def xyevent(ts):
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+    first = date.strftime("%Y/%m/%d")
+    last = date.strftime("@%H:%M:%S")
+    return first + last
+
+
+def event_thisyear(ts):
+    date = datetime.fromtimestamp(ts)
+    return f"{date.year}/01/01@00:00:00"
+
+
+def event_lastyear(ts):
+    date = datetime.fromtimestamp(ts)
+    return f"{date.year - 1}/01/01@00:00:00"
+
+
+def event_thismonth(ts):
+    date = datetime.fromtimestamp(ts)
+    return f"{date.year}/{date.month:02}/01@00:00:00"
+
+
+def event_lastmonth(ts):
+    date = datetime.fromtimestamp(ts)
+    lm = date.replace(day=1) - timedelta(days=1)
+    return f"{lm.year}/{lm.month:02}/01@00:00:00"
+
+
+def event_thisweek(ts):
+    date = datetime.fromtimestamp(ts)
+    w = date.weekday()
+    lm = date.date() - timedelta(days=w)
+    return f"{lm.year}/{lm.month:02}/{lm.day:02}@00:00:00"
+
+
+def event_lastweek(ts):
+    date = datetime.fromtimestamp(ts)
+    w = date.weekday() + 7
+    lm = date.date() - timedelta(days=w)
+    return f"{lm.year}/{lm.month:02}/{lm.day:02}@00:00:00"
+
+
+def event_yesterday(ts):
+    date = datetime.fromtimestamp(ts)
+    lm = date.date() - timedelta(days=1)
+    return f"{lm.year}/{lm.month:02}/{lm.day:02}@00:00:00"
+
+
+def event_today(ts):
+    date = datetime.fromtimestamp(ts)
+    return f"{date.year}/{date.month:02}/{date.day:02}@00:00:00"
 
 
 DAYS_IN_S = 60 * 60 * 24
