@@ -39,18 +39,36 @@ echo "[uptime]"
 uptime
 echo "[who]"
 who
+
 echo "[df]"
-EXCLUDES=`cat /proc/filesystems | grep nodev | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
-ROOTFS=`readlink -m /dev/root`
+# detect busybox df
+df --help 2>&1| grep -qi busybox
+if [ $? -eq 0 ];then
+	df
+else
+EXCLUDES=`grep nodev /proc/filesystems | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+if [ -e /dev/root ];then
+	# readlink -m do not work with busybox
+	ROOTFS=`readlink -m /dev/root`
+else
+	ROOTFS='unset'
+fi
+
+# TODO busybox does not like -l
 df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
+
+# busybox does not support -i
 echo "[inode]"
 df -Pil -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
+fi
+#end !busybox
+
 echo "[mount]"
 mount
 echo "[free]"
@@ -74,6 +92,7 @@ if [ -x /bin/netstat ];then
 	echo "[route]"
 	netstat -rn
 	echo "[netstat]"
+	# busybox does not like -s
 	netstat -s
 	if [ $PORTS_DONE -eq 0 ];then
 		echo "[ports]"
