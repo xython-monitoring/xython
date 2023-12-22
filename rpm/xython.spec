@@ -163,6 +163,7 @@ chkconfig --del xython-client
 %attr(755, root, root) /usr/lib/xython/cgi-bin/getpage.py
 %attr(755, root, root) /usr/lib/xython/cgi-bin/proxy.py
 %attr(755, root, root) /usr/lib/xython/cgi-bin/showgraph.py
+%attr(755, root, root) /usr/lib/xython/cgi-bin/topchanges.py
 %attr(755, root, root) /usr/lib/xython/cgi-bin/xythoncgi.py
 %attr(755, root, root) /usr/share/xython
 %attr(-, root, root) %{python3_sitelib}/
