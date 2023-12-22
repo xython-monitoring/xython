@@ -17,6 +17,7 @@ from xython.common import xyts
 from xython.common import xyts_
 from xython.common import xydelay
 from xython.common import xyevent
+from xython.common import xyevent_to_ts
 from xython.common import event_thisyear
 from xython.common import event_lastyear
 from xython.common import event_thismonth
@@ -64,6 +65,8 @@ def test_xytime():
     assert xyts_('Tue_Feb_7_17:04:52_2012', 'CET') == 1328630692
     assert xyts('Tue Feb 7 17:04:52 2012', 'CET') == 1328630692
     assert xyevent(1702846434) == '2023/12/17@21:53:54'
+    assert xyevent_to_ts("2023/12/17@21:53:54", 'CET') == 1702846434
+    assert xyevent_to_ts("2023/12/17@21:53:54", 'Europe/Paris') == 1702849494
     assert event_thisyear(1702846434) == '2023/01/01@00:00:00'
     assert event_lastyear(1702846434) == '2022/01/01@00:00:00'
     assert event_thismonth(1702846434) == '2023/12/01@00:00:00'

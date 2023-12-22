@@ -42,6 +42,13 @@ def xyts_(sts, tz):
     return date.timestamp()
 
 
+def xyevent_to_ts(sts, tz):
+    date = datetime.strptime(sts, "%Y/%m/%d@%H:%M:%S")
+    if tz is not None:
+        date = date.replace(tzinfo=timezone(tz))
+    return date.timestamp()
+
+
 def xyevent(ts):
     date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     first = date.strftime("%Y/%m/%d")
@@ -50,48 +57,48 @@ def xyevent(ts):
 
 
 def event_thisyear(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     return f"{date.year}/01/01@00:00:00"
 
 
 def event_lastyear(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     return f"{date.year - 1}/01/01@00:00:00"
 
 
 def event_thismonth(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     return f"{date.year}/{date.month:02}/01@00:00:00"
 
 
 def event_lastmonth(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     lm = date.replace(day=1) - timedelta(days=1)
     return f"{lm.year}/{lm.month:02}/01@00:00:00"
 
 
 def event_thisweek(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     w = date.weekday()
     lm = date.date() - timedelta(days=w)
     return f"{lm.year}/{lm.month:02}/{lm.day:02}@00:00:00"
 
 
 def event_lastweek(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     w = date.weekday() + 7
     lm = date.date() - timedelta(days=w)
     return f"{lm.year}/{lm.month:02}/{lm.day:02}@00:00:00"
 
 
 def event_yesterday(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     lm = date.date() - timedelta(days=1)
     return f"{lm.year}/{lm.month:02}/{lm.day:02}@00:00:00"
 
 
 def event_today(ts):
-    date = datetime.fromtimestamp(ts)
+    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
     return f"{date.year}/{date.month:02}/{date.day:02}@00:00:00"
 
 

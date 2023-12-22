@@ -35,6 +35,16 @@ from .common import xytime
 from .common import xytime_
 from .common import xyts
 from .common import xyts_
+from .common import event_thisyear
+from .common import event_lastyear
+from .common import event_thismonth
+from .common import event_lastmonth
+from .common import event_thisweek
+from .common import event_lastweek
+from .common import event_yesterday
+from .common import event_today
+from .common import xyevent
+from .common import xyevent_to_ts
 from .common import gcolor
 from .common import gif
 from .common import setcolor
@@ -679,6 +689,16 @@ class xythonsrv:
         html = re.sub("&XYMWEBBACKGROUND", color, html)
         html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
         html = re.sub("&HTMLCONTENTTYPE", self.xymon_getvar("HTMLCONTENTTYPE"), html)
+        now = time.time()
+        html = re.sub("&EVENTLASTYEARBEGIN", event_lastyear(now), html)
+        html = re.sub("&EVENTLASTMONTHBEGIN", event_lastmonth(now), html)
+        html = re.sub("&EVENTLASTWEEKBEGIN", event_lastweek(now), html)
+        html = re.sub("&EVENTCURRYEARBEGIN", event_thisyear(now), html)
+        html = re.sub("&EVENTCURRMONTHBEGIN", event_thismonth(now), html)
+        html = re.sub("&EVENTCURRWEEKBEGIN", event_thisweek(now), html)
+        html = re.sub("&EVENTYESTERDAY", event_yesterday(now), html)
+        html = re.sub("&EVENTTODAY", event_today(now), html)
+        html = re.sub("&EVENTNOW", xyevent(time.time()), html)
         # find remaining variables
         ireplace = 0
         while ireplace < 20:
@@ -700,6 +720,9 @@ class xythonsrv:
             header = 'acknowledge_header'
             footer = 'acknowledge_footer'
         elif pagename == 'topchanges':
+            header = 'topchanges_header'
+            footer = 'topchanges_footer'
+        elif pagename == 'topchanges_answer':
             header = 'topchanges_header'
             footer = 'topchanges_footer'
         else:
@@ -744,6 +767,7 @@ class xythonsrv:
             except FileNotFoundError as e:
                 html += f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
                 self.error(f"ERROR: fail to open {fname}")
+            html = re.sub("&SCRIPT_NAME", "topchanges.py", html)
         html += self.html_footer(footer)
         html = self.html_finalize(color, html)
         return html
@@ -1628,6 +1652,102 @@ class xythonsrv:
             if not hostcols[column]:
                 self.error(f"ERROR: remains of {name} {column}")
         return True
+
+    def gen_top_changes(self, dstart, dend):
+        ts_start = int(xyevent_to_ts(dstart, None))
+        ts_end = int(xyevent_to_ts(dend, None))
+        html = self.html_header("topchanges_header")
+        byhost = {}
+        byservice = {}
+        histdir = self.xt_histdir
+        for H in self.xy_hosts:
+            name = H.name
+            byhost[name] = 0
+            histbase = f"{histdir}/{H.name}"
+            try:
+                fhost = open(histbase)
+            except FileNotFoundError:
+                continue
+            for line in fhost:
+                line = line.rstrip()
+                sline = line.split(" ")
+                column = sline[0]
+                if column == 'info':
+                    continue
+                tss = int(sline[1])
+                tse = int(sline[2])
+                useit = False
+                if tss >= ts_start and tss <= ts_end:
+                        useit = True
+                if tse >= ts_start and tse <= ts_end:
+                        useit = True
+                if not useit:
+                    continue
+                byhost[name] += 1
+                if column in byservice:
+                    byservice[column] += 1
+                else:
+                    byservice[column] = 1
+        # sort values
+        byhosts = []
+        htotal = 0
+        while len(byhosts) < 10 and len(byhost.keys()) > 0:
+            cid = None
+            cmax = 0
+            for h in byhost:
+                if byhost[h] > cmax:
+                    cmax = byhost[h]
+                    cid = h
+            del byhost[cid]
+            v = [cid, cmax]
+            byhosts.append(v)
+            htotal += cmax
+        hother = 0
+        for h in byhost:
+            hother += byhost[h]
+        #print(f"byhost sorted = {byhosts} \nremains = {byhost}\nother={hother} total={htotal}")
+        # sort values
+        bysvcs = []
+        stotal = 0
+        while len(bysvcs) < 10 and len(byhost.keys()) > 0:
+            cid = None
+            cmax = 0
+            for h in byservice:
+                if byservice[h] > cmax:
+                    cmax = byservice[h]
+                    cid = h
+            del byservice[cid]
+            v = [cid, cmax]
+            bysvcs.append(v)
+            stotal += cmax
+        sother = 0
+        for h in byservice:
+            sother += byservice[h]
+        #print(f"byhost sorted = {bysvcs} \nremains = {byservice} \nother={sother} total={stotal}")
+        html += '<center><p><font size=+1></font></p><table summary="Top changing hosts and services" border=1><tr><td width=40% align=center valign=top>'
+        html += '<table summary="Top 10 hosts" border=0><tr><th colspan=3>Top 10 hosts</th></tr>'
+        html += '<tr><th align=left>Host</th><th align=left colspan=2>State changes</th></tr>'
+
+        for h in byhosts:
+            html += f'<tr><td>{h[0]}</td><td>{h[1]}</td></tr>'
+        if hother > 0:
+            html += f'<tr><td>Others hosts</td><td>{hother}</td></tr>'
+
+        html += f'<tr><td colspan=3><hr width="100%"></td></tr><tr><th>Total</th><th>{htotal + hother}</th><th>&nbsp;</th></tr></table>'
+        html += '</td><td width=40% align=center valign=top><table summary="Top 10 services" border=0><tr><th colspan=3>Top 10 services</th></tr>'
+        html += '<tr><th align=left>Service</th><th align=left colspan=2>State changes</th></tr>'
+
+        for h in bysvcs:
+            html += f'<tr><td>{h[0]}</td><td>{h[1]}</td></tr>'
+        if sother > 0:
+            html += f'<tr><td>Others services</td><td>{sother}</td></tr>'
+
+        html += '<tr><td colspan=3><hr width="100%"></td></tr>'
+        html += f'<tr><th>Total</th><th>{sother + stotal}</th><th>&nbsp;</th></tr></table></td></tr></table></center><BR><BR>'
+
+        html += self.html_footer("topchanges_footer")
+        html = self.html_finalize("green", html)
+        return html
 
     def check_acks(self):
         now = time.time()
@@ -3104,6 +3224,18 @@ class xythonsrv:
             ret["done"] = 1
         elif cmd == "disable":
             self.parse_disable(buf)
+            ret["done"] = 1
+        elif cmd == 'TOPCHANGES':
+            self.debug(sbuf)
+            if len(sbuf) < 3:
+                ret["send"] = 'Status: 400 Bad Request\n\nERROR: not enough arguments'
+                ret["done"] = 1
+                return ret
+            r = self.gen_top_changes(sbuf[1], sbuf[2].rstrip())
+            if type(r) == str:
+                ret["send"] = r
+            else:
+                ret["bsend"] = r
             ret["done"] = 1
         elif cmd == 'GETRRD':
             self.debug(sbuf)
