@@ -28,6 +28,7 @@ consider upgrading to a supported Python version.
 requires = [
     "celery>=2",
     "requests>=2",
+    "paramiko",
     "pytz"
 ]
 test_requirements = [

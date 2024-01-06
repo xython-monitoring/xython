@@ -166,7 +166,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install python packages
-        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery python3-setuptools python3-virtualenv redis-server iputils-ping openssl
+        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery python3-setuptools python3-virtualenv redis-server iputils-ping openssl python3-paramiko
       - name: Try to setup.py
         run: |
           virtualenv xython
@@ -221,7 +221,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install python packages
-        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-virtualenv redis-server iputils-ping openssl
+        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-virtualenv redis-server iputils-ping openssl python3-paramiko
       - name: Try to setup.py
         run: |
           virtualenv xython
@@ -275,7 +275,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install python packages
-        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-wheel iputils-ping openssl
+        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-wheel iputils-ping openssl python3-paramiko
       - name: Try to setup.py
         run: |
           python setup.py install --prefix ~/.local
@@ -327,7 +327,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery python3-redis redis-server zip netcat-openbsd iputils-ping openssl python3-rrdtool python3-pysnmp4
+        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery python3-redis redis-server zip netcat-openbsd iputils-ping openssl python3-rrdtool python3-pysnmp4 python3-paramiko
       - name: create orig targz
         run: cd .. && tar czf xython_0-1.orig.tar.gz xython
       - name: Run ls
@@ -355,7 +355,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery python3-redis redis-server zip netcat-openbsd iputils-ping openssl python3-rrdtool python3-pysnmp4
+        run: sudo apt-get -y install apache2 devscripts gnupg python3-setuptools debhelper-compat dh-apache2 dh-python python3-dev python3-distutils-extra dh-cmake python3-celery python3-redis redis-server zip netcat-openbsd iputils-ping openssl python3-rrdtool python3-pysnmp4 python3-paramiko
       - name: create orig targz
         run: cd .. && tar czf xython_0-1.orig.tar.gz xython
       - name: Run ls
