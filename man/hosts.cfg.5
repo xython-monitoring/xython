@@ -898,6 +898,17 @@ default via the \-\-trace option.
 
 .BR Xython: TODO
 
+.SH Runing a remote client via SSH
+.IP cssh://username[:password]@fqdn
+For remote host which cannot have xython installed,
+(like embedded systems or systems without packaging),
+xython could get client data via ssh.
+
+You should setup a key authentification for letting the user
+running the xython celery process accessing the remote system.
+
+This is only supported by xython
+
 .SH SNMP TESTS
 .IP snmp[:disk][:memory][:community=name]
 The snmp tag enable using SNMP for the host.

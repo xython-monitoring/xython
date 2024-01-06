@@ -29,6 +29,7 @@ except ImportError:
 import sqlite3
 from .xython_tests import ping
 from .xython_tests import dohttp
+from .xython_tests import do_cssh
 from .xython_tests import do_generic_proto
 import celery
 from .common import xytime
@@ -1115,6 +1116,10 @@ class xythonsrv:
                     H.tags_known.append(tag)
                     self.read_snmp_hosts(H.name)
                     continue
+                if tag[0:7] == 'cssh://':
+                    H.tags_known.append(tag)
+                    H.add_test("cssh", tag, None, "cssh", True, False)
+                    continue
                 if tag[0:8] == 'ssldays=':
                     tokens = tag[8:].split(':')
                     if len(tokens) != 2:
@@ -1795,6 +1800,12 @@ class xythonsrv:
         for T in self.tests:
             print("%s %d" % (T.name, int(T.ts)))
 
+    def do_cssh(self, T):
+        name = f"{T.hostname}_cssh"
+        ctask = do_cssh.delay(T.hostname, T.urls)
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+
     def dohttp(self, T):
         name = f"{T.hostname}_http"
         ctask = dohttp.delay(T.hostname, T.urls, T.column)
@@ -1848,6 +1859,8 @@ class xythonsrv:
                     if T.type == 'conn':
                         if not self.doping(T):
                             lag += 1
+                    if T.type == 'cssh':
+                        self.do_cssh(T)
                     if T.type == 'http':
                         self.dohttp(T)
                     if T.type in self.protocols:
@@ -1877,6 +1890,12 @@ class xythonsrv:
                 ret = ctask.get()
                 hostname = ret["hostname"]
                 testtype = ret["type"]
+                if testtype == 'cssh':
+                    if ret["data"] is not None:
+                        msg = {}
+                        msg["buf"] = ret["data"]
+                        msg["addr"] = hostname
+                        self.parse_hostdata(msg)
                 column = ret["column"]
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
                 self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")

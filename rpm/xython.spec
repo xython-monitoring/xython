@@ -9,7 +9,7 @@ Summary: Xython network monitor
 BuildRoot: /tmp/xymon-root
 # gcc and g++ are here to make cmake happy
 BuildRequires: python3-devel cmake gcc g++ python3-setuptools
-Requires: python3 python3-setuptools python3-celery python3-pytz python3-requests python3-redis httpd redis
+Requires: python3 python3-setuptools python3-celery python3-paramiko python3-pytz python3-requests python3-redis httpd redis
 
 %global debug_package %{nil}
 
