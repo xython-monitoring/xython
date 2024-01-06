@@ -16,11 +16,15 @@ import re
 import requests
 import socket
 import ssl
+import urllib3
 from importlib.metadata import version
 from xython.common import setcolor
 from xython.common import xytime
 
 from datetime import datetime
+
+# requests use urllib3, we dont want to see TLS warnings about self signed cert
+urllib3.disable_warnings()
 
 # TODO permit to configure localhost
 app = Celery('tasks', backend='redis://localhost', broker='redis://localhost')
