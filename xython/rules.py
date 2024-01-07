@@ -363,9 +363,10 @@ class xy_rule_cpu():
             ret["LOAD"]["txt"] = f'&green load {self.xload} < {self.loadwarn}\n'
         rup = re.search(r"up (.*),\s*[0-9]+\suser", upline)
         if not rup:
+            rup = re.search(r"up (.*),\s*load average", upline)
+        if not rup:
             # TODO return an ret["error"]
-            print("ERROR: failed to find uptime")
-            print(upline)
+            print(f"ERROR: failed to find uptime in {upline}")
             return None
         sup = rup.group(1)
         sup.replace(",", '')
