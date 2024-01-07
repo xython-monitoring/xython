@@ -587,5 +587,5 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
     except ConnectionError as e:
         dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nFailed to connect to {address} {str(e)}\n\n"
     except OSError as error:
-        dret["txt"] = f"Servide {protoname} on {hostname} is ko\n\n" + str(error) + "\n\n"
+        dret["txt"] = f"Service {protoname} on {hostname} is ko\n\n" + str(error) + "\n\n"
     return dret
