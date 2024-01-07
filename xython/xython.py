@@ -1438,6 +1438,8 @@ class xythonsrv:
         # disabletime=13 dismg=14
         # flapping=16
         if self.has_pika:
+            if data is None:
+                self.error("ERROR: column_update: data is none")
             status = f"@@status#{self.msgn}/{hostname}|{ts}|{updater}||{hostname}|{cname}|{ts}|{color}||{ocolor}|{ts}|{acktime}|{ackmsg}|0||{ts}|linux||0|\n"
             status += data
             status += '\n@@'
