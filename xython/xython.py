@@ -1953,10 +1953,10 @@ class xythonsrv:
             cdata += f"{H.certs[url]['txt']}\n"
             expire = H.certs[url]["expire"]
             if expire <= H.sslalarm:
-                cdata += f"&red expire in {expire} days\n"
+                cdata += f"&red expire in {expire} days (WARN={H.sslwarn} CRIT={H.sslalarm})\n"
                 color = setcolor('red', color)
             elif expire <= H.sslwarn:
-                cdata += f"&yellow expire in {expire} days\n"
+                cdata += f"&yellow expire in {expire} days (WARN={H.sslwarn} CRIT={H.sslalarm})\n"
                 color = setcolor('yellow', color)
             else:
                 cdata += f"&green expire in {expire} days (WARN={H.sslwarn} CRIT={H.sslalarm})\n"
@@ -2796,12 +2796,13 @@ class xythonsrv:
                 continue
             if line[0] == ' ':
                 continue
-            sbuf += line + '\n'
             #self.debug(f"DEBUG: check {line}XX")
             if len(line) > 0 and ':' not in line:
                 #self.debug(f"DEBUG: {hostname} adapter={line}")
                 adapter = line
+                sbuf += '<br>\n' + line + '\n'
             else:
+                sbuf += line + '\n'
                 if "SENSOR" in H.rules and H.rules["SENSOR"] is not None:
                     ret = H.rules["SENSOR"].check(adapter, line)
                 else:
@@ -3267,7 +3268,6 @@ class xythonsrv:
             self.parse_disable(buf)
             ret["done"] = 1
         elif cmd == 'TOPCHANGES':
-            self.debug(sbuf)
             if len(sbuf) < 3:
                 ret["send"] = 'Status: 400 Bad Request\n\nERROR: not enough arguments'
                 ret["done"] = 1
