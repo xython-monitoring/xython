@@ -115,20 +115,20 @@ class xy_rule_sensor():
         ret = {}
         if pc < self.warn:
             if self.mwarn != SENSOR_DISABLE:
-                txt = f"&green {sname} {self.mwarn} < {pc} < {self.warn}"
+                txt = f"&green {sname} CHECK=({self.mwarn} < {pc} < {self.warn})"
             else:
-                txt = f"&green {sname} {pc} < {self.warn}"
+                txt = f"&green {sname} CHECK=({pc} < {self.warn})"
         elif pc >= self.warn and pc < self.panic:
-            txt = f"&yellow {sname} {pc} => {self.warn}"
+            txt = f"&yellow {sname} CHECK=({pc} => {self.warn})"
             color = 'yellow'
         if pc >= self.panic:
-            txt = f"&red {sname} {pc} => {self.panic}"
+            txt = f"&red {sname} CHECK=({pc} => {self.panic})"
             color = 'red'
         if self.mwarn != SENSOR_DISABLE and pc <= self.mwarn:
-            txt = f"&yellow {sname} {pc} <= MINWARN={self.mwarn}"
+            txt = f"&yellow {sname} CHECK=({pc} <= MINWARN={self.mwarn})"
             color = 'yellow'
         if self.mpanic != SENSOR_DISABLE and pc <= self.mpanic:
-            txt = f"&red {sname} {pc} <= MINPANIC={self.mpanic}"
+            txt = f"&red {sname} CHECK=({pc} <= MINPANIC={self.mpanic})"
             color = 'red'
         ret["txt"] = txt
         ret["color"] = color
@@ -138,6 +138,10 @@ class xy_rule_sensor():
 
 
 # SENSOR adaptername sensorname warn panic
+# TODO parse high= crit= hyst= low= 'crit low =' from sensors C output (lowest= highest= ??)
+# TODO parse min= max= from sensors V output
+# TODO parse ALARM (and add ignoreALARM)
+# TODO parse intrusionX: OK/ALARM
 class xy_rule_sensors():
     def __init__(self):
         self.rules = {}
