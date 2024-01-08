@@ -78,6 +78,7 @@ class xy_host:
     def __init__(self, name):
         self.last_ping = 0
         self.name = name
+        self.aliases = []
         self.tests = []
         self.hostip = ""
         # False => use name, True use host_ip
@@ -474,6 +475,11 @@ class xythonsrv:
             return None
         ostype = tokens.pop(-1)
         hostname = ".".join(tokens)
+        hostname = hostname.rstrip()
+        # check if hostname is an alias
+        H = self.find_host(hostname)
+        if H and H.name != hostname:
+            hostname = H.name
         return [hostname, ostype, hostclass]
 
 
@@ -1076,6 +1082,20 @@ class xythonsrv:
                     H.dialup = True
                     H.tags_known.append(tag)
                     continue
+                if tag[0:6] == 'alias=':
+                    atok = tag.split("=")
+                    if len(atok) != 2:
+                        H.tags_error.append(tag)
+                        continue
+                    aliases = atok[1].split(',')
+                    for alias in aliases:
+                        HT = self.find_host(alias)
+                        if HT:
+                            self.error("ERROR: {alias} already used")
+                            continue
+                        H.aliases.append(alias)
+                    H.tags_known.append(tag)
+                    continue
                 if tag[0:4] == 'conn':
                     # TODO name of column via =column
                     tokens = tag.split(':')
@@ -1267,6 +1287,8 @@ class xythonsrv:
         for H in self.xy_hosts:
             if H.name == hostname:
                 return H
+            if hostname in H.aliases:
+                return H
         return None
 
     def save_hostdata(self, hostname, buf, ts):
@@ -1320,6 +1342,8 @@ class xythonsrv:
             cdata += f"OS: {H.osversion}\n"
         if H.uname:
             cdata += f"OS: {H.uname}\n"
+        if len(H.aliases) > 0:
+            cdata += f"Aliases={H.aliases}\n"
         cdata += f"IP: TODO\n"
         if H.client_version:
             cdata += f"Client S/W: {H.client_version}\n"
