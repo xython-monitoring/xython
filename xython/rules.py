@@ -368,6 +368,9 @@ class xy_rule_cpu():
         rup = re.search(r"up (.*),\s*[0-9]+\suser", upline)
         if not rup:
             rup = re.search(r"up (.*),\s*load average", upline)
+        # openbsd first minute
+        if not rup:
+            rup = re.search(r"[AP]M (.*),\s[0-9]+\suser.*load average", upline)
         if not rup:
             # TODO return an ret["error"]
             print(f"ERROR: failed to find uptime in {upline}")

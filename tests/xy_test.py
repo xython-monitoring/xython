@@ -462,6 +462,11 @@ def test_rule_cpu():
     ret = xrc.cpucheck(" 16:40:58 up 26 min,  load average: 0.72, 0.61, 0.48")
     assert ret is not None
     assert xrc.xuptime == 26
+    # OpenBSD 7.4
+    # no up for the first minute
+    ret = xrc.cpucheck(" 9:09PM  26 secs, 0 users, load averages: 0.33, 0.09, 0.03")
+    assert ret is not None
+    assert xrc.xuptime == 0
 
 
 def test_setcolor():
