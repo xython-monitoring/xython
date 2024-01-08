@@ -679,6 +679,13 @@ def test_full():
     assert H is not None
     assert 'ftp' in H.tags
 
+    H = X.find_host("test15bis")
+    assert H is not None
+    assert H.name == "test15"
+    H = X.find_host("xy")
+    assert H is not None
+    assert H.name == "test16"
+
     # no testip
     H = X.find_host("test3")
     assert H.gethost() == 'test3'
