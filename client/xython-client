@@ -2,20 +2,20 @@
 
 export LANG=C
 export LC_ALL=C
-SERVEROSTYPE="$(uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]')"	# This systems operating system in lowercase
+SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
 MACHINEDOTS="$(uname -n)"
 
-echo "client $MACHINEDOTS.$SERVEROSTYPE linux"
+echo "client $MACHINEDOTS.$SERVEROSTYPE $SERVEROSTYPE"
 echo "[date]"
 date
 echo "[uname]"
 uname -rsmn
 echo "[osversion]"
 if [ -x /bin/lsb_release ]; then
-	/bin/lsb_release -r -i -s | xargs echo
+	/bin/lsb_release -r -i -s
 	/bin/lsb_release -a 2>/dev/null
 elif [ -x /usr/bin/lsb_release ]; then
-	/usr/bin/lsb_release -r -i -s | xargs echo
+	/usr/bin/lsb_release -r -i -s
 	/usr/bin/lsb_release -a 2>/dev/null
 elif [ -f /etc/redhat-release ]; then
 	cat /etc/redhat-release
@@ -35,15 +35,27 @@ elif [ -f /etc/fedora-release ]; then
 elif [ -f /etc/arch-release ]; then
 	cat /etc/arch-release
 fi
+
 echo "[uptime]"
 uptime
+
+# on libreelec, no who
 echo "[who]"
 who
 
+SIMPLE_DF=1
+case $(uname) in
+Linux)
+	# detect busybox df
+	df --help 2>&1| grep -qi busybox
+	if [ $? -ne 0 ];then
+		SIMPLE_DF=0
+	fi
+;;
+esac
+
 echo "[df]"
-# detect busybox df
-df --help 2>&1| grep -qi busybox
-if [ $? -eq 0 ];then
+if [ $SIMPLE_DF -eq 1 ];then
 	df
 else
 EXCLUDES=`grep nodev /proc/filesystems | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
@@ -55,6 +67,7 @@ else
 fi
 
 # TODO busybox does not like -l
+# TODO FreeBSD does not like -x
 df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
@@ -71,12 +84,50 @@ fi
 
 echo "[mount]"
 mount
+
+
+# BSD does not have free
+case $(uname) in
+Linux)
 echo "[free]"
 free
+;;
+FreeBSD)
+TOTAL=$(sysctl -n hw.physmem)
+#USER=$(sysctl -n hw.usermem)
+PAGESIZE=$(sysctl -n hw.pagesize)
+FREE=$(sysctl vm.vmtotal|grep 'Free Memory' | grep -o '[0-9]*')
+#echo "               total        used        free      shared  buff/cache   available"
+#echo "Mem:     $TOTAL    $(($TOTAL-$USER))     $USER    $USER    $USER     $USER"
+echo "[meminfo]"
+echo "Total:$((TOTAL/1048576))"
+echo "Free:$((FREE/1024))"
+echo "[swapinfo]"
+swapinfo -k
+echo "[vmtotal]"
+sysctl vm.vmtotal
+;;
+OpenBSD)
+TOTAL=$(sysctl -n hw.physmem)
+#echo "[meminfo]"
+echo "Total:$((TOTAL/1048576))"
+#echo "Free:$((FREE/1024))"
+;;
+esac
 
 # TODO detect if ifconfig is present
 echo "[ifconfig]"
+case $(uname) in
+Linux)
 /bin/ifconfig 2>/dev/null
+;;
+OpenBSD)
+ifconfig -A
+;;
+FreeBSD)
+ifconfig -a
+;;
+esac
 
 PORTS_DONE=0
 # /sbin/ss on gentoo
@@ -98,11 +149,34 @@ if [ -x /bin/netstat ];then
 		echo "[ports]"
 		# Bug in RedHat's netstat spews annoying error messages. 
 		netstat -antu 2>/dev/null
+		PORTS_DONE=1
 	fi
+fi
+if [ $PORTS_DONE -eq 0 ];then
+	case $(uname) in
+	OpenBSD)
+		echo "[ports]"
+		netstat -na -f inet; netstat -na -f inet6
+	;;
+	FreeBSD)
+		echo "[ports]"
+		netstat -Wna -f inet; netstat -Wna -f inet6
+	;;
+	esac
 fi
 
 echo "[ifstat]"
+case $(uname) in
+Linux)
 /bin/ifconfig 2>/dev/null
+;;
+OpenBSD)
+	netstat -i -b -n | egrep -v "^lo|<Link"
+;;
+FreeBSD)
+	netstat -ibnW | egrep "<Link|Name" | grep -v ^lo
+;;
+esac
 
 if [ -x /bin/ip ];then
 	echo '[iproute2_route]'
@@ -127,8 +201,22 @@ then
 	echo "[lvm_vgs]"
 	vgs
 fi
+case $(uname) in
+Linux)
+# busybox does not like -w
 echo "[ps]"
 ps -Aww f -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
+;;
+FreeBSD)
+	ps -axd -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,command
+;;
+OpenBSD)
+	ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,args
+;;
+*)
+	ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
+;;
+esac
 
 # $TOP must be set, the install utility should do that for us if it exists.
 TOP=/usr/bin/top
@@ -137,12 +225,24 @@ then
     if test -x "$TOP"
     then
         echo "[top]"
+	case $(uname) in
+	Linux)
 	export CPULOOP ; CPULOOP=1 ;
 	$TOP -b -n 1 
 	# Some top versions do not finish off the last line of output
 	echo ""
+	;;
+	FreeBSD)
+	$TOP -n 20
+	;;
+	OpenBSD)
+	$TOP -n 20
+	;;
+	esac
     fi
 fi
+
+# no vmstat on LibreELEC
 echo "[vmstat]"
 vmstat
 
