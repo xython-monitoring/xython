@@ -22,10 +22,11 @@ elif [ -f /etc/redhat-release ]; then
 elif [ -f /etc/gentoo-release ]; then
 	cat /etc/gentoo-release
 elif [ -f /etc/debian_version ]; then
-	echo -n "Debian "
-	cat /etc/debian_version
-elif [ -f /etc/S?SE-release ]; then
-	cat /etc/S?SE-release
+	echo "Debian $(cat /etc/debian_version)"
+elif [ -f /etc/SuSE-release ]; then
+	# deprecated since 13.1 and removed since 15.0
+	# https://en.opensuse.org/Etc_SuSE-release
+	cat /etc/SuSE-release
 elif [ -f /etc/slackware-version ]; then
 	cat /etc/slackware-version
 elif [ -f /etc/mandrake-release ]; then
@@ -58,24 +59,24 @@ echo "[df]"
 if [ $SIMPLE_DF -eq 1 ];then
 	df
 else
-EXCLUDES=`grep nodev /proc/filesystems | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+EXCLUDES=$(grep nodev /proc/filesystems | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g')
 if [ -e /dev/root ];then
 	# readlink -m do not work with busybox
-	ROOTFS=`readlink -m /dev/root`
+	ROOTFS=$(readlink -m /dev/root)
 else
 	ROOTFS='unset'
 fi
 
 # TODO busybox does not like -l
 # TODO FreeBSD does not like -x
-df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
+df -Pl -x iso9660 -x "$EXCLUDES" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
 
 # busybox does not support -i
 echo "[inode]"
-df -Pil -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
+df -Pil -x iso9660 -x "$EXCLUDES" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
@@ -95,7 +96,7 @@ free
 FreeBSD)
 TOTAL=$(sysctl -n hw.physmem)
 #USER=$(sysctl -n hw.usermem)
-PAGESIZE=$(sysctl -n hw.pagesize)
+#PAGESIZE=$(sysctl -n hw.pagesize)
 FREE=$(sysctl vm.vmtotal|grep 'Free Memory' | grep -o '[0-9]*')
 #echo "               total        used        free      shared  buff/cache   available"
 #echo "Mem:     $TOTAL    $(($TOTAL-$USER))     $USER    $USER    $USER     $USER"
@@ -131,8 +132,14 @@ esac
 
 PORTS_DONE=0
 # /sbin/ss on gentoo
+if [ -x /sbin/ss ];then
+	HAVE_SS=1
+fi
 # /usr/bin/ss on bookworm
-if [ -x /sbin/ss -o -x /usr/bin/ss ];then
+if [ -x /usr/bin/ss ];then
+	HAVE_SS=1
+fi
+if [ $HAVE_SS -eq 1 ];then
 	echo "[ss]"
 	ss -antup
 	PORTS_DONE=1
@@ -171,10 +178,10 @@ Linux)
 /bin/ifconfig 2>/dev/null
 ;;
 OpenBSD)
-	netstat -i -b -n | egrep -v "^lo|<Link"
+	netstat -i -b -n | grep -Ev "^lo|<Link"
 ;;
 FreeBSD)
-	netstat -ibnW | egrep "<Link|Name" | grep -v ^lo
+	netstat -ibnW | grep -E "<Link|Name" | grep -v ^lo
 ;;
 esac
 
