@@ -401,3 +401,19 @@ jobs:
         with:
           name: xython-ubuntu-${{ env.GIT_BUILD_ID }}_deb
           path: xython*deb
+  client-shell:
+    runs-on: ubuntu-latest
+    name: Test shell scripts
+    steps:
+      - uses: actions/checkout@v3
+      - name: update pkglist
+        run: sudo apt-get update
+      - name: Install shellcheck
+        run: sudo apt-get -y install shellcheck devscripts
+      - name: Run checkbashisms
+        run: checkbashisms client/*
+      - name: Run shellcheck
+        run: shellcheck -e SC2181 -e SC2002 client/*
+      - name: Run client with sh
+        run: sh client/xython-client
+      # TODO run client in a busybox/other OS docker

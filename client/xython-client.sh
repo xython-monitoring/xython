@@ -7,7 +7,6 @@ XYTHON_PORT=1984
 XYTHON_TLS_PORT=1985
 USE_TLS=0
 TLS_MODE="auto"
-FORCE_TLS=0
 CAFILE=""
 NC_OPTS=""
 # either systemd or init script should create it
@@ -39,19 +38,19 @@ get_value() {
 
 tls_curl() {
 	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
-	if [ ! -z "$CAFILE" ];then
+	if [ -n "$CAFILE" ];then
 		CURLOPTS="--cacert $CAFILE"
 	fi
-	curl $CURLOPTS --no-progress-meter -F "data=@$XYTHON_TMP/xython.msg" https://$XYTHON_SRV/$PROXYCGI --output $XYTHON_TMP/logfetch.$(uname -n).cfg
+	curl "$CURLOPTS" --no-progress-meter -F "data=@$XYTHON_TMP/xython.msg" "https://$XYTHON_SRV/$PROXYCGI" --output "$XYTHON_TMP/logfetch.$(uname -n).cfg"
 }
 
 tls_openssl() {
-	if [ ! -z "$CAFILE" ];then
+	if [ -n "$CAFILE" ];then
 		OPENSSLOPTS="--CAfile $CAFILE"
 	fi
 	# TODO -servername
 	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
-	cat $XYTHON_TMP/xython.msg | openssl s_client -quiet $OPENSSLOPTS -connect $XYTHON_SRV:$XYTHON_TLS_PORT > $XYTHON_TMP/logfetch.$(uname -n).cfg
+	cat "$XYTHON_TMP/xython.msg" | openssl s_client -quiet "$OPENSSLOPTS" -connect "$XYTHON_SRV:$XYTHON_TLS_PORT" > "$XYTHON_TMP/logfetch.$(uname -n).cfg"
 	# TODO openssl dont like TLSD closing its connection
 }
 
@@ -65,11 +64,6 @@ case $1 in
 -n)
 	shift
 	NOACT=1
-;;
---tls)
-	shift
-	# for testing in cmdline
-	FORCE_TLS=1
 ;;
 --tlsmode)
 	shift
@@ -108,7 +102,11 @@ if [ -e /etc/xymon-client/xymonclient.cfg ];then
 	XYMSRV=$(grep -o '^XYMSRV=["a-z0-9A-Z_\.-]*' /etc/xymon-client/xymonclient.cfg | cut -d= -f2 | sed 's,",,g')
 	XYMSERVERS=$(grep -o '^XYMSERVERS=["a-z0-9A-Z_ \.-]*' /etc/xymon-client/xymonclient.cfg | cut -d= -f2 | sed 's,",,g')
 	# TODO XYMSERVERS=
-	if [ -z "$XYMSRV" -o "$XYMSRV" == '0.0.0.0' ];then
+	if [ -z "$XYMSRV" ];then
+		echo "TODO"
+		exit 1
+	fi
+	if [ "$XYMSRV" = '0.0.0.0' ];then
 		echo "TODO"
 		exit 1
 	fi
@@ -146,7 +144,7 @@ case $USE_TLS in
 		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT"
 		xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
 		# TODO send error as part of message
-		cat $XYTHON_TMP/xython.msg | nc $NC_OPTS -w 5 -q 5 $XYTHON_SRV $XYTHON_PORT > $XYTHON_TMP/logfetch.$(uname -n).cfg
+		cat "$XYTHON_TMP/xython.msg" | nc "$NC_OPTS" -w 5 -q 5 "$XYTHON_SRV" "$XYTHON_PORT" > "$XYTHON_TMP/logfetch.$(uname -n).cfg"
 		exit $?
 	fi
 ;;
