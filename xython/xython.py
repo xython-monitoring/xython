@@ -114,6 +114,8 @@ class xy_host:
         self.certs = {}
         self.sslwarn = 30
         self.sslalarm = 10
+        self.dialup = False
+        self.ping_success = False
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -1070,6 +1072,10 @@ class xythonsrv:
                     H.tags_known.append(tag)
                     H.dump()
                     continue
+                if tag == 'dialup':
+                    H.dialup = True
+                    H.tags_known.append(tag)
+                    continue
                 if tag[0:4] == 'conn':
                     # TODO name of column via =column
                     tokens = tag.split(':')
@@ -1364,6 +1370,20 @@ class xythonsrv:
             H = xy_host(hostname)
             H.hostip = hostname
             self.xy_hosts.append(H)
+        if H.dialup:
+            if cname == 'conn':
+                if color == 'red':
+                    color = 'clear'
+                    H.ping_success = False
+                else:
+                    H.ping_success = True
+            if color == 'purple':
+                color = 'clear'
+            # handle network test for dialup host
+            # if host is pingable, network tests will go red
+            # if host is not pingable (due to random IP), no network test should exists
+            if not H.ping_success and color == 'red' and (cname in self.protocols or cname in ["snmp", "cssh"]):
+                color = 'clear'
         ackend = None
         acktime = None
         ackcause = None
@@ -1419,7 +1439,7 @@ class xythonsrv:
             self.save_hist(hostname, cname, color, ocolor, ts, ots, duration)
             self.history_update(hostname, cname, ts, duration, color, ocolor)
             color_changed = True
-        if color == 'purple':
+        if color == 'purple' or (color == 'clear' and data is None):
             if data is not None:
                 print("ERROR")
             #duplicate
@@ -1770,7 +1790,7 @@ class xythonsrv:
     def check_purples(self):
         now = int(time.time())
         ts_start = now
-        req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple"'
+        req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple" AND color != "clear"'
         res = self.sqc.execute(req)
         results = self.sqc.fetchall()
         for col in results:
