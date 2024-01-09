@@ -2,6 +2,25 @@
 
 export LANG=C
 export LC_ALL=C
+
+iwhich() {
+	IWHICH=""
+	for pa in /sbin /usr/sbin /bin /usr/bin
+	do
+		if [ -x "${pa}/$1" ];then
+			IWHICH="${pa}/$1"
+			return 0
+		fi
+	done
+	return 1
+}
+
+# if $1 is busybox, return 0
+is_busybox() {
+	$1 --help 2>&1 |grep -qi busybox
+	return $?
+}
+
 SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
 MACHINEDOTS="$(uname -n)"
 
@@ -132,26 +151,25 @@ esac
 
 PORTS_DONE=0
 # /sbin/ss on gentoo
-if [ -x /sbin/ss ];then
-	HAVE_SS=1
-fi
 # /usr/bin/ss on bookworm
-if [ -x /usr/bin/ss ];then
-	HAVE_SS=1
-fi
-if [ $HAVE_SS -eq 1 ];then
+iwhich ss
+if [ -n "$IWHICH" ];then
 	echo "[ss]"
 	ss -antup
 	PORTS_DONE=1
 fi
 
-# TODO detect if netstat is present
-if [ -x /bin/netstat ];then
+iwhich netstat
+if [ -n "$IWHICH" ];then
 	echo "[route]"
 	netstat -rn
-	echo "[netstat]"
+
 	# busybox does not like -s
-	netstat -s
+	is_busybox netstat
+	if [ $? -ne 0 ];then
+		echo "[netstat]"
+		netstat -s
+	fi
 	if [ $PORTS_DONE -eq 0 ];then
 		echo "[ports]"
 		# Bug in RedHat's netstat spews annoying error messages. 
@@ -253,6 +271,8 @@ fi
 echo "[vmstat]"
 vmstat
 
+# TODO docker ps
+
 echo '[clientversion]'
 # to be changed by package manager
 CLIENTVERSION=""
@@ -261,4 +281,3 @@ if [ -z "$CLIENTVERSION" ];then
 else
 	echo "xython-client-$CLIENTVERSION"
 fi
-# vgs --units=k
