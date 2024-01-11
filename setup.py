@@ -29,6 +29,7 @@ requires = [
     "celery>=2",
     "requests>=2",
     "paramiko",
+    "pysnmp",
     "pytz"
 ]
 test_requirements = [
@@ -40,7 +41,7 @@ with open("README.md", "r", "utf-8") as f:
 
 setup(
     name="xython",
-    version="0.1.16",
+    version="0.1.17",
     description="xython is a rewrite in python of xymon",
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -56,7 +57,6 @@ setup(
             "xython-tlsd = xython_tlsd.xython_tlsd:main",
             "xythonc = xython.xython_client:main",
             "xython-nshow = xython_ncurses.xython_nshow:main",
-            "xython-snmpd = xython.xythonsnmpd:main",
         ],
     },
     include_package_data=True,

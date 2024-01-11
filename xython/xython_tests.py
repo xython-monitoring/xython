@@ -11,6 +11,9 @@ import subprocess
 import os
 import paramiko
 from paramiko import SSHClient
+from pysnmp import hlapi
+import pysnmp
+import pyasn1
 import time
 import re
 import requests
@@ -28,6 +31,213 @@ urllib3.disable_warnings()
 
 # TODO permit to configure localhost
 app = Celery('tasks', backend='redis://localhost', broker='redis://localhost')
+
+
+def snmp_get(oid, hostname, snmp_community):
+    ret = {}
+    ret["err"] = -1
+    try:
+        iterator = hlapi.getCmd(
+            hlapi.SnmpEngine(),
+            hlapi.CommunityData(snmp_community, mpModel=0),
+            hlapi.UdpTransportTarget((hostname, 161)),
+            hlapi.ContextData(),
+            hlapi.ObjectType(hlapi.ObjectIdentity(oid))
+        )
+    except pysnmp.error.PySnmpError as e:
+        print(str(e))
+        ret["errmsg"] = str(e)
+        return ret
+    try:
+        errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+    except pyasn1.error.PyAsn1Error:
+        ret["errmsg"] = f"Probable malformed OID {oid}"
+        return ret
+
+    if errorIndication:
+        ret["errmsg"] = str(errorIndication)
+        return ret
+    if errorStatus:
+        ret["errmsg"] = str(errorStatus.prettyPrint())
+        return ret
+    for varBind in varBinds:
+        ret["pretty"] = ' = '.join([x.prettyPrint() for x in varBind])
+        ret["oid"] = varBind[0]
+        ret["v"] = varBind[1]
+    ret["err"] = 0
+    return ret
+
+
+def do_snmpd_disk(hostname, hostip, snmp_community):
+    buf = ""
+    snmp_disk_oid = []
+    i = 0
+    while i < 100:
+        ret = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{i}', hostip, snmp_community)
+        if ret['err'] == 0:
+            partname = str(ret['v'])
+            oid = str(ret['oid'])
+            if partname[0] == '/':
+                # print(f"DEBUG: SNMP found disk {partname}")
+                snmp_disk_oid.append(i)
+        else:
+            if 'errmsg' in ret:
+                if 'timeout' in ret['errmsg']:
+                    return buf
+        i += 1
+    buf += '[df]\n'
+    for oid in snmp_disk_oid:
+        # print(f"DEBUG: SNMP DISK check {oid}")
+        disk_name = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{oid}', hostip, snmp_community)
+        if disk_name['err'] != 0:
+            buf += f'ERROR getting {oid}\n'
+            continue
+        dname = disk_name['v']
+        disk_block_size = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', hostip, snmp_community)
+        if disk_block_size['err'] != 0:
+            buf += f'ERROR getting {dname} block size\n'
+            continue
+        disk_total = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', hostip, snmp_community)
+        if disk_total['err'] != 0:
+            buf += f'ERROR getting {dname} total size\n'
+            continue
+        disk_used = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', hostip, snmp_community)
+        if disk_used['err'] != 0:
+            buf += f'ERROR getting {dname} used size\n'
+            continue
+        dbs = int(disk_block_size['v'])
+        dt = int(disk_total['v'])
+        du = int(disk_used['v'])
+        dt *= int(dbs / 1024)
+        du *= int(dbs / 1024)
+        df = dt - du
+        percent = int(100 * du / dt)
+        buf += f'{dname}\t{dt}\t{du}\t{df}\t{percent}%\t{dname}\n'
+    return buf
+
+
+def do_snmpd_memory(hostname, hostip, snmp_community):
+    ret = {}
+    ret['snmp'] = ""
+    swap_total = snmp_get('.1.3.6.1.4.1.2021.4.3.0', hostip, snmp_community)
+    if swap_total["err"] != 0:
+        ret['snmp'] = f'&red do_snmpd_memory: error with swap_total: {swap_total["errmsg"]}\n'
+        return ret
+    ret['snmp'] += swap_total["pretty"]
+    swap_free = snmp_get('.1.3.6.1.4.1.2021.4.4.0', hostip, snmp_community)
+    if swap_free["err"] != 0:
+        ret['snmp'] = f'&red do_snmpd_memory: error with swap_free: {swap_free["errmsg"]}\n'
+        return ret
+    memory_total = snmp_get('.1.3.6.1.4.1.2021.4.5.0', hostip, snmp_community)
+    if memory_total["err"] != 0:
+        ret['snmp'] = f'&red do_snmpd_memory: error with memory_total: {memory_total["errmsg"]}\n'
+        return ret
+    memory_used = snmp_get('.1.3.6.1.4.1.2021.4.6.0', hostip, snmp_community)
+    memory_free = snmp_get('.1.3.6.1.4.1.2021.4.11.0', hostip, snmp_community)
+    memory_shared = snmp_get('.1.3.6.1.4.1.2021.4.13.0', hostip, snmp_community)
+    memory_buffered = snmp_get('.1.3.6.1.4.1.2021.4.14.0', hostip, snmp_community)
+    memt = memory_total['v']
+    memf = memory_free['v']
+    memu = memory_used['v']
+    mems = memory_shared['v']
+    # no .1.3.6.1.4.1.2021.4.14.0 on OpenBSD
+    if "v" in memory_buffered:
+        memb = memory_buffered['v']
+    else:
+        memb = 0
+    ret['buf'] = f'[free]\nMem:\t{memt}\t{memu}\t{memf}\t{mems}\t{memb}\t{memf}\n'
+    ret['snmp'] = '&green DID memory OK\n'
+    return ret
+
+
+def do_snmpd_client(hostname, hostip, snmp_columns, snmp_community):
+    dret = {}
+    color = 'green'
+    status = ""
+    # TODO check linux
+    sysdscr = snmp_get('.1.3.6.1.2.1.1.1.0', hostip, snmp_community)
+    err = sysdscr['err']
+    if err == 0:
+        osname = str(sysdscr['v']).split(' ')[0].lower()
+        buf = f'client {hostname}.{osname} {osname}\n'
+        buf += f"[uname]\n{sysdscr['v']}\n"
+        status += sysdscr['pretty']
+        status += '\n'
+    else:
+        buf = f'client {hostname}.unknow unknow\n'
+        color = 'red'
+        status += f"&red do_snmpd_client: error with sysdscr: {sysdscr['errmsg']}\n"
+    if 'memory' in snmp_columns:
+        ret = do_snmpd_memory(hostname, hostip, snmp_community)
+        if 'buf' in ret:
+            buf += ret['buf']
+        if 'snmp' in ret:
+            status += ret['snmp']
+    if 'disk' in snmp_columns:
+        buf += do_snmpd_disk(hostname, hostip, snmp_community)
+    buf += '[end]\n'
+    dret["data"] = buf
+    dret['txt'] = status
+    dret['color'] = color
+    return dret
+
+
+@app.task
+def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
+    ts_start = time.time()
+    dret = {}
+    dret["type"] = 'snmp'
+    dret["column"] = 'snmp'
+    dret["hostname"] = hostname
+    color = 'green'
+    buf = ''
+    print(f"DEBUG: SNMP for {hostname} hostip={hostip} snmp_columns={snmp_columns} oids={oids}")
+    if len(snmp_columns) > 0:
+        ret = do_snmpd_client(hostname, hostip, snmp_columns, snmp_community)
+        buf += ret["txt"]
+        dret["data"] = ret["data"]
+        color = setcolor(ret["color"], color)
+        result = {}
+        for rrd in oids:
+            if rrd not in result:
+                result[rrd] = {}
+            # print(f"DEBUG: handle SNMP rrd={rrd}")
+            for obj in oids[rrd]:
+                # print(f"DEBUG: handle SNMP rrd={rrd} obj={obj}")
+                rrdcolor = 'green'
+                rrdbuf = ""
+                dsnames = []
+                values = []
+                dsspecs = []
+                for oid in oids[rrd][obj]:
+                    # print(f"DEBUG: handle rrd={rrd} oid={oid}")
+                    dsnames.append(oid['dsname'])
+                    dsspecs.append(oid['dsspec'])
+                    ret = snmp_get(oid['oid'], hostip, snmp_community)
+                    if ret['err'] == 0:
+                        buf += f"&green did {rrd} {obj} {oid['oid']} {oid['dsname']} value={ret['v']}\n"
+                        rrdbuf += f"&green did {rrd} {obj} {oid['oid']} {oid['dsname']} value={ret['v']}\n"
+                        values.append(str(ret["v"]))
+                    else:
+                        buf += f"&red did {rrd} {obj} {oid['oid']} {ret['errmsg']}\n"
+                        rrdbuf += f"&red did {rrd} {obj} {oid['oid']} {ret['errmsg']}\n"
+                        color = 'red'
+                        rrdcolor = 'red'
+                # print(f"DEBUG: value={values}")
+                r = {}
+                r["dsnames"] = ":".join(dsnames)
+                r["values"] = ":".join(values)
+                r["dsspecs"] = dsspecs
+                r["status"] = rrdbuf
+                r["color"] = rrdcolor
+                result[rrd][obj] = r
+        dret["rrds"] = result
+    dret["color"] = color
+    now = time.time()
+    dret["txt"] = f"{xytime(now)} - snmp\n" + buf
+    test_duration = now - ts_start
+    dret["txt"] += f"\nSeconds: {test_duration}\n"
+    return dret
 
 
 @app.task
