@@ -1020,7 +1020,7 @@ class xythonsrv:
             if obj not in H.oids[rrd]:
                 H.oids[rrd][obj] = []
             H.oids[rrd][obj].append(goid)
-            self.rrd_column[obj] = obj
+            self.rrd_column[rrd] = [rrd]
 
     def hosts_check_tags(self):
         for H in self.xy_hosts:
@@ -2670,8 +2670,19 @@ class xythonsrv:
         dsname = self.rrd_getdsname(sname)
         #self.debug(f"DEBUG: create {rrdfpath} with dsname={dsname}")
         if not os.path.exists(rrdfpath):
+            if "sensor" in self.rrddef:
+                self.debugdev("rrd", f"DEBUG: got RRA from {rrdname}")
+                rras = self.rrddef[rrdname]["info"]
+            elif 'default' in self.rrddef:
+                self.debugdev("rrd", f"DEBUG: got RRA from default")
+                rras = self.rrddef['default']["info"]
+            else:
+                self.error(f"DEBUG: RRD create this should not happen")
+                self.debugdev("rrd", f"DEBUG: {self.rrddef}")
+                # this should not happen
+                rras = "RRA:AVERAGE:0.5:1:1200"
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
-                "RRA:AVERAGE:0.5:1:1200",
+                rras,
                 f"DS:{dsname}:GAUGE:600:-280:5000")
         else:
             info = rrdtool.info(rrdfpath)
