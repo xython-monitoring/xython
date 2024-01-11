@@ -318,9 +318,12 @@ def do_cssh(hostname, urls):
     except paramiko.ssh_exception.NoValidConnectionsError as e:
         dret["txt"] = f"status+10m {hostname}.cssh red\n&red Failed to connect on {chostname}: {str(e)}\n"
         return dret
+    except TimeoutError as e:
+        dret["txt"] = f"status+10m {hostname}.cssh red\n&red Failed to connect on {chostname}: {str(e)}\n"
+        return dret
     scp = paramiko.SFTPClient.from_transport(client.get_transport())
     try:
-        scp.put("client/xython-client", "/tmp/xython-client")
+        scp.put("/usr/bin/xython-client", "/tmp/xython-client")
     except PermissionError as e:
         dret["txt"] = f"status+10m {hostname}.cssh red\n&red Failed to scp on {chostname}: {str(e)}\n"
         return dret
