@@ -30,6 +30,7 @@ import sqlite3
 from .xython_tests import ping
 from .xython_tests import dohttp
 from .xython_tests import do_cssh
+from .xython_tests import do_snmp
 from .xython_tests import do_generic_proto
 import celery
 from .common import xytime
@@ -219,6 +220,7 @@ class xythonsrv:
         self.msgn = 0
         # to be compared with mtime of hosts.cfg
         self.time_read_hosts = 0
+        self.time_read_snmpd = 0
         # each time read_hosts is called, read_hosts_cnt is ++ abd all hosts found are set to this value
         # so all hosts with a lower value need to be removed
         self.read_hosts_cnt = 0
@@ -1020,33 +1022,6 @@ class xythonsrv:
             H.oids[rrd][obj].append(goid)
             self.rrd_column[obj] = obj
 
-    def hosts_check_snmp_tags(self):
-        for H in self.xy_hosts:
-            if H.tags_read:
-                continue
-            need_conn = True
-            for test in H.tags:
-                if len(test) == 0:
-                    continue
-                if test == '#':
-                    continue
-                if test[0] == '#':
-                    test = test[1:]
-                if test[0:6] == 'testip':
-                    H.use_ip = True
-                    continue
-                if test[0:4] == 'snmp':
-                    snmp_tags = test.split(':')
-                    for stag in snmp_tags:
-                        self.debug(f"DEBUG: check SNMP TAG {stag}")
-                        if stag in ['memory', 'disk']:
-                            H.snmp_columns.append(stag)
-                            continue
-                        if stag[0:10] == 'community=':
-                            H.snmp_community = stag.split('=')[1]
-                            continue
-                    self.read_snmp_hosts(H.name)
-
     def hosts_check_tags(self):
         for H in self.xy_hosts:
             if H.tags_read:
@@ -1139,8 +1114,22 @@ class xythonsrv:
                     H.tags_known.append(tag)
                     continue
                 if tag[0:4] == 'snmp':
-                    H.tags_known.append(tag)
+                    snmp_tags = tag.split(':')
+                    snmp_tags.pop(0)
+                    for stag in snmp_tags:
+                        self.debug(f"DEBUG: check SNMP TAG {stag}")
+                        if stag in ['memory', 'disk']:
+                            self.debug(f"DEBUG: SNMP add column {stag} to {H.snmp_columns}")
+                            H.snmp_columns.append(stag)
+                            continue
+                        if stag[0:10] == 'community=':
+                            H.snmp_community = stag.split('=')[1]
+                            continue
+                        self.error(f"ERROR: unknow SNMP tag {stag}")
+                    self.debug(f"DEBUG: SNMP COLUMNS = {H.snmp_columns}")
                     self.read_snmp_hosts(H.name)
+                    H.add_test("snmp", None, None, "snmp", True, False)
+                    H.tags_known.append(tag)
                     continue
                 if tag[0:7] == 'cssh://':
                     H.tags_known.append(tag)
@@ -1177,10 +1166,23 @@ class xythonsrv:
         except:
             self.error("ERROR: cannot get mtime of hosts.cfg")
             return self.RET_ERR
-        #self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
+        try:
+            mtime_snmpd = os.path.getmtime(self.etcdir + "/snmp.d")
+        except FileNotFoundError:
+            # optionnal directory
+            mtime_snmpd = 0
+        except PermissionError as e:
+            self.error("ERROR: cannot get mtime of snmp.d directory {str(e)}")
+            return self.RET_ERR
+        #self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts} {mtime_snmpd} vs {self.time_read_snmpd}")
+        need_reload = False
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
-        else:
+            need_reload = True
+        if self.time_read_snmpd < mtime_snmpd:
+            self.time_read_snmpd = mtime_snmpd
+            need_reload = True
+        if not need_reload:
             return self.RET_OK
         self.debug(f"DEBUG: read_hosts in {self.etcdir}")
         self.read_hosts_cnt += 1
@@ -1852,6 +1854,13 @@ class xythonsrv:
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 
+    def do_snmp(self, T):
+        name = f"{T.hostname}_snmp"
+        H = self.find_host(T.hostname)
+        ctask = do_snmp.delay(T.hostname, H.gethost(), H.snmp_community, H.snmp_columns, H.oids)
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+
     def dohttp(self, T):
         name = f"{T.hostname}_http"
         ctask = dohttp.delay(T.hostname, T.urls, T.column)
@@ -1907,6 +1916,8 @@ class xythonsrv:
                             lag += 1
                     if T.type == 'cssh':
                         self.do_cssh(T)
+                    if T.type == 'snmp':
+                        self.do_snmp(T)
                     if T.type == 'http':
                         self.dohttp(T)
                     if T.type in self.protocols:
@@ -1916,6 +1927,23 @@ class xythonsrv:
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
+
+    def tests_rrd(self, hostname, rrds):
+        for rrd in rrds:
+            self.debugdev("rrd", f"DEBUG: handle RRD {rrd}")
+            buf = ""
+            rrdcolor = 'green'
+            for obj in rrds[rrd]:
+                rrdcolor = 'green'
+                self.debugdev("rrd", f"DEBUG: handle {rrd} obj {obj}")
+                values = rrds[rrd][obj]["values"]
+                if values != "":
+                    self.do_rrd(hostname, rrd, obj, rrds[rrd][obj]["dsnames"], rrds[rrd][obj]["values"], rrds[rrd][obj]["dsspecs"])
+                rrdcolor = setcolor(rrds[rrd][obj]["color"], rrdcolor)
+                buf += rrds[rrd][obj]["status"]
+            now = time.time()
+            status = f"{xytime(now)} - {rrd}\n" + buf
+            self.column_update(hostname, rrd, rrdcolor, now, status, self.NETTEST_INTERVAL + 120, "xython-tests")
 
     def do_tests_rip(self):
         self.celery_workers = celery.current_app.control.inspect().ping()
@@ -1936,12 +1964,14 @@ class xythonsrv:
                 ret = ctask.get()
                 hostname = ret["hostname"]
                 testtype = ret["type"]
-                if testtype == 'cssh':
+                if testtype in ['cssh', 'snmp']:
                     if ret["data"] is not None:
                         msg = {}
                         msg["buf"] = ret["data"]
                         msg["addr"] = hostname
                         self.parse_hostdata(msg)
+                if "rrds" in ret:
+                    self.tests_rrd(hostname, ret["rrds"])
                 column = ret["column"]
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
                 self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")

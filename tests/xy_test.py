@@ -649,6 +649,19 @@ def test_reload():
     with open("./tests/etc/xython-load/analysis.cfg", "w") as f:
         f.write(ba)
 
+    print("==========================")
+    print("snmp.d creation")
+    os.mkdir("./tests/etc/xython-load/snmp.d")
+    ret = X.read_hosts()
+    assert ret == X.RET_NEW
+    print(X.mtimes_hosts)
+    assert "./tests/etc/xython-load/snmp.d" in X.mtimes_hosts
+    assert X.mtimes_hosts["./tests/etc/xython-load/snmp.d"]["mtime"] > 0
+
+    ret = X.read_hosts()
+    assert ret == X.RET_OK
+    os.rmdir('./tests/etc/xython-load/snmp.d')
+
     X.sqc.close()
     os.remove(f"{X.xt_data}/xython.db")
     shutil.rmtree(X.xt_data)
@@ -781,8 +794,9 @@ def test_snmpd():
     X.etcdir = './tests/etc/full/'
     setup_testdir(X, 'snmpd')
     X.daemon_name = "xython-snmpd"
+    X.init()
     X.read_hosts()
-    X.hosts_check_snmp_tags()
+    X.hosts_check_tags()
     # test community
     #do_snmpd(X)
     shutil.rmtree(X.xt_data)
@@ -792,8 +806,9 @@ def test_snmpd2():
     X.etcdir = './tests/etc/snmp/'
     setup_testdir(X, 'snmpd2')
     X.daemon_name = "xython-snmpd"
+    X.init()
     X.read_hosts()
-    X.hosts_check_snmp_tags()
+    X.hosts_check_tags()
     # test community
     #do_snmpd(X)
     shutil.rmtree(X.xt_data)
