@@ -472,7 +472,7 @@ def dohttp(hostname, urls, column):
                     hdata += f'&red pattern {check_content} not found\n'
         except requests.exceptions.Timeout as e:
             color = "red"
-            hdata += f"&red {url} - TIMEOUT\n"
+            hdata += f"&red {url} - TIMEOUT {str(e)}\n"
             httpstate += "Timeout"
         except requests.exceptions.RequestException as e:
             color = "red"
@@ -497,7 +497,7 @@ def dohttp(hostname, urls, column):
             dret["certs"][url] = cret
         if options != "":
             hdata += f"xython options: {options}\n"
-        hdata += f'</fieldset><br>'
+        hdata += '</fieldset><br>'
     now = time.time()
     fdata = f"{xytime(now)}: {httpstate}\n"
     test_duration = now - ts_start

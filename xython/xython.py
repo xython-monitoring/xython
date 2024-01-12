@@ -15,7 +15,6 @@ from random import randint
 import shutil
 import socket
 from importlib.metadata import version
-from pathlib import Path
 try:
     import pika
     has_pika = True
@@ -68,12 +67,14 @@ RRD_COLOR = ["0000FF", "FF0000", "00CC00", "FF00FF", "555555", "880000", "000088
              "AAAAAA", "DD8833", "DDCC33", "8888FF", "5555AA", "B428D3", "FF5555", "DDDDDD",
              "AAFFAA", "AAFFFF", "FFAAFF", "FFAA55", "55AAFF", "AA55FF"]
 
+
 class xy_protocol:
     def __init__(self):
         self.send = None
         self.expect = None
         self.port = None
         self.options = None
+
 
 class xy_host:
     def __init__(self, name):
@@ -146,6 +147,7 @@ class xy_host:
     def dump(self):
         for test in self.tests:
             test.dump()
+
 
 class xytest:
     def __init__(self, hostname, ttype, url, port, column):
@@ -284,7 +286,7 @@ class xythonsrv:
 
     def history_update(self, hostname, cname, ts, duration, color, ocolor):
         req = f'INSERT INTO history(hostname, column, ts, duration, color, ocolor)VALUES ("{hostname}", "{cname}", {ts}, {duration}, "{color}", "{ocolor}")'
-        res = self.sqc.execute(req)
+        self.sqc.execute(req)
 
     # used only at start, expire is set to let enough time to arrive before purpleing
     def column_set(self, hostname, cname, color, ts, expire, ts_expire):
@@ -293,7 +295,7 @@ class xythonsrv:
         if ts_expire is None:
             ts_expire = now + expire
         req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts_expire}, "{color}")'
-        res = self.sqc.execute(req)
+        self.sqc.execute(req)
 
     def debug(self, buf):
         if self.lldebug:
@@ -330,20 +332,19 @@ class xythonsrv:
             if len(sline) < 1:
                 continue
             if sline[0] == varname:
-                #found = sline[1].split('"')[1]
                 found = sline[1]
-                #self.debug(f"getvar {varname}={found}")
+                # self.debug(f"getvar {varname}={found}")
                 return found
         self.debugdev('vars', "DEBUG: did not found %s" % varname)
         return None
 
     def xython_is_ack(self, hostname, column):
         req = f'SELECT ackend, ackcause FROM columns WHERE hostname="{hostname}" AND column="{column}"'
-        res = self.sqc.execute(req)
+        self.sqc.execute(req)
         results = self.sqc.fetchall()
         if len(results) == 0:
             return None
-        if results[0][0] == None:
+        if results[0][0] is None:
             return None
         return results
 
@@ -389,7 +390,7 @@ class xythonsrv:
         # DROP HOSTNAME TEST
         sbuf = buf.rstrip().split(" ")
         if len(sbuf) < 2 or len(sbuf) > 3:
-            self.error(f"ERROR: invalid drop command")
+            self.error("ERROR: invalid drop command")
             return False
         column = None
         hostname = sbuf[1]
@@ -397,7 +398,7 @@ class xythonsrv:
             column = sbuf[2].rstrip()
         H = self.find_host(hostname)
         if H is None:
-            self.debug(f"DEBUG: drop unknow hostname")
+            self.debug("DEBUG: drop unknow hostname")
         self.debug(f"DEBUG: DROP {hostname} {column}")
         if column is not None:
             self.drop_column(hostname, column)
@@ -484,7 +485,6 @@ class xythonsrv:
             hostname = H.name
         return [hostname, ostype, hostclass]
 
-
     def send_client_local(self, buf):
         ret = self.parse_collector(buf)
         if ret is None:
@@ -507,12 +507,12 @@ class xythonsrv:
         except:
             self.error(f"ERROR: fail to get mtime of {pclientlocalcfg}")
             return self.RET_ERR
-        #self.debug(f"DEBUG: read {pclientlocalcfg} mtime={mtime}")
+        # self.debug(f"DEBUG: read {pclientlocalcfg} mtime={mtime}")
         if self.time_read_client_local_cfg < mtime:
             self.time_read_client_local_cfg = mtime
         else:
             return self.RET_OK
-        #self.debug(f"DEBUG: read {pclientlocalcfg}")
+        # self.debug(f"DEBUG: read {pclientlocalcfg}")
         try:
             clientlocalcfg = open(pclientlocalcfg, 'r')
         except:
@@ -539,7 +539,6 @@ class xythonsrv:
                     self.client_local_cfg[section] = []
                 continue
             self.client_local_cfg[section].append(line)
-            #print(f"DEBUG {section} {line}")
         return self.RET_OK
 
     def load_xymonserver_cfg(self):
@@ -559,7 +558,6 @@ class xythonsrv:
             self.error(f"ERROR: cannot open {pxserver}")
             return self.RET_ERR
         lines = xserver.readlines()
-        section = None
         for line in lines:
             line = line.rstrip()
             line = line.lstrip()
@@ -592,7 +590,7 @@ class xythonsrv:
                     if raw[i] == '\\':
                         i += 1
                     if raw[i] == '"':
-                        if raw[i-1] != '\\':
+                        if raw[i - 1] != '\\':
                             break
                     value += raw[i]
                     i += 1
@@ -632,7 +630,7 @@ class xythonsrv:
 
     def html_history(self, now, history_extra):
         html = ""
-        res = self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
+        self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
         results = self.sqc.fetchall()
         hcount = len(results)
         if hcount > 0:
@@ -665,7 +663,7 @@ class xythonsrv:
         return html
 
     def html_header(self, header):
-        #self.debug(f"DEBUG: read {self.webdir}/{header}")
+        # self.debug(f"DEBUG: read {self.webdir}/{header}")
         fname = f"{self.webdir}/{header}"
         try:
             fh = open(fname, "r")
@@ -724,7 +722,6 @@ class xythonsrv:
             ireplace += 1
         return html
 
-
     def html_page(self, pagename):
         color = 'blue'
         if pagename == 'acknowledgements':
@@ -739,7 +736,6 @@ class xythonsrv:
         else:
             header = 'stdnormal_header'
             footer = 'stdnormal_footer'
-        now = time.time()
         html = self.html_header(header)
         if pagename == 'nongreen':
             ret = self.html_hostlist(pagename)
@@ -750,8 +746,8 @@ class xythonsrv:
             html += ret["html"]
             color = ret["color"]
         if pagename == 'acknowledgements':
-            req = f"SELECT hostname, column, ackend, ackcause FROM columns WHERE ackend != 0"
-            res = self.sqc.execute(req)
+            req = "SELECT hostname, column, ackend, ackcause FROM columns WHERE ackend != 0"
+            self.sqc.execute(req)
             results = self.sqc.fetchall()
             for res in results:
                 print(res)
@@ -761,8 +757,8 @@ class xythonsrv:
                 ackcause = res[3]
                 html += f"{hostname} {column} {ackcause} {ackend} {xytime(ackend)}\n<br>"
         if pagename == 'expires':
-            req = f"SELECT hostname, column, expire FROM columns ORDER BY expire ASC"
-            res = self.sqc.execute(req)
+            req = "SELECT hostname, column, expire FROM columns ORDER BY expire ASC"
+            self.sqc.execute(req)
             results = self.sqc.fetchall()
             for res in results:
                 hostname = res[0]
@@ -784,7 +780,7 @@ class xythonsrv:
         return html
 
     def html_hostlist(self, pagename):
-        #self.debug(f"DEBUG: html_hostlist for {pagename}")
+        # self.debug(f"DEBUG: html_hostlist for {pagename}")
         now = time.time()
         html = ""
         color = 'green'
@@ -810,16 +806,16 @@ class xythonsrv:
         html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
 
         if pagename == 'nongreen':
-            res = self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green" and color != "blue") ORDER by ackend, hostname')
+            self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green" and color != "blue") ORDER by ackend, hostname')
         else:
-            res = self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
+            self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
         hostlist = self.sqc.fetchall()
         # TODO results up is not used
         for host in hostlist:
             H = self.find_host(host[0])
             if H is None:
                 continue
-            res = self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
+            self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
             results = self.sqc.fetchall()
             hcols = {}
             hts = {}
@@ -840,7 +836,7 @@ class xythonsrv:
                     lts = hts[Cname]
                     dhm = xydhm(lts, now)
                     acki = self.xython_is_ack(H.name, Cname)
-                    if acki == None or lcolor == 'green':
+                    if acki is None or lcolor == 'green':
                         isack = False
                     else:
                         isack = True
@@ -883,7 +879,7 @@ class xythonsrv:
             html += '<PRE>'
             data = ''.join(rdata["data"])
             data.replace("\n", '<br>\n')
-            #data = re.sub("\n", '<br>\n', data)
+            # data = re.sub("\n", '<br>\n', data)
             for gifc in COLORS:
                 data = re.sub("&%s" % gifc, '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % gifc, data)
             html += data
@@ -899,7 +895,7 @@ class xythonsrv:
             html += '</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n'
             history_extra = f'AND hostname="{hostname}" AND column="{column}"'
 
-            res = self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
+            self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
             ackinfos = self.sqc.fetchall()
             if len(ackinfos) == 1:
                 ackinfo = ackinfos[0]
@@ -910,34 +906,34 @@ class xythonsrv:
             else:
                 print(f"ackinfo is len={len(ackinfo)}")
             # TODO acknowledge is only for non-history and non-green
-            #if color != 'green':
-            html += f'<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
+            # if color != 'green':
+            html += '<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
             html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
             html += '<input type="text" placeholder="ack message" name="cause" required>\n'
             html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
             html += f'<input type="hidden" name="service" value="{column}">\n'
-            html += f'<input type="hidden" name="action" value="ack">\n'
-            #html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            html += '<input type="hidden" name="action" value="ack">\n'
+            # html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
             html += '<button type="submit">Send ack</button></form>\n'
             html += '</CENTER>\n'
 
-            html += f'<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
+            html += '<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
             html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
             html += '<input type="text" placeholder="disable message" name="cause" required>\n'
             html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
             html += f'<input type="text" name="dservice" value="{column}">\n'
             html += f'<input type="hidden" name="service" value="{column}">\n'
-            html += f'<input type="hidden" name="action" value="disable">\n'
-            #html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            html += '<input type="hidden" name="action" value="disable">\n'
+            # html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
             html += '<button type="submit">Send blue</button></form>\n'
             html += '</CENTER>\n'
 
-            #html += f"Status valid until {xytime()}"
+            # html += f"Status valid until {xytime()}"
 
             if has_rrdtool:
                 if column in self.rrd_column:
                     for rrdname in self.rrd_column[column]:
-                        #html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
+                        # html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
                         html += f'<CENTER><img src="$XYMONSERVERCGIURL/showgraph.py?hostname={hostname}&service={rrdname}"></CENTER>'
 
         # history
@@ -976,7 +972,7 @@ class xythonsrv:
         if H is None:
             return
         req = f'SELECT * FROM columns WHERE hostname == "{hostname}"'
-        res = self.sqc.execute(req)
+        self.sqc.execute(req)
         results = self.sqc.fetchall()
         for sqr in results:
             print(f'{sqr[1]} {sqr[4]} TS={sqr[2]}')
@@ -993,8 +989,8 @@ class xythonsrv:
         except FileNotFoundError:
             self.error(f"Fail to open {fname}")
             return False
-        except:
-            self.error(f"Fail to open {fname}")
+        except PermissionError as e:
+            self.error(f"Fail to open {fname} {str(e)}")
             return False
         for line in f:
             line = line.rstrip()
@@ -1174,7 +1170,7 @@ class xythonsrv:
         except PermissionError as e:
             self.error("ERROR: cannot get mtime of snmp.d directory {str(e)}")
             return self.RET_ERR
-        #self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts} {mtime_snmpd} vs {self.time_read_snmpd}")
+        # self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts} {mtime_snmpd} vs {self.time_read_snmpd}")
         need_reload = False
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
@@ -1234,7 +1230,7 @@ class xythonsrv:
 
     def read_protocols(self):
         mtime = os.path.getmtime(self.etcdir + "/protocols.cfg")
-        #self.debug(f"DEBUG: compare mtime={mtime} and time_read_protocols={self.time_read_protocols}")
+        # self.debug(f"DEBUG: compare mtime={mtime} and time_read_protocols={self.time_read_protocols}")
         if self.time_read_protocols < mtime:
             self.time_read_protocols = mtime
         else:
@@ -1272,13 +1268,13 @@ class xythonsrv:
                 if line[-1] != '"':
                     self.error(f"ERROR: wrong expect format for {cproto}")
                     continue
-                P.expect = line[8:len(line)-1]
+                P.expect = line[8:len(line) - 1]
                 continue
             if line[0:6] == 'send "':
                 if line[-1] != '"':
                     self.error(f"ERROR: wrong send format for {cproto}")
                     continue
-                P.send = line[6:len(line)-1]
+                P.send = line[6:len(line) - 1]
                 P.send = P.send.replace('\\n', '\n')
                 P.send = P.send.replace('\\r', '\r')
                 continue
@@ -1346,7 +1342,7 @@ class xythonsrv:
             cdata += f"OS: {H.uname}\n"
         if len(H.aliases) > 0:
             cdata += f"Aliases={H.aliases}\n"
-        cdata += f"IP: TODO\n"
+        cdata += "IP: TODO\n"
         if H.client_version:
             cdata += f"Client S/W: {H.client_version}\n"
         cdata += f"TAGS={H.tags_known}\n"
@@ -1364,7 +1360,7 @@ class xythonsrv:
     # return all cname for a host in a list
     def get_columns(self, hostname):
         print(f"DEBUG: get_columns {hostname}")
-        res = self.sqc.execute(f'SELECT column FROM columns WHERE hostname == "{hostname}"')
+        self.sqc.execute(f'SELECT column FROM columns WHERE hostname == "{hostname}"')
         results = self.sqc.fetchall()
         if len(results) >= 1:
             allc = []
@@ -1374,7 +1370,7 @@ class xythonsrv:
         return None
 
     def get_column_state(self, hostname, cname):
-        res = self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
+        self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
         results = self.sqc.fetchall()
         if len(results) == 1:
             return results[0]
@@ -1385,13 +1381,13 @@ class xythonsrv:
     # return 2 for errors
     def column_update(self, hostname, cname, color, ts, data, expire, updater):
         color_changed = False
-        #self.debug(f"DEBUG: column_update {hostname} {cname} ts={ts} expire={expire}")
+        # self.debug(f"DEBUG: column_update {hostname} {cname} ts={ts} expire={expire}")
         color = gcolor(color)
         ts_start = time.time()
         expiretime = int(ts_start + expire)
         H = self.find_host(hostname)
         if not H:
-            #self.debug("DEBUG: %s not exists" % hostname)
+            # self.debug("DEBUG: %s not exists" % hostname)
             # TODO autoregister
             H = xy_host(hostname)
             H.hostip = hostname
@@ -1415,7 +1411,7 @@ class xythonsrv:
         ackcause = None
         ocolor = "-"
         ots = ts
-        res = self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
+        self.sqc.execute('SELECT * FROM columns WHERE hostname == ? AND column == ?', (hostname, cname))
         results = self.sqc.fetchall()
         if len(results) > 1:
             self.error("ERROR: this is impossible")
@@ -1424,7 +1420,7 @@ class xythonsrv:
             if color == 'purple':
                 self.error("ERROR: creating a purple column")
                 return 2
-            #self.debug("DEBUG: create column %s on %s" % (cname, hostname))
+            # self.debug("DEBUG: create column %s on %s" % (cname, hostname))
         else:
             result = results[0]
             ocolor = result[4]
@@ -1457,7 +1453,7 @@ class xythonsrv:
             if ocolor == 'purple':
                 self.error("ERROR: cannot go from purple to purple")
                 return 2
-        #self.debug("%s %s color=%s ocolor=%s ts=%s ots=%s" % (hostname, cname, ocolor, color, ts, ots))
+        # self.debug("%s %s color=%s ocolor=%s ts=%s ots=%s" % (hostname, cname, ocolor, color, ts, ots))
         if color == ocolor:
             ts = ots
         else:
@@ -1468,7 +1464,7 @@ class xythonsrv:
         if color == 'purple' or (color == 'clear' and data is None):
             if data is not None:
                 print("ERROR")
-            #duplicate
+            # duplicate
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
                 self.error("ERROR: cannot purple without status")
@@ -1498,17 +1494,17 @@ class xythonsrv:
             # pika.exceptions.ChannelWrongStateError: Channel is closed.
             except pika.exceptions.ChannelWrongStateError as e:
                 # TODO what to do ?
-                self.error(f"ERROR: pika connection closed")
+                self.error("ERROR: pika connection closed")
                 if self.channel.is_closed:
                     self.debug("DEBUG: closed")
                 self.init_pika()
                 self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
 
-        #req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
-        res = self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color, ackend, ackcause) VALUES (?, ?, ?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color, ackend, ackcause))
-        #self.sqconn.commit()
+        # req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts} + {expire}, "{color}")'
+        self.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color, ackend, ackcause) VALUES (?, ?, ?, ?, ?, ?, ?)', (hostname, cname, ts, expiretime, color, ackend, ackcause))
+        # self.sqconn.commit()
         if color == 'purple':
-            #duplicate
+            # duplicate
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
                 return 2
@@ -1610,7 +1606,7 @@ class xythonsrv:
                 f = open(fstate, 'r')
                 data = f.read()
                 f.close()
-                #print(data)
+                # print(data)
                 tokens = data.split(" ")
                 if len(tokens) != 3:
                     self.error(f"ERROR: fail to load {expdir}/{cname}: invalid data")
@@ -1618,7 +1614,7 @@ class xythonsrv:
                 color = tokens[0]
                 ts_start = int(tokens[1])
                 ts_expire = int(tokens[2])
-                #self.debug(f"DEBUG: expire of {hostname}.{cname} is {expire} {xytime(expire)}")
+                # self.debug(f"DEBUG: expire of {hostname}.{cname} is {expire} {xytime(expire)}")
                 self.column_set(hostname, cname, color, ts_start, None, ts_expire)
             except:
                 self.error(f"ERROR: fail to load {expdir}/{cname}")
@@ -1671,7 +1667,7 @@ class xythonsrv:
                 return False
             column = sline[0]
             if column not in hostcols:
-                #self.debug(f"DEBUG: ignore dropped {name} {column}")
+                # self.debug(f"DEBUG: ignore dropped {name} {column}")
                 continue
             if column == 'info':
                 continue
@@ -1694,7 +1690,7 @@ class xythonsrv:
                 self.debug(f"DEBUG: BLUE CASE {sline}")
                 bbuf = self.get_histlogs(H.name, column, tsb)
                 edate = bbuf['first'].replace('blue Disabled until ', '').rstrip()
-                #self.debug(f"DEBUG: disable date is {edate}X")
+                # self.debug(f"DEBUG: disable date is {edate}X")
                 ets = xyts(edate, None)
                 expire = ets - int(time.time())
             if self.readonly:
@@ -1731,9 +1727,9 @@ class xythonsrv:
                 tse = int(sline[2])
                 useit = False
                 if tss >= ts_start and tss <= ts_end:
-                        useit = True
+                    useit = True
                 if tse >= ts_start and tse <= ts_end:
-                        useit = True
+                    useit = True
                 if not useit:
                     continue
                 byhost[name] += 1
@@ -1758,7 +1754,7 @@ class xythonsrv:
         hother = 0
         for h in byhost:
             hother += byhost[h]
-        #print(f"byhost sorted = {byhosts} \nremains = {byhost}\nother={hother} total={htotal}")
+        # print(f"byhost sorted = {byhosts} \nremains = {byhost}\nother={hother} total={htotal}")
         # sort values
         bysvcs = []
         stotal = 0
@@ -1776,7 +1772,7 @@ class xythonsrv:
         sother = 0
         for h in byservice:
             sother += byservice[h]
-        #print(f"byhost sorted = {bysvcs} \nremains = {byservice} \nother={sother} total={stotal}")
+        # print(f"byhost sorted = {bysvcs} \nremains = {byservice} \nother={sother} total={stotal}")
         html += '<center><p><font size=+1></font></p><table summary="Top changing hosts and services" border=1><tr><td width=40% align=center valign=top>'
         html += '<table summary="Top 10 hosts" border=0><tr><th colspan=3>Top 10 hosts</th></tr>'
         html += '<tr><th align=left>Host</th><th align=left colspan=2>State changes</th></tr>'
@@ -1808,16 +1804,16 @@ class xythonsrv:
         self.sqc.execute(req)
 
     def acks_dump(self):
-        req = f"SELECT hostname, column, ackend, ackcause FROM columns"
-        res = self.sqc.execute(req)
+        req = "SELECT hostname, column, ackend, ackcause FROM columns"
+        self.sqc.execute(req)
         results = self.sqc.fetchall()
-        #for col in results:
+        print(results)
 
     def check_purples(self):
         now = int(time.time())
         ts_start = now
         req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple" AND color != "clear"'
-        res = self.sqc.execute(req)
+        self.sqc.execute(req)
         results = self.sqc.fetchall()
         for col in results:
             hostname = col[0]
@@ -1842,7 +1838,7 @@ class xythonsrv:
                 self.debug("DEBUG: gentest %s %s" % (H.name, T.type))
                 # self.debug(T.urls)
                 tnext = now + randint(1, 10)
-                res = self.sqc.execute(f'INSERT OR REPLACE INTO tests(hostname, column, next) VALUES ("{H.name}", "{T.type}", {tnext})')
+                self.sqc.execute(f'INSERT OR REPLACE INTO tests(hostname, column, next) VALUES ("{H.name}", "{T.type}", {tnext})')
 
     def dump_tests(self):
         for T in self.tests:
@@ -1869,7 +1865,6 @@ class xythonsrv:
 
     def doping(self, T):
         H = self.find_host(T.hostname)
-        hostip = H.hostip
         name = f"{T.hostname}_conn"
         self.debugdev('celery', f"DEBUG: doping for {name}")
         if name in self.celerytasks:
@@ -1887,7 +1882,7 @@ class xythonsrv:
             return None
         P = self.protocols[T.type]
         ctask = do_generic_proto.delay(T.hostname, H.gethost(), T.type, P.port, T.urls,
-            P.send, P.expect, P.options)
+                                       P.send, P.expect, P.options)
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 
@@ -1898,7 +1893,7 @@ class xythonsrv:
             return
         ts_start = time.time()
         now = int(time.time())
-        res = self.sqc.execute(f'SELECT * FROM tests WHERE next < {now}')
+        self.sqc.execute(f'SELECT * FROM tests WHERE next < {now}')
         results = self.sqc.fetchall()
         self.log("tests", f"DEBUG: DO TESTS {len(results)}")
         if len(results) == 0:
@@ -1923,7 +1918,7 @@ class xythonsrv:
                     if T.type in self.protocols:
                         self.do_generic_proto(H, T)
                         continue
-        res = self.sqc.execute(f'UPDATE tests SET next = {now} + {self.NETTEST_INTERVAL} WHERE next < {now}')
+        self.sqc.execute(f'UPDATE tests SET next = {now} + {self.NETTEST_INTERVAL} WHERE next < {now}')
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
@@ -1976,7 +1971,7 @@ class xythonsrv:
                 self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
                 self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")
                 if "certs" in ret:
-                    #self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
+                    # self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
                     for url in ret["certs"]:
                         H = self.find_host(ret["hostname"])
                         H.certs[url] = ret["certs"][url]
@@ -1987,7 +1982,7 @@ class xythonsrv:
                 if name not in self.celerytasks:
                     self.error(f"ERROR: BUG {name} not found")
                 else:
-                    del(self.celerytasks[name])
+                    del (self.celerytasks[name])
                 if testtype == 'conn' and "rtt_avg" in ret:
                     self.do_rrd(hostname, column, "rtt", 'sec', ret["rtt_avg"], ['DS:sec:GAUGE:600:0:U'])
         ts_end = time.time()
@@ -2002,7 +1997,7 @@ class xythonsrv:
             return
         cdata = f"{xytime(time.time())} - sslcert\n"
         for url in H.certs:
-            #self.debug(f"DEBUG: sslcert handle {url}")
+            # self.debug(f"DEBUG: sslcert handle {url}")
             cdata += f"<fieldset><legend>{url}</legend>\n"
             cdata += f"{H.certs[url]['txt']}\n"
             expire = H.certs[url]["expire"]
@@ -2014,7 +2009,7 @@ class xythonsrv:
                 color = setcolor('yellow', color)
             else:
                 cdata += f"&green expire in {expire} days (WARN={H.sslwarn} CRIT={H.sslalarm})\n"
-            cdata += f"</fieldset>\n"
+            cdata += "</fieldset>\n"
         self.column_update(hostname, "sslcert", color, int(time.time()), cdata, self.NETTEST_INTERVAL + 120, "sslcert")
 
     # TODO hardcoded hostname
@@ -2024,27 +2019,27 @@ class xythonsrv:
         buf = f"{xytime(now)} - xythond\n"
         for stat in self.stats:
             color = '&clear'
-            moy = round(self.stats[stat]["cumul"] / self.stats[stat]["count"],4)
-            smin = round(self.stats[stat]["min"],4)
-            smax = round(self.stats[stat]["max"],4)
-            cur = round(self.stats[stat]["last"],4)
+            moy = round(self.stats[stat]["cumul"] / self.stats[stat]["count"], 4)
+            smin = round(self.stats[stat]["min"], 4)
+            smax = round(self.stats[stat]["max"], 4)
+            cur = round(self.stats[stat]["last"], 4)
             if stat == 'tests-lag' and cur > 0:
                 color = '&yellow'
             buf += f'{color} {stat:13} CURRENT={cur:10} COUNT={self.stats[stat]["count"]:10} MOY={moy:8} MIN={smin:8} MAX={smax:8}\n'
         uptime = now - self.uptime_start
-        uptimem = int(uptime/60)
+        uptimem = int(uptime / 60)
         if uptimem < 1:
             uptimem = 1
         buf += f"Up since {xytime(self.uptime_start)} ({xydhm(self.uptime_start, now)})\n"
         if "COLUPDATE" in self.stats:
             if "count" in self.stats["COLUPDATE"]:
                 buf += f'UPDATE/m: {int(self.stats["COLUPDATE"]["count"]/uptimem)}\n'
-        #for worker in self.celery_workers:
+        # for worker in self.celery_workers:
         #    print(worker)
-        res = self.sqc.execute(f'SELECT count(DISTINCT hostname) FROM columns')
+        self.sqc.execute('SELECT count(DISTINCT hostname) FROM columns')
         results = self.sqc.fetchall()
         buf += f"Hosts: {results[0][0]}\n"
-        res = self.sqc.execute('SELECT count(next) FROM tests')
+        self.sqc.execute('SELECT count(next) FROM tests')
         results = self.sqc.fetchall()
         buf += f"Active tests: {results[0][0]}\n"
         buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
@@ -2058,7 +2053,7 @@ class xythonsrv:
         self.column_update(socket.gethostname(), "xythond", ccolor, now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
     def scheduler(self):
-        #self.debug("====================")
+        # self.debug("====================")
         now = time.time()
         if now > self.ts_tests + 5:
             self.do_tests()
@@ -2100,7 +2095,7 @@ class xythonsrv:
     def read_analysis(self, hostname):
         H = self.find_host(hostname)
         mtime = os.path.getmtime(f"{self.etcdir}/analysis.cfg")
-        #self.debug(f"DEBUG: read_analysis: compare mtime={mtime} and {H.time_read_analysis}")
+        # self.debug(f"DEBUG: read_analysis: compare mtime={mtime} and {H.time_read_analysis}")
         if H.time_read_analysis < mtime:
             H.time_read_analysis = mtime
         else:
@@ -2225,7 +2220,7 @@ class xythonsrv:
                     rxd = H.rules["INODE"]
                     rxd.add(line[6:])
             elif line[0:6] == 'SENSOR':
-                #self.debug(f"DEBUG: {line}")
+                # self.debug(f"DEBUG: {line}")
                 if currhost == 'DEFAULT':
                     # TODO
                     self.rules["SENSOR"].add(line[7:])
@@ -2351,7 +2346,6 @@ class xythonsrv:
                     continue
                 section = line.split('[')[1]
                 section = section.split(']')[0]
-                #print(f"SECTION is {section}")
                 self.graphscfg[section] = {}
                 self.graphscfg[section]["info"] = []
                 continue
@@ -2383,7 +2377,7 @@ class xythonsrv:
                 rrd_sensors = os.listdir(f"{basedir}/sensor/{adapter}/")
                 for rrd_sensor in rrd_sensors:
                     allrrds.append(f"sensor/{adapter}/{rrd_sensor}")
-        #print(f"DEBUG: allrrds={allrrds}")
+        # print(f"DEBUG: allrrds={allrrds}")
         now = time.time()
         for rrd in allrrds:
             mtime = os.path.getmtime(f"{basedir}/{rrd}")
@@ -2428,14 +2422,14 @@ class xythonsrv:
             else:
                 height = self.RRDHEIGHT
             base = [pngpath,
-                f'--width={width}', f'--height={height}',
-                '--vertical-label="% Full"',
-                '--start=end-96h'
-                ]
+                    f'--width={width}', f'--height={height}',
+                    '--vertical-label="% Full"',
+                    '--start=end-96h'
+                    ]
             if 'YAXIS' in self.graphscfg[graph]:
                 base.append(f'--vertical-label={self.graphscfg[graph]["YAXIS"]}')
             else:
-                base.append(f'--vertical-label="unset"')
+                base.append('--vertical-label="unset"')
             if 'TITLE' in self.graphscfg[graph]:
                 base.append(f'--title={self.graphscfg[graph]["TITLE"]} on {hostname}')
             else:
@@ -2453,15 +2447,15 @@ class xythonsrv:
                 template = self.graphscfg[graph]["info"]
                 if graph == 'sensor':
                     adapter = os.path.dirname(rrd).split('/')[-1]
-                    #print(f"DEBUG: sensor_rrd: adapter is {adapter}")
+                    # print(f"DEBUG: sensor_rrd: adapter is {adapter}")
                     # remove adapter name
                     label = re.sub('/.*/', '', label)
                 if graph == 'sensor' and sensor_adapter != adapter:
-                    #print(f"DEBUG: sensor_rrd: add comment {adapter}")
+                    # print(f"DEBUG: sensor_rrd: add comment {adapter}")
                     sensor_adapter = adapter
                     base.append(f'COMMENT:{adapter}\\n')
                 label = label.ljust(20)
-                #print(f"DEBUG: label is {label}")
+                # print(f"DEBUG: label is {label}")
                 for line in template:
                     for dsname in self.get_ds_name(info):
                         line = line.replace('@RRDDS@', dsname)
@@ -2477,13 +2471,13 @@ class xythonsrv:
             rrdup = xytime(time.time()).replace(':', '\\:')
             base.append(f'COMMENT:Updated\\: {rrdup}')
             try:
-                #ret = rrdtool.graph(base)
+                # ret = rrdtool.graph(base)
                 # TODO check this ret
                 rrdbuf += f"&green generate graph from {rrd} with template={graph}\n"
             except rrdtool.OperationalError as e:
                 rrdbuf += f"&red Failed to generate RRD from {rrd} with template={graph} {e}\n"
                 color = 'red'
-            #os.chmod(pngpath, 0o644)
+            # os.chmod(pngpath, 0o644)
         # TODO try to handle sensor in a generic way
         if "sensor" in allrrds:
             allrrds.remove("sensor")
@@ -2497,7 +2491,7 @@ class xythonsrv:
         if not has_rrdtool:
             return True
         ts_start = time.time()
-        #self.debug("GEN RRDS")
+        # self.debug("GEN RRDS")
         hosts = os.listdir(f"{self.xt_rrd}")
         for hostname in hosts:
             self.gen_rrd(hostname)
@@ -2519,10 +2513,8 @@ class xythonsrv:
                     rrdlist.append(rrd)
         else:
             rrdpath = f'{basedir}/{service}.rrd'
-            #print(rrdpath)
             if os.path.exists(rrdpath):
                 rrdlist.append(f"{service}.rrd")
-                #print("exists")
         if service == 'sensor':
             allrrds = os.listdir(basedir)
             if 'sensor' in allrrds:
@@ -2546,16 +2538,16 @@ class xythonsrv:
             height = self.RRDHEIGHT
         base = ['-',
                 f'--width={width}', f'--height={height}',
-            '--vertical-label="% Full"',
-            '--start=end-96h'
-        ]
+                '--vertical-label="% Full"',
+                '--start=end-96h'
+                ]
         if 'RRDGRAPHOPTS' in self.xymonserver_cfg:
             for rrdgopt in self.xymonserver_cfg['RRDGRAPHOPTS'].split(' '):
                 base.append(rrdgopt)
         if 'YAXIS' in self.graphscfg[service]:
             base.append(f'--vertical-label={self.graphscfg[service]["YAXIS"]}')
         else:
-            base.append(f'--vertical-label="unset"')
+            base.append('--vertical-label="unset"')
         if 'TITLE' in self.graphscfg[service]:
             base.append(f'--title={self.graphscfg[service]["TITLE"]} on {hostname}')
         else:
@@ -2570,18 +2562,18 @@ class xythonsrv:
             template = self.graphscfg[service]["info"]
             if service == 'sensor':
                 adapter = os.path.dirname(rrd).split('/')[-1]
-            #print(f"DEBUG: sensor_rrd: adapter is {adapter}")
+            # print(f"DEBUG: sensor_rrd: adapter is {adapter}")
             # remove adapter name
                 label = re.sub('/.*/', '', label)
+            # print(f"DEBUG: sensor_rrd: add comment {adapter}")
             if service == 'sensor' and sensor_adapter != adapter:
-            #print(f"DEBUG: sensor_rrd: add comment {adapter}")
                 sensor_adapter = adapter
                 base.append(f'COMMENT:{adapter}\\n')
             label = label.ljust(20)
-            #print(f"DEBUG: label is {label}<br>")
+            # print(f"DEBUG: label is {label}<br>")
             for line in template:
                 for dsname in self.get_ds_name(info):
-                    #print(f"DEBUG: dsname={dsname}<br>")
+                    # print(f"DEBUG: dsname={dsname}<br>")
                     line = line.replace('@RRDDS@', dsname)
                     line = line.replace('@COLOR@', self.rrd_color(i))
                     line = line.replace('@RRDIDX@', f"{i}")
@@ -2592,11 +2584,11 @@ class xythonsrv:
                 line = line.replace('@RRDPARAM@', f"{label}")
                 base.append(line)
             i += 1
-            #rrdup = xytime(time.time()).replace(':', '\\:')
-            #base.append(f'COMMENT:Updated\\: {rrdup}')
-        #print("==================<br>")
-        #print(base)
-        #print('<br>')
+            # rrdup = xytime(time.time()).replace(':', '\\:')
+            # base.append(f'COMMENT:Updated\\: {rrdup}')
+        # print("==================<br>")
+        # print(base)
+        # print('<br>')
         try:
             ret = rrdtool.graphv(base)
         # TODO check this ret
@@ -2613,9 +2605,9 @@ class xythonsrv:
             dsname = sname.replace(" ", '')
         return dsname[:19]
 
-    def get_ds_name(self, l):
+    def get_ds_name(self, info):
         r = []
-        for k in l.keys():
+        for k in info.keys():
             if len(k) > 4:
                 if k[-4:] == 'type':
                     ds = k.split('[')[1].split(']')[0]
@@ -2623,7 +2615,7 @@ class xythonsrv:
         return r
 
     def do_rrd(self, hostname, rrdname, obj, dsname, value, dsspec):
-        #self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
+        # self.debug(f"DEBUG: do_rrd for {hostname} {rrdname} {obj} {dsname} {value}")
         if not has_rrdtool:
             return False
         fname = self.rrd_pathname(rrdname, obj)
@@ -2638,22 +2630,21 @@ class xythonsrv:
                 self.debugdev("rrd", f"DEBUG: got RRA from {rrdname}")
                 rras = self.rrddef[rrdname]["info"]
             elif 'default' in self.rrddef:
-                self.debugdev("rrd", f"DEBUG: got RRA from default")
+                self.debugdev("rrd", "DEBUG: got RRA from default")
                 rras = self.rrddef['default']["info"]
             else:
-                self.error(f"DEBUG: RRD create this should not happen")
+                self.error("DEBUG: RRD create this should not happen")
                 self.debugdev("rrd", f"DEBUG: {self.rrddef}")
                 # this should not happen
                 rras = "RRA:AVERAGE:0.5:1:1200"
             self.debug(f"Create RRD with {rras}")
-            rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
-                rras, dsspec);
+            rrdtool.create(rrdfpath, "--start", "now", "--step", "60", rras, dsspec)
         self.debugdev("rrd", f"DEBUG: update RRD {rrdpath} for {dsname} value={value}")
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
         return True
 
     def do_sensor_rrd(self, hostname, adapter, sname, value):
-        #self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
+        # self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
         if not has_rrdtool:
             return
         fname = self.rrd_pathname('sensor', sname)
@@ -2668,26 +2659,25 @@ class xythonsrv:
             os.mkdir(rrd_dpath)
         rrdfpath = f"{rrd_dpath}/{fname}.rrd"
         dsname = self.rrd_getdsname(sname)
-        #self.debug(f"DEBUG: create {rrdfpath} with dsname={dsname}")
+        # self.debug(f"DEBUG: create {rrdfpath} with dsname={dsname}")
         if not os.path.exists(rrdfpath):
             if "sensor" in self.rrddef:
-                self.debugdev("rrd", f"DEBUG: got RRA from {rrdname}")
-                rras = self.rrddef[rrdname]["info"]
+                self.debugdev("rrd", "DEBUG: got RRA from sensor")
+                rras = self.rrddef["sensor"]["info"]
             elif 'default' in self.rrddef:
-                self.debugdev("rrd", f"DEBUG: got RRA from default")
+                self.debugdev("rrd", "DEBUG: got RRA from default")
                 rras = self.rrddef['default']["info"]
             else:
-                self.error(f"DEBUG: RRD create this should not happen")
+                self.error("DEBUG: RRD create this should not happen")
                 self.debugdev("rrd", f"DEBUG: {self.rrddef}")
                 # this should not happen
                 rras = "RRA:AVERAGE:0.5:1:1200"
             rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
-                rras,
-                f"DS:{dsname}:GAUGE:600:-280:5000")
+                           rras, f"DS:{dsname}:GAUGE:600:-280:5000")
         else:
             info = rrdtool.info(rrdfpath)
             allds = self.get_ds_name(info)
-            #print(f"DEBUG: already exists with {allds} we have {dsname}")
+            # print(f"DEBUG: already exists with {allds} we have {dsname}")
             if dsname not in allds:
                 rrdtool.tune(rrdfpath, f"DS:{dsname}:GAUGE:600:-280:5000")
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
@@ -2702,7 +2692,7 @@ class xythonsrv:
             self.error(f"ERROR: parse_free: host is None for {hostname}")
             return 2
         now = int(time.time())
-        #self.debug(f"DEBUG: parse_free for {hostname}")
+        # self.debug(f"DEBUG: parse_free for {hostname}")
         # TODO handle other OS case
         color = 'green'
         sbuf = f"{xytime(now)} - Memory OK\n"
@@ -2819,7 +2809,7 @@ class xythonsrv:
         texts = []
         for port in H.rules["PORT"]:
             text = port.text
-            #self.debug(f"DEBUG: handle port {text} {texts}")
+            # self.debug(f"DEBUG: handle port {text} {texts}")
             if text is not None:
                 if text in texts:
                     sbuf += f"Ignore {text}\n"
@@ -2830,7 +2820,7 @@ class xythonsrv:
             color = setcolor(ret["color"], color)
         for port in self.rules["PORT"]:
             text = port.text
-            #self.debug(f"DEBUG: handle port {text} {texts}")
+            # self.debug(f"DEBUG: handle port {text} {texts}")
             if text is not None:
                 if text in texts:
                     sbuf += f"Ignore {text}\n"
@@ -2861,9 +2851,9 @@ class xythonsrv:
                 continue
             if line[0] == ' ':
                 continue
-            #self.debug(f"DEBUG: check {line}XX")
+            # self.debug(f"DEBUG: check {line}XX")
             if len(line) > 0 and ':' not in line:
-                #self.debug(f"DEBUG: {hostname} adapter={line}")
+                # self.debug(f"DEBUG: {hostname} adapter={line}")
                 adapter = line
                 sbuf += '<br>\n' + line + '\n'
             else:
@@ -2873,7 +2863,7 @@ class xythonsrv:
                 else:
                     ret = None
                 if ret is None:
-                    #self.debug("DEBUG: use global rules")
+                    # self.debug("DEBUG: use global rules")
                     ret = self.rules["SENSOR"].check(adapter, line)
                 if ret is not None:
                     sbuf += ret["txt"] + '\n'
@@ -2933,7 +2923,7 @@ class xythonsrv:
         return ret
 
     def parse_status(self, msg):
-        #self.debug(f"DEBUG: parse_status from {msg['addr']}")
+        # self.debug(f"DEBUG: parse_status from {msg['addr']}")
         hdata = msg["buf"]
         column = None
         # only first line is important
@@ -2946,7 +2936,7 @@ class xythonsrv:
         if len(hc) < 2:
             return False
         column = hc[-1]
-        del(hc[-1])
+        del (hc[-1])
         hostname = ".".join(hc)
         if color not in COLORS:
             self.error(f"ERROR: invalid color {color}")
@@ -2956,7 +2946,6 @@ class xythonsrv:
         if len(wstatus) > 0:
             # either group and/or +x
             if wstatus[0] == '+':
-                delay = wstatus[1:]
                 expire = xydelay(wstatus)
         self.debug("DEBUG: HOST.COL=%s %s %s color=%s expire=%d" % (sline[1], hostname, column, color, expire))
 
@@ -2991,7 +2980,7 @@ class xythonsrv:
             start = float(tokens.pop(0))
             expire = float(tokens.pop(0))
             if expire < now:
-                self.debug(f"DEBUG: expired ack")
+                self.debug("DEBUG: expired ack")
                 # TODO ignore it and delete it
                 continue
             why = ' '.join(tokens)
@@ -3014,8 +3003,8 @@ class xythonsrv:
         data = f.readlines()
         f.close()
         for line in data:
-            #print("======================================")
-            #print(line)
+            # print("======================================")
+            # print(line)
             tokens = line.split('|')
             if tokens[0] != '@@XYMONDCHK-V1':
                 print(f"Invalid header {tokens[0]}")
@@ -3038,7 +3027,7 @@ class xythonsrv:
             print(f"DEBUG: acks: for {hostname}.{column} by={sender} reason={ackmsg} end={ackend}")
             now = time.time()
             print(ackend - now)
-            print((ackend - now)/ 60)
+            print((ackend - now) / 60)
             print((ackend - now) / (3600 * 24))
 
 # format acknowledge hostname column duration cause
@@ -3151,7 +3140,7 @@ class xythonsrv:
             line = line.rstrip()
             if len(line) == 0:
                 continue
-            #self.debug(f"DEBUG: section={section} line={line}")
+            # self.debug(f"DEBUG: section={section} line={line}")
             if line[0] == '[' and line[len(line) - 1] == ']':
                 if section is not None:
                     handled = False
@@ -3220,7 +3209,7 @@ class xythonsrv:
                         if H is not None:
                             H.osversion = buf
                         self.gen_column_info(hostname)
-                    #if not handled:
+                    # if not handled:
                     #    self.debug(f"DEBUG: section {section} not handled")
                 section = line
                 buf = ""
@@ -3281,7 +3270,7 @@ class xythonsrv:
         sbuf = buf.split(" ")
         cmd = sbuf[0]
         ret["cmd"] = cmd
-        #print(f"DEBUG: cmd={cmd}")
+        # print(f"DEBUG: cmd={cmd}")
         if cmd[0:4] == 'PING':
             self.debug("PING PONG")
             ret["send"] = "PONG\n"
@@ -3295,9 +3284,9 @@ class xythonsrv:
             data = self.html_page(page)
             ret["send"] = data
             ret["done"] = 1
-            #try:
+            # try:
             #    C.send(data.encode("UTF8"))
-            #except BrokenPipeError as error:
+            # except BrokenPipeError as error:
             #    self.error("Client get away")
             #    pass
         elif cmd == 'GETSTATUS':
@@ -3338,7 +3327,7 @@ class xythonsrv:
                 ret["done"] = 1
                 return ret
             r = self.gen_top_changes(sbuf[1], sbuf[2].rstrip())
-            if type(r) == str:
+            if type(r) is str:
                 ret["send"] = r
             else:
                 ret["bsend"] = r
@@ -3350,7 +3339,7 @@ class xythonsrv:
                 ret["done"] = 1
                 return ret
             r = self.gen_cgi_rrd(sbuf[1], sbuf[2], sbuf[3])
-            if type(r) == str:
+            if type(r) is str:
                 ret["send"] = r
             else:
                 ret["bsend"] = r
@@ -3390,13 +3379,13 @@ class xythonsrv:
     def unet_loop(self):
         try:
             c, addr = self.us.accept()
-            #print(f"UNIX {addr}")
+            # print(f"UNIX {addr}")
             c.setblocking(0)
             C = {}
             C["s"] = c
             self.uclients.append(C)
         except socket.error:
-            #self.debug("DEBUG: nobody")
+            # self.debug("DEBUG: nobody")
             pass
         for C in self.uclients:
             try:
@@ -3411,7 +3400,7 @@ class xythonsrv:
                 if rbuflen >= self.MAX_MSG_SIZE:
                     self.error(f"ERROR: received oversized message len={rbuflen}")
             except socket.error:
-                #self.debug("DEBUG: nothing to recv")
+                # self.debug("DEBUG: nothing to recv")
                 continue
             buf = rbuf.decode("UTF8")
             C["buf"] = buf
@@ -3420,14 +3409,14 @@ class xythonsrv:
             sbuf = buf.split(" ")
             cmd = sbuf[0]
             if "send" in r:
-                #self.debug(f"DEBUG: answer from {cmd}")
+                # self.debug(f"DEBUG: answer from {cmd}")
                 smsg = r["send"]
                 try:
                     C["s"].send(smsg.encode("UTF8"))
                 except BrokenPipeError:
                     pass
             if "bsend" in r:
-                #self.debug(f"DEBUG: answer from {cmd}")
+                # self.debug(f"DEBUG: answer from {cmd}")
                 smsg = r["bsend"]
                 try:
                     C["s"].send(smsg)
@@ -3489,7 +3478,7 @@ class xythonsrv:
                     if "send" in r:
                         client.send(r["send"].encode("UTF8"))
                     client.close()
-                    #self.parse_hostdata(C)
+                    # self.parse_hostdata(C)
                     self.clients.remove(C)
                 # else:
                 #    self.debug("DEBUG: nothing to recv")
@@ -3503,7 +3492,7 @@ class xythonsrv:
                 r = self.handle_net_message(C, None, True)
                 if "send" in r:
                     self.debug(f'DEBUG client {C["addr"]} disconnected, cannot answer for cmd={r["cmd"]}')
-                #self.parse_hostdata(C)
+                # self.parse_hostdata(C)
                 self.clients.remove(C)
             else:
                 # self.debug(f"DEBUG: got data len={len(buf)}")
@@ -3512,11 +3501,11 @@ class xythonsrv:
                     r = self.handle_net_message(C, dbuf, False)
                     if "send" in r:
                         client.send(r["send"].encode("UTF8"))
-                    #data = self.send_client_local(dbuf)
-                    #if data:
+                    # data = self.send_client_local(dbuf)
+                    # if data:
                     #    client.send("\n".join(data).encode("UTF8"))
                     if "done" in r:
-                        #self.parse_hostdata(C)
+                        # self.parse_hostdata(C)
                         self.clients.remove(C)
                         continue
                 C["buf"] += dbuf
@@ -3643,7 +3632,7 @@ class xythonsrv:
         if ret == self.RET_NEW:
             self.hosts_check_tags()
         for H in self.xy_hosts:
-            #self.debug(f"DEBUG: init FOUND: {H.name}")
+            # self.debug(f"DEBUG: init FOUND: {H.name}")
             if not self.read_hist(H.name):
                 self.error(f"ERROR: failed to read hist for {H.name}")
             self.read_analysis(H.name)
