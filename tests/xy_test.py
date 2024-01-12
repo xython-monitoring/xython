@@ -85,6 +85,7 @@ def test_git():
     assert gif("red", now - 300) == 'red.gif'
     assert gif("red", now, False) == 'red-recent.gif'
     assert gif("red", now, True) == 'red-ack.gif'
+    assert gif("-", now) == 'unknown-recent.gif'
 
 
 def test_color():

@@ -157,6 +157,8 @@ def setcolor(colortry, oldcolor):
 
 # return gif from color
 def gif(color, ts, isack=False):
+    if color == '-':
+        color = 'unknown'
     now = time.time()
     if isack:
         return f"{color}-ack.gif"
