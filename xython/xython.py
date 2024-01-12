@@ -1150,7 +1150,7 @@ class xythonsrv:
                 self.debug(f"\tDEBUG: unknow tag={tag}xxx")
                 H.tags_unknown.append(tag)
             if need_conn:
-                H.add_test("conn", tag, None, "conn", True, False)
+                H.add_test("conn", "conn", None, "conn", True, False)
             self.gen_column_info(H.name)
 
 # read hosts.cfg
@@ -2313,7 +2313,7 @@ class xythonsrv:
             self.debugdev("rrddef", f"DEBUG: load_graphs: {section} {line}")
             self.rrddef[section]["info"].append(line)
         if 'default' not in self.rrddef:
-            self.error("ERROR: didnt found a default section in {prrddef}")
+            self.error(f"ERROR: didnt found a default section in {prrddef}")
             return self.RET_ERR
         return self.RET_OK
 
