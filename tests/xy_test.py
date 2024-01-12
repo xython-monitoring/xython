@@ -48,6 +48,7 @@ try:
 except ImportError:
     has_rrdtool = False
 
+
 def setup_testdir(X, name):
     X.xt_data = f'./tests/data-{name}-' + str(random.randint(0, 32000))
     X.xt_logdir = f'{X.xt_data}/logs/'
@@ -55,6 +56,7 @@ def setup_testdir(X, name):
         os.mkdir(X.xt_data)
     if not os.path.exists(X.xt_logdir):
         os.mkdir(X.xt_logdir)
+
 
 def test_xytime():
     assert xytime(1678871776) == 'Wed Mar 15 10:16:16 2023'
@@ -149,6 +151,7 @@ def test_read_xymonserver():
 
     shutil.rmtree(X.xt_data)
 
+
 def test_xython_getvar():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
@@ -160,6 +163,7 @@ def test_xython_getvar():
     assert X.xython_getvar("XYTHON_TLS_KEY") == "./etc/xython/xymon.montjoie.local.key"
 
     shutil.rmtree(X.xt_data)
+
 
 def test_xymon_getvar():
     X = xythonsrv()
@@ -178,19 +182,20 @@ def test_xymon_getvar():
 
     shutil.rmtree(X.xt_data)
 
+
 def test_port_rule():
     rp = xy_rule_port()
     rp.init_from('LOCAL=:22 state=LISTEN TEXT=SSH')
     assert rp.local == ':22'
     assert rp.state == 'LISTEN'
-    assert rp.rstate == None
+    assert rp.rstate is None
     assert rp.text == 'SSH'
 
     rp = xy_rule_port()
     rp.init_from('LOCAL=%:22 state=LISTEN TEXT=SSH')
     assert rp.local == ':22'
     assert rp.state == 'LISTEN'
-    assert rp.rstate == None
+    assert rp.rstate is None
     assert rp.text == 'SSH'
 
     rp = xy_rule_port()
@@ -216,6 +221,7 @@ def test_port_rule_smtps():
     assert rp.rstate is None
     assert rp.text == 'smtps'
 
+
 def test_ss_netstat():
     rp = xy_rule_port()
     rp.init_from('LOCAL=%:2049 state=LISTEN TEXT=NFS')
@@ -237,6 +243,7 @@ def test_ss_netstat():
     assert rp._count == 1
     rp631.check(data)
     assert rp631._count == 2
+
 
 def test_port_check():
     f = open("./tests/ports/1678699830")
@@ -347,9 +354,9 @@ def test_proc_check():
 
 
 def test_proc_disk():
-    f = open("./tests/disk/test0")
-    data = f.readlines()
-    f.close()
+    # f = open("./tests/disk/test0")
+    # data = f.readlines()
+    # f.close()
 
     xrd = xy_rule_disks()
     xrd.add('/ 10 30')
@@ -376,8 +383,8 @@ def test_proc_disk():
 
     xrd = xy_rule_disks()
     xrd.add('%.* 90 95')
-    #assert xrd.rules['/'].warn == 98
-    #assert xrd.rules['/'].panic == 99
+    # assert xrd.rules['/'].warn == 98
+    # assert xrd.rules['/'].panic == 99
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  95% /")
     assert ret["color"] == "red"
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  90% /")
@@ -418,10 +425,10 @@ def test_xydelay():
     assert xydelay('1d') == 3600 * 24
     assert xydelay('1w') == 3600 * 24 * 7
     assert xydelay('-1') == -1
-    #with pytest.raises(SystemExit):
-    assert xydelay('60x') == None
-    assert xydelay('test') == None
-    assert xydelay('tesh') == None
+    # with pytest.raises(SystemExit):
+    assert xydelay('60x') is None
+    assert xydelay('test') is None
+    assert xydelay('tesh') is None
 
 
 DAY_M = 60 * 24
@@ -441,8 +448,8 @@ def test_rule_cpu():
     assert xrc.xuptime == 162 * DAY_M + 14
     xrc.cpucheck(" 14:39:37 up 162 mins, 34 users,  load average: 4.81, 4.65, 4.63")
     assert xrc.xuptime == 162
-    #xrc.cpucheck(" 4:45pm up 554.61 hours, 34 users,  load average: 4.81, 4.65, 4.63")
-    #assert xrc.xuptime == 162
+    # xrc.cpucheck(" 4:45pm up 554.61 hours, 34 users,  load average: 4.81, 4.65, 4.63")
+    # assert xrc.xuptime == 162
     xrc.cpucheck(" 21:39:37 up 162 days, 22min, 34 users,  load average: 4.81, 4.65, 4.63")
     assert xrc.xuptime == 162 * DAY_M + 22
     xrc.cpucheck(" 7:39AM up 162 days, 22min, 34 users,  load average: 4.81, 4.65, 4.63")
@@ -479,6 +486,7 @@ def test_setcolor():
     assert setcolor('yellow', 'clear') == 'yellow'
     assert setcolor('red', 'clear') == 'red'
 
+
 def test_xydhm():
     assert xydhm(0, 36) == '0m'
     assert xydhm(0, 3600) == '1h'
@@ -488,30 +496,32 @@ def test_xydhm():
     assert xydhm(0, 60 * 60 * 24 + 10 * 60) == '1d 10m'
     assert xydhm(0, 60 * 60 * 24 + 10 * 60 * 60) == '1d 10h'
 
+
 def test_replace():
     X = xythonsrv()
     X.etcdir = './tests/etc/xymon/'
     X.debug = True
     X.debugs = ['vars']
-    #buf = X.xymon_replace("$SHELL")
-    #assert buf == '/bin/sh'
-    #buf = X.xymon_replace("$DONOTEXIST")
-    #assert buf == ''
+    # buf = X.xymon_replace("$SHELL")
+    # assert buf == '/bin/sh'
+    # buf = X.xymon_replace("$DONOTEXIST")
+    # assert buf == ''
+
 
 def test_lmsensors():
-    f = open("./tests/sensors/sensors1")
-    data = f.read()
-    f.close()
+    # f = open("./tests/sensors/sensors1")
+    # data = f.read()
+    # f.close()
     xs = xy_rule_sensors()
     xs.add("%.* %.*  20 30")
-    #assert xs.warn == 30
-    #assert xs.panic == 30
+    # assert xs.warn == 30
+    # assert xs.panic == 30
     print(xs.rules)
-    assert xs.is_sensor("") == None
-    assert xs.is_sensor("Adapter: fake") == None
-    assert xs.is_sensor("Adapter: 40 RPM") == None
-    assert xs.is_sensor("in0 30") == None
-    assert xs.is_sensor("in0: 30") == None
+    assert xs.is_sensor("") is None
+    assert xs.is_sensor("Adapter: fake") is None
+    assert xs.is_sensor("Adapter: 40 RPM") is None
+    assert xs.is_sensor("in0 30") is None
+    assert xs.is_sensor("in0: 30") is None
     assert xs.is_sensor("in0: 30 V") is not None
     assert xs.is_sensor("in0: 30 mV") is not None
     assert xs.is_sensor("in0: 30 RPM") is not None
@@ -527,7 +537,6 @@ def test_lmsensors():
     assert ret[0] == 'fan7'
     assert ret[1] == '4500'
     assert ret[2] == 'RPM'
-
 
     ret = xs.is_sensor("CPU temperature: +30°C")
     assert ret is not None
@@ -573,6 +582,7 @@ def test_lmsensors():
     # ret = xs.check("fake2", "temp1: -40.7°C")
     # assert ret["color"] == 'clear'
 
+
 def test_reload():
     # we should have 2 hosts with conn on each
     # test that conn is added by default
@@ -589,23 +599,20 @@ def test_reload():
     H = X.find_host("ipv6")
     assert H is not None
     assert len(X.xy_hosts) == 2
-    res = X.sqc.execute(f'SELECT * FROM tests')
+    X.sqc.execute('SELECT * FROM tests')
     results = X.sqc.fetchall()
-    #print(results)
     assert len(results) == 2
 
     # we should have 3 hosts with conn on each except for ipv6
     # test that conn is removed from ipv6
-    #time.sleep(1)
     with open("./tests/etc/xython-load/hosts.cfg", 'w') as f:
         f.write("192.168.1.40	test01		#conn\n\
 192.168.1.45	test02		#conn\n\
 2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc	ipv6 # noconn\n")
     X.read_configs()
     assert len(X.xy_hosts) == 3
-    res = X.sqc.execute(f'SELECT * FROM tests')
+    X.sqc.execute('SELECT * FROM tests')
     results = X.sqc.fetchall()
-    #print(results)
     assert len(results) == 2
     assert len(X.xy_hosts) == 3
 
@@ -616,9 +623,8 @@ def test_reload():
 2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc	ipv6 # noconn\n")
     X.read_configs()
     assert len(X.xy_hosts) == 2
-    res = X.sqc.execute(f'SELECT * FROM tests')
+    X.sqc.execute('SELECT * FROM tests')
     results = X.sqc.fetchall()
-    #print(results)
     assert len(results) == 1
     assert len(X.xy_hosts) == 2
 
@@ -667,6 +673,7 @@ def test_reload():
     os.remove(f"{X.xt_data}/xython.db")
     shutil.rmtree(X.xt_data)
 
+
 def test_protocols_binary():
     assert hex_to_binary('\\x35\\x36') == b'56'
     assert hex_to_binary('\\x35\\x37') == b'57'
@@ -681,6 +688,7 @@ def test_protocols_binary():
     assert not hex_compare(b'ABC', '\\x41\\x42\\x44')
     assert not hex_compare(b'ABC', '\\x41\\x3778899')
     assert not hex_compare(b'ABC', '\\x414')
+
 
 def test_full():
     X = xythonsrv()
@@ -725,7 +733,7 @@ def test_full():
         X.gen_rrd('test1')
 
     X.handle_net_message("status+10m test1.coltest red\nfake content\n", "fake")
-    res = X.sqc.execute(f'SELECT * FROM columns where column == "coltest"')
+    X.sqc.execute('SELECT * FROM columns where column == "coltest"')
     results = X.sqc.fetchall()
     assert len(results) == 1
 
@@ -761,7 +769,7 @@ def test_full():
     f.close()
 
     X.handle_net_message(f"proxy: test\n{data}", "fake")
-    res = X.sqc.execute(f'SELECT * FROM columns where hostname == "test1"')
+    X.sqc.execute('SELECT * FROM columns where hostname == "test1"')
     results = X.sqc.fetchall()
     # TODO check each column (disk, cpu, etc..) exists
     expected_cols = ['disk', 'cpu', 'coltest', 'info', 'inode', 'memory', 'ports', 'procs', 'sensor']
@@ -777,6 +785,7 @@ def test_full():
     X.handle_net_message(f"proxy: test\n{data}", "fake")
     shutil.rmtree(X.xt_data)
 
+
 def test_snmpd():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
@@ -786,8 +795,9 @@ def test_snmpd():
     X.read_hosts()
     X.hosts_check_tags()
     # test community
-    #do_snmpd(X)
+    # do_snmpd(X)
     shutil.rmtree(X.xt_data)
+
 
 def test_snmpd2():
     X = xythonsrv()
@@ -798,8 +808,9 @@ def test_snmpd2():
     X.read_hosts()
     X.hosts_check_tags()
     # test community
-    #do_snmpd(X)
+    # do_snmpd(X)
     shutil.rmtree(X.xt_data)
+
 
 def test_tests():
     X = xythonsrv()
@@ -811,6 +822,7 @@ def test_tests():
     X.gen_tests()
 #    X.do_tests()
     shutil.rmtree(X.xt_data)
+
 
 def test_rrd():
     X = xythonsrv()
@@ -887,14 +899,15 @@ def test_rrd():
     envi['QUERY_STRING'] = f'hostname=invalid&service=invalid&sockpath={X.unixsock}'
     ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
     print(ret)
-    #assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
+    # assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
 
     envi['QUERY_STRING'] = 'hostname=invalid&service=&sockpath={X.unixsock}'
     ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
     print(ret)
-    #assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
+    # assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
 
     shutil.rmtree(X.xt_data)
+
 
 def test_celery_ping():
     ret = ping("test", "-invalid", False, False)
@@ -918,6 +931,7 @@ def test_celery_ping():
     ret = ping("test", "google.com", True, True)
     if test_ping:
         assert ret["color"] == 'green'
+
 
 @pytest.mark.filterwarnings("ignore:InsecureRequestWarning.*Unverified HTTPS.*")
 def test_celery_http():
@@ -977,6 +991,7 @@ def test_celery_http():
     ret = dohttp("test", ['http://8.8.8.8:445/;timeout=1'], 'http')
     assert ret["color"] == 'red'
 
+
 def test_celery_protocols():
     # protocols test
     # no TLS tests
@@ -1030,9 +1045,10 @@ def test_celery_protocols():
     assert err
 
     print("DEBUG: tests: send GET / and expect to find HTTP")
-    #ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "GET /\\r\\nHTTP/1.1\\r\\nHost: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
+    # ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "GET /\\r\\nHTTP/1.1\\r\\nHost: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
     ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "\\x47\\x45\\x54\\x20\\x2F\\x47HTTP/1.1\\x13\\x10Host: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
     assert ret["color"] == 'green'
+
 
 def test_net():
     X = xythonsrv()
@@ -1045,6 +1061,7 @@ def test_net():
 
     shutil.rmtree(X.xt_data)
 
+
 def test_misc():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
@@ -1052,6 +1069,7 @@ def test_misc():
     X.init()
     X.print()
     shutil.rmtree(X.xt_data)
+
 
 def test_clientlocal():
     X = xythonsrv()
@@ -1093,6 +1111,5 @@ def test_clientlocal():
     # test non-linux
     ret = X.send_client_local("client test4.freebsd test2")
     assert ret == ['data', 'test2']
-
 
     shutil.rmtree(X.xt_data)

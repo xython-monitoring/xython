@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-import  fcntl
+import fcntl
 import os
-import pytest
-import random
-import re
-import shutil
 import socket
 import subprocess
 import sys
 import time
+
 
 def run_cgi(cgibin, UNIXSOCK, envi, close_after_accept):
     ret = {}
@@ -46,10 +43,10 @@ def run_cgi(cgibin, UNIXSOCK, envi, close_after_accept):
     us.close()
     outs, err = pp.communicate()
     print(f"OUT={outs}")
-    #print(f"ERR={err}")
     ret["out"] = outs
     print(pp)
     return ret
+
 
 def test_proxy():
     cgibin = [sys.executable, "-m", "coverage", 'run', './cgi/proxy.py']
@@ -141,7 +138,6 @@ def test_proxy():
     assert ret.stdout == b'Content-type: text/plain\n\nFAIL to connect to xythond, no such file or directory\n'
     assert ret.stderr == b''
 
-
     # ConnectionRefusedError:
     us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     us.bind(UNIXSOCK)
@@ -157,8 +153,6 @@ def test_proxy():
     print("=================================")
     if os.path.exists(UNIXSOCK):
         os.unlink(UNIXSOCK)
-    #us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    #us.bind(UNIXSOCK)
     us.listen(10)
     us.setblocking(0)
 
@@ -198,7 +192,7 @@ def test_proxy():
     us.close()
     os.remove(UNIXSOCK)
 
-    #assert True == False
+
 def test_topchanges():
     cgibin = [sys.executable, "-m", "coverage", 'run', './cgi/topchanges.py']
     ret = subprocess.run(cgibin, capture_output=True, env=None)
