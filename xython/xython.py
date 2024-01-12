@@ -6,6 +6,7 @@
     SPDX-License-Identifier: GPL-2.0
 """
 
+import asyncio
 import bz2
 import os
 import time
@@ -488,7 +489,7 @@ class xythonsrv:
     def send_client_local(self, buf):
         ret = self.parse_collector(buf)
         if ret is None:
-            return
+            return None
         # now seek hostname in client local
         if ret[0] in self.client_local_cfg:
             return self.client_local_cfg[ret[0]]
@@ -1961,10 +1962,7 @@ class xythonsrv:
                 testtype = ret["type"]
                 if testtype in ['cssh', 'snmp']:
                     if ret["data"] is not None:
-                        msg = {}
-                        msg["buf"] = ret["data"]
-                        msg["addr"] = hostname
-                        self.parse_hostdata(msg)
+                        self.parse_hostdata(ret["data"], f"{testtype} for {hostname}")
                 if "rrds" in ret:
                     self.tests_rrd(hostname, ret["rrds"])
                 column = ret["column"]
@@ -3125,8 +3123,7 @@ class xythonsrv:
             self.column_update(hostname, cname, "blue", dstart, blue_status, howlongs, "bluter")
         return True
 
-    def parse_hostdata(self, msg):
-        hdata = msg["buf"]
+    def parse_hostdata(self, hdata, addr):
         hostname = None
         section = None
         save_hostdata = False
@@ -3148,47 +3145,47 @@ class xythonsrv:
                         handled = True
                     if section == '[free]':
                         handled = True
-                        ret = self.parse_free(hostname, buf, msg["addr"])
+                        ret = self.parse_free(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[uptime]':
                         handled = True
-                        ret = self.parse_uptime(hostname, buf, msg["addr"])
+                        ret = self.parse_uptime(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[df]':
                         handled = True
-                        ret = self.parse_df(hostname, buf, False, msg["addr"])
+                        ret = self.parse_df(hostname, buf, False, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[inode]':
                         handled = True
-                        ret = self.parse_df(hostname, buf, True, msg["addr"])
+                        ret = self.parse_df(hostname, buf, True, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[ports]':
                         handled = True
-                        ret = self.parse_ports(hostname, buf, msg["addr"])
+                        ret = self.parse_ports(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[ss]':
                         handled = True
-                        ret = self.parse_ports(hostname, buf, msg["addr"])
+                        ret = self.parse_ports(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[ps]':
                         handled = True
-                        ret = self.parse_ps(hostname, buf, msg["addr"])
+                        ret = self.parse_ps(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[lmsensors]':
                         handled = True
-                        ret = self.parse_sensors(hostname, buf, msg["addr"])
+                        ret = self.parse_sensors(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[mdstat]':
                         handled = True
-                        ret = self.parse_mdstat(hostname, buf, msg["addr"])
+                        ret = self.parse_mdstat(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
                     if section == '[clientversion]':
@@ -3222,51 +3219,11 @@ class xythonsrv:
                 self.save_hostdata(hostname, hdata, time.time())
         else:
             self.error("ERROR: invalid client data without hostname")
-            if self.debug:
-                print(msg)
 
-    def unet_send(self, buf):
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            sock.connect(self.unixsock)
-        except:
-            self.error(f"FAIL to connect to xythond sock {self.unixsock}")
-            return False
-        sock.send(buf.encode("UTF8"))
-        sock.close()
-        return True
-
-    def unet_send_recv(self, buf):
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(5)
-        try:
-            sock.connect(self.unixsock)
-        except:
-            self.error(f"FAIL to connect to xythond sock {self.unixsock}")
-            return None
-        sock.send(buf.encode("UTF8"))
-        self.unet_loop()
-        buf = sock.recv(64000)
-        sock.close()
-        return buf
-
-    def unet_start(self):
-        if os.path.exists(self.unixsock):
-            os.unlink(self.unixsock)
-        self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.us.bind(self.unixsock)
-        # TODO does it is necessary ?, check setup with apache
-        os.chmod(self.unixsock, 0o666)
-        self.us.listen(10)
-        self.us.setblocking(0)
-        self.uclients = []
-        self.debug("DEBUG: create unix socket")
-        return True
-
-    def handle_net_message(self, C, buf, final):
+    def handle_net_message(self, buf, addr):
         ret = {}
-        if buf is None:
-            buf = C["buf"]
+        #if buf is None:
+        #    buf = C["buf"]
         sbuf = buf.split(" ")
         cmd = sbuf[0]
         ret["cmd"] = cmd
@@ -3348,26 +3305,15 @@ class xythonsrv:
             lines = buf.split("\n")
             line = lines.pop(0)
             buf = "\n".join(lines)
-            msg = {}
-            msg["buf"] = buf
-            msg["addr"] = line.split(':')[1]
-            self.parse_hostdata(msg)
+            self.parse_hostdata(buf, line.split(':')[1] )
         elif cmd == "TLSproxy" or cmd == "HTTPTLSproxy":
             lines = buf.split("\n")
             line = lines.pop(0)
             addr = line.split(" ")[1]
             buf = "\n".join(lines)
-            msg = {}
-            msg["buf"] = buf
-            msg["addr"] = f"TLS proxy for {addr}"
-            ret = self.handle_net_message(msg, None, final)
+            ret = self.handle_net_message(buf, f"TLS proxy for {addr}")
         elif cmd == "client":
-            data = self.send_client_local(buf)
-            if data:
-                ret["send"] = "\n".join(data)
-            # nothing
-            if final:
-                self.parse_hostdata(C)
+            self.parse_hostdata(buf, addr)
         else:
             if len(sbuf) > 1:
                 self.debug(f"DEBUG: handle_net_message do not handle {cmd} {sbuf[1]}X")
@@ -3375,140 +3321,10 @@ class xythonsrv:
                 self.debug(f"DEBUG: handle_net_message do not handle {cmd}X")
         return ret
 
-    # Unix sock seems to always send data in one packet, it ease handling
-    def unet_loop(self):
-        try:
-            c, addr = self.us.accept()
-            # print(f"UNIX {addr}")
-            c.setblocking(0)
-            C = {}
-            C["s"] = c
-            self.uclients.append(C)
-        except socket.error:
-            # self.debug("DEBUG: nobody")
-            pass
-        for C in self.uclients:
-            try:
-                # TODO does this value is good enough
-                # handle better bigger message via a loop
-                # TODO alert when max is reached
-                rbuf = C["s"].recv(self.MAX_MSG_SIZE)
-                if not rbuf:
-                    self.uclients.remove(C)
-                    continue
-                rbuflen = len(rbuf)
-                if rbuflen >= self.MAX_MSG_SIZE:
-                    self.error(f"ERROR: received oversized message len={rbuflen}")
-            except socket.error:
-                # self.debug("DEBUG: nothing to recv")
-                continue
-            buf = rbuf.decode("UTF8")
-            C["buf"] = buf
-            C["addr"] = 'unix'
-            r = self.handle_net_message(C, None, True)
-            sbuf = buf.split(" ")
-            cmd = sbuf[0]
-            if "send" in r:
-                # self.debug(f"DEBUG: answer from {cmd}")
-                smsg = r["send"]
-                try:
-                    C["s"].send(smsg.encode("UTF8"))
-                except BrokenPipeError:
-                    pass
-            if "bsend" in r:
-                # self.debug(f"DEBUG: answer from {cmd}")
-                smsg = r["bsend"]
-                try:
-                    C["s"].send(smsg)
-                except BrokenPipeError:
-                    pass
-            C["s"].close()
-
     def set_netport(self, port):
         if port <= 0 or port > 65535:
             return False
         self.netport = port
-        return True
-
-    def net_start(self):
-        if self.ipv6:
-            self.s = socket.socket(socket.AF_INET6)
-        else:
-            self.s = socket.socket()
-        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.log('network', f"DEBUG: listen on {self.netport}")
-        if self.ipv6:
-            self.s.bind(("::", self.netport))
-        else:
-            self.s.bind(("0.0.0.0", self.netport))
-        self.s.setblocking(0)
-        self.clients = []
-        self.s.listen(1000)
-
-    def net_loop(self):
-        now = time.time()
-        try:
-            c, addr = self.s.accept()
-            c.setblocking(0)
-            self.log('network', 'DEBUG: Got connection from %s' % str(addr))
-            C = {}
-            C["s"] = c
-            C["t"] = now
-            C["buf"] = ""
-            # we need only IP
-            C["addr"] = addr[0]
-            self.clients.append(C)
-        except socket.error:
-            # self.debug("DEBUG: nobody")
-            pass
-        # readlist = []
-        # for C in self.clients:
-        #    readlist.append(C["s"])
-        # rread, rwrite, rerror = select.select(readlist, [], readlist, 1)
-        # print(rread)
-        # print(rerror)
-        for C in self.clients:
-            client = C["s"]
-            try:
-                buf = client.recv(64000)
-            except socket.error as e:
-                if C["t"] + 30 < now:
-                    self.debug(f'TIMEOUT client len={len(C["buf"])} addr={C["addr"]}')
-                    r = self.handle_net_message(C, None, True)
-                    if "send" in r:
-                        client.send(r["send"].encode("UTF8"))
-                    client.close()
-                    # self.parse_hostdata(C)
-                    self.clients.remove(C)
-                # else:
-                #    self.debug("DEBUG: nothing to recv")
-                # print(self.clients)
-                # print(e)
-                # return True
-                continue
-            if not buf:
-                # self.debug("DEBUG: client disconnected")
-                client.close()
-                r = self.handle_net_message(C, None, True)
-                if "send" in r:
-                    self.debug(f'DEBUG client {C["addr"]} disconnected, cannot answer for cmd={r["cmd"]}')
-                # self.parse_hostdata(C)
-                self.clients.remove(C)
-            else:
-                # self.debug(f"DEBUG: got data len={len(buf)}")
-                dbuf = buf.decode("UTF8")
-                if C["buf"] == "":
-                    r = self.handle_net_message(C, dbuf, False)
-                    if "send" in r:
-                        client.send(r["send"].encode("UTF8"))
-                    # data = self.send_client_local(dbuf)
-                    # if data:
-                    #    client.send("\n".join(data).encode("UTF8"))
-                    if "done" in r:
-                        # self.parse_hostdata(C)
-                        self.clients.remove(C)
-                        continue
-                C["buf"] += dbuf
         return True
 
     def set_xymonvar(self, p):
@@ -3651,3 +3467,61 @@ class xythonsrv:
         print(f"WWW is {self.wwwdir}")
         print(f"DB is {self.db}")
         print(f"LOG is {self.xt_logdir}")
+
+    async def do_scheduler(self):
+        while True:
+            print("ca schedule")
+            self.scheduler()
+            await asyncio.sleep(1)
+
+    async def handle_unix_client(self, reader, writer):
+        data = await reader.read(320000)
+        message = data.decode("UTF8")
+        ret = self.handle_net_message(message, "unix")
+        if "send" in ret:
+            writer.write(ret["send"].encode("UTF8"))
+        await writer.drain()
+        return
+
+    async def handle_inet_client(self, reader, writer):
+        peername = writer.get_extra_info('peername')
+        data = await reader.readline()
+        message = data.decode("UTF8")
+        lsbuf = self.send_client_local(message)
+        if lsbuf:
+            sbuf = "\n".join(lsbuf)
+            writer.write(sbuf.encode("UTF8"))
+            await writer.drain()
+        while True:
+            try:
+                data = await reader.read(320000)
+                message += data.decode("UTF8")
+                if len(data) == 0:
+                    self.handle_net_message(message, peername)
+                    return
+                await writer.drain()
+                await asyncio.sleep(0.1)
+            except ConnectionResetError:
+                return
+            except asyncio.exceptions.CancelledError:
+                return
+
+    async def run(self):
+        self.tasks = []
+        coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', 12346, backlog=1000)
+        self.tasks.append(coro)
+        if self.ipv6:
+            coro = asyncio.start_server(self.handle_inet_client, '::', 12346, backlog=1000)
+            self.tasks.append(coro)
+        if os.path.exists(self.unixsock):
+            os.unlink(self.unixsock)
+        self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.us.bind(self.unixsock)
+        # TODO does it is necessary ?, check setup with apache
+        os.chmod(self.unixsock, 0o666)
+        self.us.listen(100)
+        coro = asyncio.start_unix_server(self.handle_unix_client, sock=self.us)
+        self.tasks.append(coro)
+        sc = asyncio.create_task(self.do_scheduler())
+        self.tasks.append(sc)
+        await asyncio.gather(*self.tasks)
