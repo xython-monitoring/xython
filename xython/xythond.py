@@ -7,6 +7,7 @@
 """
 
 import argparse
+import asyncio
 import time
 from xython import xythonsrv
 import sys
@@ -63,6 +64,8 @@ def main():
         sys.exit(0)
 
     if args.daemon:
+        asyncio.run(X.run())
+        sys.exit(0)
         X.net_start()
         X.unet_start()
         while True:
