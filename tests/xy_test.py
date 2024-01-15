@@ -590,9 +590,12 @@ def test_reload():
         f.write("192.168.1.40	test01		#conn\n\
 2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc  ipv6\n")
     X = xythonsrv()
+    X.lldebug = True
     X.etcdir = './tests/etc/xython-load/'
     setup_testdir(X, 'load')
     X.init()
+    # test remove last /
+    assert X.etcdir == './tests/etc/xython-load'
     X.read_configs()
     H = X.find_host("donotexists")
     assert H is None
@@ -651,6 +654,88 @@ def test_reload():
     # verify PROC rules are correctly reseted
     assert len(H.rules["PROC"]) == 2
 
+    with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
+        f.write("directory donotexists\n")
+    assert not X.read_configs()
+
+    if os.path.exists("./tests/etc/xython-load/hosts.d/new.conf"):
+        os.remove("./tests/etc/xython-load/hosts.d/new.conf")
+
+    time.sleep(0.1)
+    print("==========================")
+    print("DEBUG: initial directory")
+    with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
+        f.write("directory hosts.d\n")
+    ret = X.read_hosts()
+    assert ret == X.RET_NEW
+    print("==========================")
+    print("DEBUG: should nothing happen")
+    ret = X.read_hosts()
+    assert ret == X.RET_OK
+    time.sleep(0.1)
+    print("==========================")
+    print("add new.conf")
+    with open("./tests/etc/xython-load/hosts.d/new.conf", "w") as f:
+        f.write("192.168.1.253 itest3\n")
+    ret = X.read_hosts()
+    assert ret == X.RET_NEW
+    assert X.find_host("itest3")
+
+    print("==========================")
+    print("remove new.conf")
+    os.remove("./tests/etc/xython-load/hosts.d/new.conf")
+    ret = X.read_hosts()
+    assert ret == X.RET_NEW
+    assert not X.find_host("itest3")
+    print(X.mtimes_hosts)
+    assert "./tests/etc/xython-load/hosts.d/new.conf" not in X.mtimes_hosts
+
+    print("==========================")
+    print("Test include non-existant")
+    with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
+        f.write("include invalid\n")
+    ret = X.read_hosts()
+    assert ret == X.RET_ERR
+    print(X.get_last_error())
+    assert X.get_last_error()["msg"].find("No such file or directory")
+
+    print("==========================")
+    print("Test include with bad rights")
+    with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
+        f.write("include hosts-include.cfg\n")
+    os.chmod("./tests/etc/xython-load/hosts-include.cfg", 0)
+    ret = X.read_hosts()
+    assert ret == X.RET_ERR
+
+    print("==========================")
+    print("Test include with good rights")
+    os.chmod("./tests/etc/xython-load/hosts-include.cfg", 0o644)
+    ret = X.read_hosts()
+    assert ret == X.RET_NEW
+    assert X.find_host("itest2")
+    print(X.mtimes_hosts)
+    assert "./tests/etc/xython-load/hosts-include.cfg" in X.mtimes_hosts
+
+    print("==========================")
+    print("test getting EDENY on mtime")
+    os.chmod("./tests/etc/xython-load/", 0o000)
+    ret = X.read_hosts()
+    assert ret == X.RET_ERR
+    os.chmod("./tests/etc/xython-load/", 0o755)
+
+    print("==========================")
+    print("test getting EDENY on mtime")
+    os.chmod("./tests/etc/xython-load/", 0o000)
+    ret = X.read_hosts()
+    assert ret == X.RET_ERR
+    os.chmod("./tests/etc/xython-load/", 0o755)
+
+    print("==========================")
+    print("no hosts.cfg should fail")
+    os.remove('./tests/etc/xython-load/hosts.cfg')
+    assert X.read_hosts() == X.RET_ERR
+
+    # restore backup
     with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
         f.write(bh)
     with open("./tests/etc/xython-load/analysis.cfg", "w") as f:

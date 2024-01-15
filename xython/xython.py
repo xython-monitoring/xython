@@ -210,7 +210,7 @@ class xythonsrv:
         self.expires = []
         self.stats = {}
         self.uptime_start = time.time()
-        self.etcdir = '/etc/xymon/'
+        self.etcdir = '/etc/xymon'
         self.xt_logdir = "/var/log/xython/"
         self.wwwdir = None
         self.xy_data = None
@@ -223,7 +223,7 @@ class xythonsrv:
         self.msgn = 0
         # to be compared with mtime of hosts.cfg
         self.time_read_hosts = 0
-        self.time_read_snmpd = 0
+        self.mtimes_hosts = {}
         # each time read_hosts is called, read_hosts_cnt is ++ abd all hosts found are set to this value
         # so all hosts with a lower value need to be removed
         self.read_hosts_cnt = 0
@@ -318,6 +318,9 @@ class xythonsrv:
         elog["ts"] = time.time()
         elog["msg"] = buf
         self.errors.append(elog)
+
+    def get_last_error(self):
+        return self.errors[-1]
 
     # get configuration values from xython
     def xython_getvar(self, varname):
@@ -1160,34 +1163,64 @@ class xythonsrv:
     def read_hosts(self):
         try:
             mtime = os.path.getmtime(self.etcdir + "/hosts.cfg")
-        except:
-            self.error("ERROR: cannot get mtime of hosts.cfg")
+        except FileNotFoundError as e:
+            self.error(f"ERROR: cannot get mtime of hosts.cfg {str(e)}")
             return self.RET_ERR
-        try:
-            mtime_snmpd = os.path.getmtime(self.etcdir + "/snmp.d")
-        except FileNotFoundError:
-            # optionnal directory
-            mtime_snmpd = 0
         except PermissionError as e:
-            self.error("ERROR: cannot get mtime of snmp.d directory {str(e)}")
+            self.error(f"ERROR: cannot get mtime of hosts.cfg {str(e)}")
             return self.RET_ERR
-        # self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts} {mtime_snmpd} vs {self.time_read_snmpd}")
+        # Watch snmp.d
+        snmpd_path = self.etcdir + "/snmp.d"
+        if os.path.exists(snmpd_path) and snmpd_path not in self.mtimes_hosts:
+            self.mtimes_hosts[snmpd_path] = {}
+            self.mtimes_hosts[snmpd_path]["mtime"] = 0
+            self.mtimes_hosts[snmpd_path]["optional"] = True
+        # self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
         need_reload = False
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
             need_reload = True
-        if self.time_read_snmpd < mtime_snmpd:
-            self.time_read_snmpd = mtime_snmpd
-            need_reload = True
+        for fpath in list(self.mtimes_hosts):
+            old_mtime = self.mtimes_hosts[fpath]["mtime"]
+            self.debug(f"DEBUG: get mtime of {fpath}")
+            try:
+                cmtime = os.path.getmtime(fpath)
+            except FileNotFoundError:
+                # file could have be removed
+                need_reload = True
+                self.debug(f"DEBUG: {fpath} not found")
+                del self.mtimes_hosts[fpath]
+                continue
+            except PermissionError as e:
+                self.error(f"ERROR: fail to mtime {fpath} {str(e)}")
+                return self.RET_ERR
+            self.debug(f"DEBUG: check mtime of {fpath} old={old_mtime} new={cmtime} {old_mtime < cmtime}")
+            if cmtime > old_mtime:
+                need_reload = True
+                self.mtimes_hosts[fpath]["mtime"] = cmtime
         if not need_reload:
             return self.RET_OK
         self.debug(f"DEBUG: read_hosts in {self.etcdir}")
         self.read_hosts_cnt += 1
+        # TODO prevent inifine loop (like having directory hosts.d in hosts.d/file)
+        return self.read_hosts_file(self.etcdir + "/hosts.cfg")
+
+    def read_hosts_file(self, fpath):
+        # on error it force to reload next time
+        self.mtimes_hosts[fpath] = {}
+        self.mtimes_hosts[fpath]["mtime"] = 0
         try:
-            fhosts = open(self.etcdir + "/hosts.cfg", 'r')
-        except:
-            self.error("ERROR: cannot open hosts.cfg")
+            fhosts = open(fpath, 'r')
+        except FileNotFoundError as e:
+            self.error(f"ERROR: Cannot open {fpath} {str(e)}")
             return self.RET_ERR
+        except PermissionError as e:
+            self.error(f"ERROR: Cannot open {fpath} {str(e)}")
+            return self.RET_ERR
+        if fpath not in self.mtimes_hosts:
+            self.mtimes_hosts[fpath] = {}
+        self.mtimes_hosts[fpath]["mtime"] = os.path.getmtime(fpath)
+        self.debug(f"DEBUG: HOSTS: read {fpath}")
         dhosts = fhosts.read()
         dhosts = dhosts.replace('\\\n', '')
         for line in dhosts.split('\n'):
@@ -1201,7 +1234,39 @@ class xythonsrv:
             if len(sline) < 2:
                 self.error(f"ERROR: hosts line is too short {line}")
                 continue
-            host_ip = sline.pop(0)
+            keyword = sline.pop(0)
+            if keyword in ['dispinclude', 'netinclude', 'optional',
+                           'page', 'subpage', 'subparent',
+                           'vpage', 'vsubpage', 'vsubparent', 'group']:
+                self.log(f"UNHANDLED {keyword}")
+                continue
+            if keyword == 'include':
+                dname = sline.pop(0)
+                dpath = self.etcdir + "/" + dname
+                ret = self.read_hosts_file(dpath)
+                if ret == self.RET_ERR:
+                    return ret
+                self.mtimes_hosts[dpath] = {}
+                self.mtimes_hosts[dpath]["mtime"] = os.path.getmtime(dpath)
+                continue
+            if keyword == 'directory':
+                dname = sline.pop(0)
+                dpath = self.etcdir + "/" + dname
+                try:
+                    flist = os.listdir(dpath)
+                except FileNotFoundError as e:
+                    self.error(f"ERROR: fail to read {dpath} {str(e)}")
+                    return self.RET_ERR
+                self.mtimes_hosts[dpath] = {}
+                self.mtimes_hosts[dpath]["mtime"] = os.path.getmtime(dpath)
+                for fname in flist:
+                    npath = f"{dpath}/{fname}"
+                    self.debug(f"DEBUG: will load {npath}")
+                    ret = self.read_hosts_file(npath)
+                    if ret == self.RET_ERR:
+                        return ret
+                continue
+            host_ip = keyword
             host_name = sline.pop(0)
             if '/' in host_name:
                 self.error(f"ERROR: invalid hostname {host_name}")
@@ -3359,6 +3424,7 @@ class xythonsrv:
             if not self.init_pika():
                 self.has_pika = False
         ts_start = time.time()
+        self.etcdir = self.etcdir.rstrip('/')
         self.load_xymonserver_cfg()
         self.load_client_local_cfg()
         if self.xy_data is None:
@@ -3492,6 +3558,7 @@ class xythonsrv:
             sbuf = "\n".join(lsbuf)
             writer.write(sbuf.encode("UTF8"))
             await writer.drain()
+        i = 0
         while True:
             try:
                 data = await reader.read(320000)
