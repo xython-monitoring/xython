@@ -1685,6 +1685,7 @@ class xythonsrv:
             except:
                 self.error(f"ERROR: fail to load {expdir}/{cname}")
                 continue
+        return True
 
     # read hist of a host, creating columns
     # this permit to detect current blue
