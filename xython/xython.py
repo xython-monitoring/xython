@@ -259,6 +259,7 @@ class xythonsrv:
         self.GENPAGE_INTERVAL = 30
         # xymon use 512K by default
         self.MAX_MSG_SIZE = 512 * 1024
+        self.ghosts = []
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -1442,6 +1443,12 @@ class xythonsrv:
             return results[0]
         return None
 
+    def get_ghost_mode(self):
+        ghostmode = self.xython_getvar("GHOSTMODE")
+        if ghostmode is None:
+            ghostmode = "ALLOW"
+        return ghostmode
+
     # return 0 if no color change
     # return 1 if color change
     # return 2 for errors
@@ -1453,8 +1460,30 @@ class xythonsrv:
         expiretime = int(ts_start + expire)
         H = self.find_host(hostname)
         if not H:
+            if not is_valid_hostname(hostname):
+                self.error(f"ERROR: ghost with invalid hostname {hostname}")
+                return 2
+            ghostmode = self.get_ghost_mode()
+            if ghostmode not in ["ALLOW", "DROP", "LOG", "AUTOREGISTER"]:
+                self.error(f"ERROR: invalid ghost mode {ghostmode}")
+                ghostmode = "ALLOW"
+            if ghostmode == "DROP":
+                return 0
+            if ghostmode == "LOG":
+                # TODO get IP
+                self.error(f"ERROR: ghost client {hostname}")
+                R = {}
+                R["hostname"] = hostname
+                R["ts"] = ts_start
+                self.ghosts.append(R)
+                return 0
+            if ghostmode == "AUTOREGISTER":
+                self.ghostfile = self.etcdir + "/ghosts.cfg"
+                with open(self.ghostfile, "a") as f:
+                    f.write(f"0.0.0.0 {hostname}\n")
+                #self.read_hosts()
+            # default is self.ghost == "ALLOW":
             # self.debug("DEBUG: %s not exists" % hostname)
-            # TODO autoregister
             H = xy_host(hostname)
             H.hostip = hostname
             self.xy_hosts.append(H)
@@ -2108,6 +2137,18 @@ class xythonsrv:
         buf += f"Active tests: {results[0][0]}\n"
         buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
         buf += f"xymonserver.cfg mtime {xytime(self.time_read_xserver_cfg)}\n"
+        nghost = 0
+        for ghost in self.ghosts:
+            if ghost["ts"] + 300 < now:
+                self.ghosts.remove(ghost)
+                continue
+            if nghost == 0:
+                buf += "Ghost reports:\n"
+            nghost += 1
+            buf += f'&nbsp;reported host {ghost["hostname"]}\n'
+            ccolor = setcolor('yellow', ccolor)
+        if nghost > 0:
+            buf += f'Current ghost mode {self.get_ghost_mode()}\n\n'
         for elog in self.errors:
             if elog["ts"] + 300 < now:
                 self.errors.remove(elog)
