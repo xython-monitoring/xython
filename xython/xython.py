@@ -3625,7 +3625,11 @@ class xythonsrv:
         if os.path.exists(self.unixsock):
             os.unlink(self.unixsock)
         self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.us.bind(self.unixsock)
+        try:
+            self.us.bind(self.unixsock)
+        except FileNotFoundError as e:
+            self.error(f"ERROR: fail to bind to {self.unixsock} {str(e)}")
+            return
         # TODO does it is necessary ?, check setup with apache
         os.chmod(self.unixsock, 0o666)
         self.us.listen(100)
