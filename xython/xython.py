@@ -1479,11 +1479,17 @@ class xythonsrv:
                 return 0
             if ghostmode == "AUTOREGISTER":
                 self.ghostfile = self.etcdir + "/ghosts.cfg"
-                with open(self.ghostfile, "a") as f:
-                    f.write(f"0.0.0.0 {hostname}\n")
+                try:
+                    with open(self.ghostfile, "a") as f:
+                        f.write(f"0.0.0.0 {hostname}\n")
+                except PermissionError as e:
+                    self.error(f"ERROR: FAIL to write to {self.ghostfile} {str(e)}")
+                    return 2
+                self.debug(f"DEBUG: AUTOREGISTER {hostname}")
                 #self.read_hosts()
             # default is self.ghost == "ALLOW":
             # self.debug("DEBUG: %s not exists" % hostname)
+            self.debug(f"DEBUG: GHOST ALLOW {hostname}")
             H = xy_host(hostname)
             H.hostip = hostname
             self.xy_hosts.append(H)
