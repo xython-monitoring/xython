@@ -3594,12 +3594,21 @@ class xythonsrv:
         ret = self.handle_net_message(message, "unix")
         if "send" in ret:
             writer.write(ret["send"].encode("UTF8"))
-        await writer.drain()
+        try:
+            await writer.drain()
+        except BrokenPipeError:
+            writer.close()
+            return
+        writer.close()
         return
 
     async def handle_inet_client(self, reader, writer):
         peername = writer.get_extra_info('peername')
-        data = await reader.readline()
+        try:
+            data = await asyncio.wait_for(reader.readline(), timeout=5)
+        except TimeoutError:
+            writer.close()
+            return
         message = data.decode("UTF8")
         lsbuf = self.send_client_local(message)
         if lsbuf:
@@ -3609,16 +3618,21 @@ class xythonsrv:
         i = 0
         while True:
             try:
-                data = await reader.read(320000)
+                data = await asyncio.wait_for(reader.read(320000), timeout=5)
                 message += data.decode("UTF8")
                 if len(data) == 0:
                     self.handle_net_message(message, peername)
+                    writer.close()
                     return
                 await writer.drain()
-                await asyncio.sleep(0.1)
+            except TimeoutError:
+                writer.close()
+                return
             except ConnectionResetError:
+                writer.close()
                 return
             except asyncio.exceptions.CancelledError:
+                writer.close()
                 return
 
     async def run(self):
