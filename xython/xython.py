@@ -3623,10 +3623,11 @@ class xythonsrv:
 
     async def run(self):
         self.tasks = []
-        coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', 12346, backlog=1000)
+
+        coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.netport, backlog=1000, sock=self.s)
         self.tasks.append(coro)
         if self.ipv6:
-            coro = asyncio.start_server(self.handle_inet_client, '::', 12346, backlog=1000)
+            coro = asyncio.start_server(self.handle_inet_client, '::', self.netport, backlog=1000)
             self.tasks.append(coro)
         if os.path.exists(self.unixsock):
             os.unlink(self.unixsock)
