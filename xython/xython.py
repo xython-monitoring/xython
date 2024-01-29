@@ -1912,8 +1912,8 @@ class xythonsrv:
         print(results)
 
     def check_purples(self):
-        now = int(time.time())
-        ts_start = now
+        ts_start = time.time()
+        now = int(ts_start)
         req = f'SELECT * FROM columns WHERE expire < {now} AND color != "purple" AND color != "clear"'
         self.sqc.execute(req)
         results = self.sqc.fetchall()
@@ -2043,11 +2043,11 @@ class xythonsrv:
             self.column_update(hostname, rrd, rrdcolor, now, status, self.NETTEST_INTERVAL + 120, "xython-tests")
 
     def do_tests_rip(self):
+        ts_start = time.time()
         self.celery_workers = celery.current_app.control.inspect().ping()
         if self.celery_workers is None:
             self.error("ERROR: no celery workers")
             return
-        ts_start = time.time()
         # RIP celery tasks
         now = int(time.time())
         for ctask in self.celtasks:
@@ -2169,6 +2169,7 @@ class xythonsrv:
         if now > self.ts_tests + 5:
             self.do_tests()
             self.do_tests_rip()
+            self.stat("ts_tests", time.time() - now)
             self.ts_tests = now
         if now > self.ts_check + 1:
             self.check_purples()
@@ -2177,8 +2178,7 @@ class xythonsrv:
         if now > self.ts_xythond + self.XYTHOND_INTERVAL:
             xythond_start = time.time()
             self.do_xythond()
-            now = time.time()
-            self.stat("xythond", now - xythond_start)
+            self.stat("xythond", time.time() - xythond_start)
             self.ts_xythond = now
 
         if now > self.ts_page + self.GENPAGE_INTERVAL:
@@ -2189,7 +2189,9 @@ class xythonsrv:
             self.stat("HTML", ts_end - ts_start)
             self.ts_page = now
         if now > self.ts_read_configs + 60:
+            ts = time.time()
             self.read_configs()
+            self.stat("read_configs", time.time() - ts)
             self.ts_read_configs = now
         if now > self.ts_genrrd + self.RRD_INTERVAL:
             self.gen_rrds()
@@ -2862,7 +2864,8 @@ class xythonsrv:
         return ret
 
     def parse_ps(self, hostname, buf, sender):
-        now = int(time.time())
+        ts_start = time.time()
+        now = int(ts_start)
         color = 'green'
         sbuf = f"{xytime(now)} - procs Ok\n"
         H = self.find_host(hostname)
@@ -2882,7 +2885,7 @@ class xythonsrv:
                 color = ret["color"]
         sbuf += buf
         ts_end = time.time()
-        self.stat("parseps", ts_end - now)
+        self.stat("parseps", ts_end - ts_start)
         ret = self.column_update(hostname, "procs", color, now, sbuf, self.ST_INTERVAL + 60, sender)
         return ret
 
@@ -2949,7 +2952,8 @@ class xythonsrv:
 # like Core 0:        +46.0 C  (high = +82.0 C, crit = +102.0 C)
 # should detect a second warn=82 and red=102
     def parse_sensors(self, hostname, buf, sender):
-        now = int(time.time())
+        ts_start = time.time()
+        now = int(ts_start)
         color = 'green'
         sbuf = f"{xytime(now)} - sensors Ok\n"
         H = self.find_host(hostname)
@@ -2982,7 +2986,7 @@ class xythonsrv:
                 if ret is not None and 'v' in ret:
                     self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
         ts_end = time.time()
-        self.stat("parsesensor", ts_end - now)
+        self.stat("parsesensor", ts_end - ts_start)
         ret = self.column_update(hostname, "sensor", color, now, sbuf, self.ST_INTERVAL + 60, sender)
         return ret
 
