@@ -639,7 +639,7 @@ class xythonsrv:
         return ""
 
     def html_history(self, now, history_extra):
-        html = ""
+        hlist = []
         self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
         results = self.sqc.fetchall()
         hcount = len(results)
@@ -648,10 +648,10 @@ class xythonsrv:
             minutes = (now - lastevent[2]) // 60 + 1
         else:
             minutes = 0
-        html += '<center>'
-        html += '<TABLE SUMMARY="$EVENTSTITLE" BORDER=0>\n<TR BGCOLOR="#333333">'
+        hlist.append('<center>')
+        hlist.append('<TABLE SUMMARY="$EVENTSTITLE" BORDER=0>\n<TR BGCOLOR="#333333">')
         # TODO minutes
-        html += f'<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR="#33ebf4">{hcount}&nbsp;events&nbsp;received&nbsp;in&nbsp;the&nbsp;past&nbsp;{minutes}&nbsp;minutes</FONT></TD></TR>\n'
+        hlist.append(f'<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR="#33ebf4">{hcount}&nbsp;events&nbsp;received&nbsp;in&nbsp;the&nbsp;past&nbsp;{minutes}&nbsp;minutes</FONT></TD></TR>\n')
         for change in results:
             hhostname = change[0]
             hcol = change[1]
@@ -659,45 +659,47 @@ class xythonsrv:
             hduration = change[3]
             hcolor = change[4]
             hocolor = change[5]
-            html += '<TR BGCOLOR=#000000>'
-            html += '<TD ALIGN=CENTER>%s</TD>' % xytime(hts)
-            html += '<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>' % (hcolor, hhostname)
-            html += '<TD ALIGN=LEFT>%s</TD>' % hcol
-            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts - hduration)}">'
-            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hocolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hocolor}" TITLE="{hocolor}"></A>'
-            html += '<IMG SRC="$XYMONSERVERWWWURL/gifs/arrow.gif" BORDER=0 ALT="From -&gt; To">'
-            html += f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts)}">'
-            html += f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hcolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hcolor}" TITLE="{hcolor}"></A>'
-            html += '</TR>'
-        html += '</center>'
-        return html
+            hlist.append('<TR BGCOLOR=#000000>')
+            hlist.append('<TD ALIGN=CENTER>%s</TD>' % xytime(hts))
+            hlist.append('<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>' % (hcolor, hhostname))
+            hlist.append('<TD ALIGN=LEFT>%s</TD>' % hcol)
+            hlist.append(f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts - hduration)}">')
+            hlist.append(f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hocolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hocolor}" TITLE="{hocolor}"></A>')
+            hlist.append('<IMG SRC="$XYMONSERVERWWWURL/gifs/arrow.gif" BORDER=0 ALT="From -&gt; To">')
+            hlist.append(f'<TD><A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hhostname}&amp;SERVICE={hcol}&amp;TIMEBUF={xytime_(hts)}">')
+            hlist.append(f'<IMG SRC="$XYMONSERVERWWWURL/gifs/{gif(hcolor, hts)}"  HEIGHT="16" WIDTH="16" BORDER=0 ALT="{hcolor}" TITLE="{hcolor}"></A>')
+            hlist.append('</TR>')
+        hlist.append('</center>')
+        return hlist
 
     def html_header(self, header):
         # self.debug(f"DEBUG: read {self.webdir}/{header}")
         fname = f"{self.webdir}/{header}"
         try:
             fh = open(fname, "r")
-            html = fh.read()
+            html = fh.readlines()
             fh.close()
         except FileNotFoundError as e:
             self.error(f"ERROR: fail to open {fname}")
-            return f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
+            return [f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"]
         return html
 
     def html_footer(self, footer):
         fname = f"{self.webdir}/{footer}"
         try:
             fh = open(fname, "r")
-            html = fh.read()
+            html = fh.readlines()
             fh.close()
         except FileNotFoundError as e:
             self.error(f"ERROR: fail to open {fname}")
-            return f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
+            return [f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"]
         return html
 
     # replace all variables in HTML
     # this means also adding xymonmenu
-    def html_finalize(self, color, html):
+    def html_finalize(self, color, hlist, pagename):
+        ts_start = time.time()
+        html = '\n'.join(hlist)
         fh = open(self.etcdir + "/xymonmenu.cfg")
         body_header = fh.read()
         fh.close()
@@ -718,18 +720,29 @@ class xythonsrv:
         html = re.sub("&EVENTYESTERDAY", event_yesterday(now), html)
         html = re.sub("&EVENTTODAY", event_today(now), html)
         html = re.sub("&EVENTNOW", xyevent(time.time()), html)
+        if pagename == 'topchanges':
+            html = re.sub("&SCRIPT_NAME", "topchanges.py", html)
         # find remaining variables
         ireplace = 0
-        while ireplace < 20:
-            toreplace = re.findall(r"\&XY[A-Z][A-Z]*", html)
-            for xvar in toreplace:
+        matcher1 = re.compile(r"\&XY[A-Z][A-Z]*")
+        matcher2 = re.compile(r"\$XY[A-Z][A-Z]*")
+        while ireplace < 2:
+            toreplace = re.findall(matcher1, html)
+            toreplaceu = {}
+            for x in toreplace:
+                toreplaceu[x] = ""
+            for xvar in toreplaceu:
                 xvarbase = xvar.replace("&", "")
                 html = re.sub(xvar, self.xymon_getvar(xvarbase), html)
-            toreplace = re.findall(r"\$XY[A-Z][A-Z]*", html)
-            for xvar in toreplace:
+            toreplace = re.findall(matcher2, html)
+            toreplaceu = {}
+            for x in toreplace:
+                toreplaceu[x] = ""
+            for xvar in toreplaceu:
                 xvarbase = xvar.replace("$", "")
                 html = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), html)
             ireplace += 1
+        self.stat('HTML_FINALIZE', time.time() - ts_start)
         return html
 
     def html_page(self, pagename):
@@ -746,14 +759,14 @@ class xythonsrv:
         else:
             header = 'stdnormal_header'
             footer = 'stdnormal_footer'
-        html = self.html_header(header)
+        hlist = self.html_header(header)
         if pagename == 'nongreen':
             ret = self.html_hostlist(pagename)
-            html += ret["html"]
+            hlist += ret["html"]
             color = ret["color"]
         if pagename == 'all':
             ret = self.html_hostlist(pagename)
-            html += ret["html"]
+            hlist += ret["html"]
             color = ret["color"]
         if pagename == 'acknowledgements':
             req = "SELECT hostname, column, ackend, ackcause FROM columns WHERE ackend != 0"
@@ -765,7 +778,7 @@ class xythonsrv:
                 column = res[1]
                 ackend = res[2]
                 ackcause = res[3]
-                html += f"{hostname} {column} {ackcause} {ackend} {xytime(ackend)}\n<br>"
+                hlist.append(f"{hostname} {column} {ackcause} {ackend} {xytime(ackend)}\n<br>")
         if pagename == 'expires':
             req = "SELECT hostname, column, expire FROM columns ORDER BY expire ASC"
             self.sqc.execute(req)
@@ -774,34 +787,33 @@ class xythonsrv:
                 hostname = res[0]
                 column = res[1]
                 expire = res[2]
-                html += f"{hostname} {column} {expire} {xytime(expire)}\n<br>"
+                hlist.append(f"{hostname} {column} {expire} {xytime(expire)}\n<br>")
         if pagename == 'topchanges':
             fname = f"{self.webdir}/topchanges_form"
             try:
                 fh = open(fname, "r")
-                html += fh.read()
+                hlist += fh.readlines()
                 fh.close()
             except FileNotFoundError as e:
-                html += f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"
+                hlist.append(f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>")
                 self.error(f"ERROR: fail to open {fname}")
-            html = re.sub("&SCRIPT_NAME", "topchanges.py", html)
-        html += self.html_footer(footer)
-        html = self.html_finalize(color, html)
+        hlist += self.html_footer(footer)
+        html = self.html_finalize(color, hlist, pagename)
         return html
 
     def html_hostlist(self, pagename):
         # self.debug(f"DEBUG: html_hostlist for {pagename}")
         now = time.time()
-        html = ""
+        hlist = []
         color = 'green'
         # dump hosts
-        html += "<center>\n"
-        html += '<A NAME=begindata>&nbsp;</A>\n'
-        html += '<A NAME="hosts-blk">&nbsp;</A>\n'
-        html += '<A NAME=hosts-blk-1>&nbsp;</A>\n'
+        hlist.append("<center>\n")
+        hlist.append('<A NAME=begindata>&nbsp;</A>\n')
+        hlist.append('<A NAME="hosts-blk">&nbsp;</A>\n')
+        hlist.append('<A NAME=hosts-blk-1>&nbsp;</A>\n')
 
-        html += '<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n'
-        html += '<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>'
+        hlist.append('<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n')
+        hlist.append('<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>')
         if pagename == 'nongreen':
             res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' ORDER BY column")
         else:
@@ -811,70 +823,71 @@ class xythonsrv:
         for col in results:
             colname = col[0]
             cols.append(colname)
-        # for each column
-            html += '<TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n<A HREF="$XYMONSERVERCGIURL/columndoc.sh?%s"><FONT COLOR="#87a9e5" SIZE="-1"><B>%s</B></FONT></A> </TD>\n' % (colname, colname)
-        html += '</TR><TR><TD COLSPAN=%d><HR WIDTH="100%%"></TD></TR>\n' % len(results)
+            hlist.append(f'<TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n<A HREF="$XYMONSERVERCGIURL/columndoc.sh?{colname}"><FONT COLOR="#87a9e5" SIZE="-1"><B>{colname}</B></FONT></A> </TD>\n')
+        hlist.append('</TR><TR><TD COLSPAN={len(results)}><HR WIDTH="100%%"></TD></TR>\n')
 
         if pagename == 'nongreen':
-            self.sqc.execute('SELECT DISTINCT hostname FROM columns WHERE hostname IN (SELECT hostname WHERE color != "green" and color != "blue") ORDER by ackend, hostname')
+            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue") ORDER by hostname, column')
         else:
-            self.sqc.execute('SELECT DISTINCT hostname FROM columns ORDER BY hostname')
-        hostlist = self.sqc.fetchall()
-        # TODO results up is not used
-        for host in hostlist:
-            H = self.find_host(host[0])
-            if H is None:
+            self.sqc.execute('SELECT hostname,column,ts,color FROM columns ORDER BY hostname,column')
+        results = self.sqc.fetchall()
+        chost = None
+        ci = 0
+        for result in results:
+            hostname = result[0]
+            if hostname != chost:
+                if chost is not None:
+                    hlist.append('</TR>\n')
+                chost = hostname
+                ci = 0
+                hlist.append('<TR class=line>\n')
+                hlist.append(f'<TD NOWRAP ALIGN=LEFT><A NAME="{hostname}">&nbsp;</A>\n')
+                hlist.append(f'<A HREF="/xython/xython.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">{hostname}</FONT></A>')
+            Cname = result[1]
+            if Cname not in cols:
+                print(f"IGNORE {Cname} not in {cols}")
                 continue
-            self.sqc.execute('SELECT column,ts,color FROM columns WHERE hostname == "%s"' % H.name)
-            results = self.sqc.fetchall()
-            hcols = {}
-            hts = {}
-            for col in results:
-                hcols[col[0]] = col[2]
-                hts[col[0]] = col[1]
-            html += '<TR class=line>\n'
-            html += '<TD NOWRAP ALIGN=LEFT><A NAME="%s">&nbsp;</A>\n' % H.name
-            html += '<A HREF="/xython/xython.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">%s</FONT></A>' % H.name
-            for Cname in cols:
-                if Cname not in hcols:
-                    html += '<TD ALIGN=CENTER>-</TD>\n'
-                else:
-                    html += '<TD ALIGN=CENTER>'
-                    lcolor = hcols[Cname]
-                    if lcolor in ["red", "yellow"]:
-                        color = setcolor(lcolor, color)
-                    lts = hts[Cname]
-                    dhm = xydhm(lts, now)
-                    acki = self.xython_is_ack(H.name, Cname)
-                    if acki is None or lcolor == 'green':
-                        isack = False
-                    else:
-                        isack = True
-                    if self.xythonmode > 0:
-                        html += f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xython/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
-                    else:
-                        html += f'<A HREF="$XYMONSERVERCGIURL/svcstatus.sh?HOST=%s&amp;SERVICE=%s"><IMG SRC="/xymon/gifs/%s" ALT="%s:%s:{dhm}" TITLE="%s:%s:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>' % (H.name, Cname, gif(lcolor, lts, isack), Cname, lcolor, Cname, lcolor)
-            html += '</TR>\n'
+            lts = result[2]
+            lcolor = result[3]
+            if lcolor in ["red", "yellow"]:
+                color = setcolor(lcolor, color)
+            dhm = xydhm(lts, now)
+            acki = self.xython_is_ack(hostname, Cname)
+            if acki is None or lcolor == 'green':
+                isack = False
+            else:
+                isack = True
+            while Cname != cols[ci]:
+                hlist.append('<TD ALIGN=CENTER>-</TD>\n')
+                ci += 1
+                if ci >= len(cols):
+                    self.error(f"BUG: ci={ci} cols={cols} ")
+            hlist.append('<TD ALIGN=CENTER>')
+            hlist.append(f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={Cname}">')
+            hlist.append(f'<IMG SRC="/xython/gifs/{gif(lcolor, lts, isack)}" ALT="{Cname}:{lcolor}:{dhm}" TITLE="{Cname}:{lcolor}:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>')
+            ci += 1
 
-        html += '</TABLE></CENTER><BR>'
+        hlist.append('</TR>\n</TABLE></CENTER><BR>')
+
         # end nongreen
-        html += self.html_history(now, "")
+        hlist += self.html_history(now, "")
         ret = {}
         ret["color"] = color
-        ret["html"] = html
+        ret["html"] = hlist
         return ret
 
     # TODO template jinja ?
     def gen_html(self, pagename, hostname, column, ts):
         now = time.time()
         color = 'green'
-        html = self.html_header('stdnormal_header')
-        # concat
+        hlist = self.html_header('stdnormal_header')
 
         if pagename == 'nongreen' or pagename == 'all':
+            ts = time.time()
             ret = self.html_hostlist(pagename)
-            html += ret["html"]
+            hlist += ret["html"]
             color = ret["color"]
+            self.stat("HTML_hostlist", time.time() - ts)
 
         history_extra = ""
         if pagename == 'svcstatus':
@@ -883,26 +896,26 @@ class xythonsrv:
                 html = "HIST not found"
                 return html
             color = rdata["first"]
-            html += '<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY="Detail Status">'
+            hlist.append('<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY="Detail Status">')
             # TODO replace with first line of status (without color)
-            html += '<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"]
-            html += '<PRE>'
+            hlist.append('<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"])
+            hlist.append('<PRE>')
             data = ''.join(rdata["data"])
             data.replace("\n", '<br>\n')
             # data = re.sub("\n", '<br>\n', data)
             for gifc in COLORS:
                 data = re.sub("&%s" % gifc, '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % gifc, data)
-            html += data
-            html += '</PRE>\n</TD></TR></TABLE>'
-            html += '<br><br>\n'
-            html += '<table align="center" border=0 summary="Status report info">'
-            html += f'<tr><td align="center"><font COLOR="#87a9e5" SIZE="-1">Status unchanged in {xydhm(ts, now)}<br>'
-            html += 'Status %s<br>' % rdata["sender"]
+            hlist.append(data)
+            hlist.append('</PRE>\n</TD></TR></TABLE>')
+            hlist.append('<br><br>\n')
+            hlist.append('<table align="center" border=0 summary="Status report info">')
+            hlist.append(f'<tr><td align="center"><font COLOR="#87a9e5" SIZE="-1">Status unchanged in {xydhm(ts, now)}<br>')
+            hlist.append('Status %s<br>' % rdata["sender"])
             if self.xythonmode > 0:
-                html += '<a href="$XYMONSERVERCGIURL/xythoncgi.py?CLIENT={hostname}">Client data</a> available<br>'
+                hlist.append('<a href="$XYMONSERVERCGIURL/xythoncgi.py?CLIENT={hostname}">Client data</a> available<br>')
             else:
-                html += '<a href="$XYMONSERVERCGIURL/svcstatus.sh?CLIENT={hostname}">Client data</a> available<br>'
-            html += '</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n'
+                hlist.append('<a href="$XYMONSERVERCGIURL/svcstatus.sh?CLIENT={hostname}">Client data</a> available<br>')
+            hlist.append('</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n')
             history_extra = f'AND hostname="{hostname}" AND column="{column}"'
 
             self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
@@ -912,47 +925,47 @@ class xythonsrv:
                 ackend = ackinfo[0]
                 if ackend is not None:
                     ackmsg = ackinfo[1]
-                    html += f'<CENTER>Current acknowledgement: {ackmsg}<br>Next update at: {xytime(int(ackend))}</CENTER>\n'
+                    hlist.append(f'<CENTER>Current acknowledgement: {ackmsg}<br>Next update at: {xytime(int(ackend))}</CENTER>\n')
             else:
                 print(f"ackinfo is len={len(ackinfo)}")
             # TODO acknowledge is only for non-history and non-green
             # if color != 'green':
-            html += '<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
-            html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
-            html += '<input type="text" placeholder="ack message" name="cause" required>\n'
-            html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
-            html += f'<input type="hidden" name="service" value="{column}">\n'
-            html += '<input type="hidden" name="action" value="ack">\n'
-            # html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
-            html += '<button type="submit">Send ack</button></form>\n'
-            html += '</CENTER>\n'
+            hlist.append('<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n')
+            hlist.append('<input type="text" placeholder="61" SIZE=6 name="duration" required>\n')
+            hlist.append('<input type="text" placeholder="ack message" name="cause" required>\n')
+            hlist.append(f'<input type="hidden" name="hostname" value="{hostname}">\n')
+            hlist.append(f'<input type="hidden" name="service" value="{column}">\n')
+            hlist.append('<input type="hidden" name="action" value="ack">\n')
+            # hlist.append(f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            hlist.append('<button type="submit">Send ack</button></form>\n')
+            hlist.append('</CENTER>\n')
 
-            html += '<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n'
-            html += '<input type="text" placeholder="61" SIZE=6 name="duration" required>\n'
-            html += '<input type="text" placeholder="disable message" name="cause" required>\n'
-            html += f'<input type="hidden" name="hostname" value="{hostname}">\n'
-            html += f'<input type="text" name="dservice" value="{column}">\n'
-            html += f'<input type="hidden" name="service" value="{column}">\n'
-            html += '<input type="hidden" name="action" value="disable">\n'
-            # html += f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
-            html += '<button type="submit">Send blue</button></form>\n'
-            html += '</CENTER>\n'
+            hlist.append('<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n')
+            hlist.append('<input type="text" placeholder="61" SIZE=6 name="duration" required>\n')
+            hlist.append('<input type="text" placeholder="disable message" name="cause" required>\n')
+            hlist.append(f'<input type="hidden" name="hostname" value="{hostname}">\n')
+            hlist.append(f'<input type="text" name="dservice" value="{column}">\n')
+            hlist.append(f'<input type="hidden" name="service" value="{column}">\n')
+            hlist.append('<input type="hidden" name="action" value="disable">\n')
+            # hlist.append(f'<input type="hidden" name="returnurl" value="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={column}">\n'
+            hlist.append('<button type="submit">Send blue</button></form>\n')
+            hlist.append('</CENTER>\n')
 
-            # html += f"Status valid until {xytime()}"
+            # hlist.append(f"Status valid until {xytime()}"
 
             if has_rrdtool:
                 if column in self.rrd_column:
                     for rrdname in self.rrd_column[column]:
-                        # html += f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
-                        html += f'<CENTER><img src="$XYMONSERVERCGIURL/showgraph.py?hostname={hostname}&service={rrdname}"></CENTER>'
+                        # hlist.append(f'<CENTER><img src="/xython/{hostname}/{rrdname}.png"></CENTER>'
+                        hlist.append(f'<CENTER><img src="$XYMONSERVERCGIURL/showgraph.py?hostname={hostname}&service={rrdname}"></CENTER>')
 
         # history
         if pagename in ["svcstatus"]:
-            html += self.html_history(now, history_extra)
+            hlist += self.html_history(now, history_extra)
 
-        html += self.html_footer('stdnormal_footer')
+        hlist += self.html_footer('stdnormal_footer')
 
-        html = self.html_finalize(color, html)
+        html = self.html_finalize(color, hlist, pagename)
 
         if pagename == 'nongreen':
             fhtml = open(self.wwwdir + '/nongreen.html', 'w')
@@ -1845,7 +1858,7 @@ class xythonsrv:
     def gen_top_changes(self, dstart, dend):
         ts_start = int(xyevent_to_ts(dstart, None))
         ts_end = int(xyevent_to_ts(dend, None))
-        html = self.html_header("topchanges_header")
+        hlist = self.html_header("topchanges_header")
         byhost = {}
         byservice = {}
         histdir = self.xt_histdir
@@ -1912,29 +1925,29 @@ class xythonsrv:
         for h in byservice:
             sother += byservice[h]
         # print(f"byhost sorted = {bysvcs} \nremains = {byservice} \nother={sother} total={stotal}")
-        html += '<center><p><font size=+1></font></p><table summary="Top changing hosts and services" border=1><tr><td width=40% align=center valign=top>'
-        html += '<table summary="Top 10 hosts" border=0><tr><th colspan=3>Top 10 hosts</th></tr>'
-        html += '<tr><th align=left>Host</th><th align=left colspan=2>State changes</th></tr>'
+        hlist.append('<center><p><font size=+1></font></p><table summary="Top changing hosts and services" border=1><tr><td width=40% align=center valign=top>')
+        hlist.append('<table summary="Top 10 hosts" border=0><tr><th colspan=3>Top 10 hosts</th></tr>')
+        hlist.append('<tr><th align=left>Host</th><th align=left colspan=2>State changes</th></tr>')
 
         for h in byhosts:
-            html += f'<tr><td>{h[0]}</td><td>{h[1]}</td></tr>'
+            hlist.append(f'<tr><td>{h[0]}</td><td>{h[1]}</td></tr>')
         if hother > 0:
-            html += f'<tr><td>Others hosts</td><td>{hother}</td></tr>'
+            hlist.append(f'<tr><td>Others hosts</td><td>{hother}</td></tr>')
 
-        html += f'<tr><td colspan=3><hr width="100%"></td></tr><tr><th>Total</th><th>{htotal + hother}</th><th>&nbsp;</th></tr></table>'
-        html += '</td><td width=40% align=center valign=top><table summary="Top 10 services" border=0><tr><th colspan=3>Top 10 services</th></tr>'
-        html += '<tr><th align=left>Service</th><th align=left colspan=2>State changes</th></tr>'
+        hlist.append(f'<tr><td colspan=3><hr width="100%"></td></tr><tr><th>Total</th><th>{htotal + hother}</th><th>&nbsp;</th></tr></table>')
+        hlist.append('</td><td width=40% align=center valign=top><table summary="Top 10 services" border=0><tr><th colspan=3>Top 10 services</th></tr>')
+        hlist.append('<tr><th align=left>Service</th><th align=left colspan=2>State changes</th></tr>')
 
         for h in bysvcs:
-            html += f'<tr><td>{h[0]}</td><td>{h[1]}</td></tr>'
+            hlist.append(f'<tr><td>{h[0]}</td><td>{h[1]}</td></tr>')
         if sother > 0:
-            html += f'<tr><td>Others services</td><td>{sother}</td></tr>'
+            hlist.append(f'<tr><td>Others services</td><td>{sother}</td></tr>')
 
-        html += '<tr><td colspan=3><hr width="100%"></td></tr>'
-        html += f'<tr><th>Total</th><th>{sother + stotal}</th><th>&nbsp;</th></tr></table></td></tr></table></center><BR><BR>'
+        hlist.append('<tr><td colspan=3><hr width="100%"></td></tr>')
+        hlist.append(f'<tr><th>Total</th><th>{sother + stotal}</th><th>&nbsp;</th></tr></table></td></tr></table></center><BR><BR>')
 
-        html += self.html_footer("topchanges_footer")
-        html = self.html_finalize("green", html)
+        hlist += self.html_footer("topchanges_footer")
+        html = self.html_finalize("green", hlist, "topchanges")
         return html
 
     def check_acks(self):
