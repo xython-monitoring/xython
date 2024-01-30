@@ -3005,6 +3005,7 @@ class xythonsrv:
     def parse_sensors(self, hostname, buf, sender):
         ts_start = time.time()
         now = int(ts_start)
+        adapter = None
         color = 'green'
         sbuf = f"{xytime(now)} - sensors Ok\n"
         H = self.find_host(hostname)
@@ -3014,15 +3015,19 @@ class xythonsrv:
         sline = buf.split("\n")
         for line in sline:
             if len(line) == 0:
+                adapter = None
                 continue
             if line[0] == ' ':
+                # TODO some crit/emerg are on thoses lines
                 continue
             # self.debug(f"DEBUG: check {line}XX")
+            continue
             if len(line) > 0 and ':' not in line:
                 # self.debug(f"DEBUG: {hostname} adapter={line}")
                 adapter = line
                 sbuf += '<br>\n' + line + '\n'
-            else:
+                continue
+            if adapter is not None:
                 sbuf += line + '\n'
                 if "SENSOR" in H.rules and H.rules["SENSOR"] is not None:
                     ret = H.rules["SENSOR"].check(adapter, line)
@@ -3036,6 +3041,8 @@ class xythonsrv:
                     color = setcolor(ret["color"], color)
                 if ret is not None and 'v' in ret:
                     self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
+                continue
+            # self.debug(f"DEBUG: ignored {line}XX")
         ts_end = time.time()
         self.stat("parsesensor", ts_end - ts_start)
         ret = self.column_update(hostname, "sensor", color, now, sbuf, self.ST_INTERVAL + 60, sender)
