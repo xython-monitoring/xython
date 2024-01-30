@@ -10,6 +10,10 @@
 Let see what I will have. For the moment I stick with one process to do all stuff (just for fun), let see when it will break.
 But my will is to be able to support at least 2000 xymon client on one setup.
 
+There are 2 important metrics to measure xython performance
+- time to generate the normal and nongreen view (TODO: add current numbers)
+- number of handled network status per second (TODO: add current numbers)
+
 # Milestones
 
 WARNING: I need to update milestones, there are a bit obsolete
@@ -24,6 +28,8 @@ Handling some active tests (conn, smtp, imap, http, ssh)
 This include acking, RRD, page, group
 
 - 0.3 Probably finishing handling remaing hostdata section (files, msgs)
+
+- 0.4 alerting
 
 # Running mode, How to tests
 ## Requirements/Installation
@@ -233,6 +239,7 @@ In the same time, all BB and hobbit compatibility will be removed probably.
 * megacli
 * ntpd + rtc
 * kernel log / dmesg
+* docker ps
 
 # TODO
 This is a uncomplete list
@@ -251,7 +258,11 @@ This is a uncomplete list
 * rename pgp public key
 * ACL on commands
 * compressed messages/status
-* convert network to asyncIO
+* handle docker ps like proc column
+* handle WMI for fake windows client
+* OpenVAS integration
+* convert TLSd to asyncIO
+* interface link report (ethtool)
 
 # List of xython install path (FHS)
 
