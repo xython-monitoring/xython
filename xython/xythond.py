@@ -82,7 +82,7 @@ def main():
         for rule in X.rules["PORT"]:
             rule.dump()
         for Hh in X.xy_hosts:
-            print("DUMP RULE FOR %s" % Hh.name)
+            print("DUMP RULE FOR %s" % X.xy_hosts[Hh].name)
             # for rule in Hh.rules["PORT"]:
             #    rule.dump()
             # for rule in Hh.rules["PROC"]:

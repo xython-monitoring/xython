@@ -175,7 +175,8 @@ class xythonsrv:
         self.RET_OK = 0
         self.RET_ERR = 1
         self.RET_NEW = 2
-        self.xy_hosts = []
+        self.xy_hosts = {}
+        self.xy_hosts_alias = {}
         self.tests = []
         self.xythonmode = 2
         self.uclients = []
@@ -1024,7 +1025,8 @@ class xythonsrv:
             self.rrd_column[rrd] = [rrd]
 
     def hosts_check_tags(self):
-        for H in self.xy_hosts:
+        for hostname in self.xy_hosts:
+            H = self.xy_hosts[hostname]
             if H.tags_read:
                 continue
             need_conn = True
@@ -1069,7 +1071,7 @@ class xythonsrv:
                         if HT:
                             self.error("ERROR: {alias} already used")
                             continue
-                        H.aliases.append(alias)
+                        self.add_host_alias(H, alias)
                     H.tags_known.append(tag)
                     continue
                 if tag[0:4] == 'conn':
@@ -1279,7 +1281,7 @@ class xythonsrv:
             H = self.find_host(host_name)
             if H is not None:
                 host_tags = H.tags
-                self.xy_hosts.remove(H)
+                self.remove_host(H)
             H = xy_host(host_name)
             H.rhcnt = self.read_hosts_cnt
             H.hostip = host_ip
@@ -1288,11 +1290,12 @@ class xythonsrv:
             else:
                 self.log(self.daemon_name, f"Known host {H.name}")
             H.tags = sline
-            self.xy_hosts.append(H)
-        for H in self.xy_hosts:
+            self.add_host(H)
+        for hostname in list(self.xy_hosts):
+            H = self.xy_hosts[hostname]
             if H.rhcnt < self.read_hosts_cnt:
                 self.debug(f"DEBUG: read_hosts: purge {H.name}")
-                self.xy_hosts.remove(H)
+                self.remove_host(H)
         return self.RET_NEW
 
     def read_protocols(self):
@@ -1349,12 +1352,30 @@ class xythonsrv:
         return self.RET_OK
 
     def find_host(self, hostname):
-        for H in self.xy_hosts:
-            if H.name == hostname:
-                return H
-            if hostname in H.aliases:
-                return H
-        return None
+        if hostname in self.xy_hosts_alias:
+            hostname = self.xy_hosts_alias[hostname]
+        if hostname not in self.xy_hosts:
+            return None
+        return self.xy_hosts[hostname]
+
+    def add_host(self, H):
+        self.xy_hosts[H.name] = H
+
+    def remove_host(self, H):
+        # first remove alias
+        for alias in H.aliases:
+            del self.xy_hosts_alias[alias]
+        del self.xy_hosts[H.name]
+
+    def add_host_alias(self, H, alias):
+        if alias in self.xy_hosts_alias:
+            self.error(f"ERROR: alias {alias} already present")
+            return False
+        H.aliases.append(alias)
+        self.xy_hosts_alias[alias] = H.name
+
+    def remove_host_alias(self, H):
+        del self.xy_hosts_alias[H.name]
 
     def save_hostdata(self, hostname, buf, ts):
         if self.readonly:
@@ -1811,10 +1832,9 @@ class xythonsrv:
         byhost = {}
         byservice = {}
         histdir = self.xt_histdir
-        for H in self.xy_hosts:
-            name = H.name
-            byhost[name] = 0
-            histbase = f"{histdir}/{H.name}"
+        for hostname in self.xy_hosts:
+            byhost[hostname] = 0
+            histbase = f"{histdir}/{hostname}"
             try:
                 fhost = open(histbase)
             except FileNotFoundError:
@@ -1834,7 +1854,7 @@ class xythonsrv:
                     useit = True
                 if not useit:
                     continue
-                byhost[name] += 1
+                byhost[hostname] += 1
                 if column in byservice:
                     byservice[column] += 1
                 else:
@@ -1935,7 +1955,8 @@ class xythonsrv:
         now = int(time.time())
         self.debug("DEBUG: GEN TESTS")
         self.sqc.execute('DELETE FROM tests')
-        for H in self.xy_hosts:
+        for hostname in self.xy_hosts:
+            H = self.xy_hosts[hostname]
             for T in H.tests:
                 self.debug("DEBUG: gentest %s %s" % (H.name, T.type))
                 # self.debug(T.urls)
@@ -3565,7 +3586,8 @@ class xythonsrv:
             return False
         if ret == self.RET_NEW:
             self.hosts_check_tags()
-        for H in self.xy_hosts:
+        for hostname in self.xy_hosts:
+            H = self.xy_hosts[hostname]
             # self.debug(f"DEBUG: init FOUND: {H.name}")
             if not self.read_hist(H.name):
                 self.error(f"ERROR: failed to read hist for {H.name}")
