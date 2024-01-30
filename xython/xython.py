@@ -3657,6 +3657,8 @@ class xythonsrv:
         ret = self.handle_net_message(message, "unix")
         if "send" in ret:
             writer.write(ret["send"].encode("UTF8"))
+        if "bsend" in ret:
+            writer.write(ret["bsend"])
         try:
             await writer.drain()
         except BrokenPipeError:
