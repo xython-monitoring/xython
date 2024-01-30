@@ -7,8 +7,8 @@
 """
 
 
+import asyncio
 import os
-import socket
 import sys
 
 
@@ -44,16 +44,30 @@ if page is None:
     print("\n")
     sys.exit(0)
 
-sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-try:
-    sock.connect('/run/xython/xython.sock')
-except:
-    print("getpage: FAIL to connect to xythond")
-    sys.exit(0)
 buf = f"GETPAGE {page}"
-sock.send(buf.encode("UTF8"))
-buf = sock.recv(640000)
-print(buf.decode("UTF8"))
-sock.close()
 
-sys.exit(0)
+async def unix_xython(buf):
+    reader, writer = await asyncio.open_unix_connection(path='/run/xython/xython.sock')
+    try:
+        writer.write(buf.encode())
+        await writer.drain()
+        print(f"SEND {buf}")
+        while True:
+            r = await reader.read(640000)
+            if len(r) == 0:
+                break
+            print(f"LEN={len(r)}")
+            print(r.decode("UTF8"))
+    except ConnectionResetError as e:
+        print("getpage: FAIL to connect to xythond {str(e)}")
+    except ConnectionRefusedError as e:
+        print("getpage: FAIL to connect to xythond {str(e)}")
+    except BrokenPipeError as e:
+        print("getpage: FAIL to connect to xythond {str(e)}")
+    try:
+        writer.close()
+        await writer.wait_closed()
+    except BrokenPipeError:
+        pass
+
+asyncio.run(unix_xython(buf))
