@@ -36,6 +36,7 @@ from xython.rules import xy_rule_mem
 from xython.rules import xy_rule_cpu
 from xython.rules import xy_rule_sensors
 from xython.xython import xythonsrv
+from xython.xython import xy_host
 from xython.xython_tests import hex_to_binary
 from xython.xython_tests import hex_compare
 from xython.xython_tests import ping
@@ -591,6 +592,32 @@ def test_lmsensors():
     # xs.add("fake2 IGNORE")
     # ret = xs.check("fake2", "temp1: -40.7°C")
     # assert ret["color"] == 'clear'
+
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-load/'
+    X.lldebug = True
+    setup_testdir(X, 'sensors')
+    X.init()
+
+    f = open("./tests/sensors/sensors2")
+    data = f.read()
+    f.close()
+    X.parse_sensors("test01", data, "fake")
+    assert 'parsesensor' in X.stats
+
+    f = open("./tests/sensors/sensors3")
+    data = f.read()
+    f.close()
+    X.parse_sensors("test01", data, "fake")
+
+    f = open("./tests/sensors/sensors4")
+    data = f.read()
+    f.close()
+    X.parse_sensors("test01", data, "fake")
+
+    shutil.rmtree(X.xt_data)
+
+    print(X.stats["parsesensor"])
 
 
 def test_reload():
@@ -1206,5 +1233,40 @@ def test_clientlocal():
     # test non-linux
     ret = X.send_client_local("client test4.freebsd test2")
     assert ret == ['data', 'test2']
+
+    shutil.rmtree(X.xt_data)
+
+# permit to check if timings are okay
+def todo_timing():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'misc')
+    X.init()
+    X.wwwdir = X.xt_data
+
+    i = 0
+    while i < 1000:
+        i += 1
+        hostname = f'test{i}'
+        H = xy_host(f'test{i}')
+        X.add_host(H)
+        X.gen_column_info(hostname)
+        c = 0
+        data = "\n\n\n\n"
+        now = int(time.time())
+        while c < 30:
+            colors = ['red', 'yellow', 'green', 'blue', 'green', 'green', 'green']
+            color = colors[random.randint(0, len(colors) -1)]
+            cname = f"col{c}"
+            X.sqc.execute('INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color, ackend, ackcause) VALUES (?, ?, ?, ?, ?, ?, ?)', (hostname, cname, now, 3600, color, None, None))
+            c += 1
+    print(len(X.xy_hosts))
+    ts = time.time()
+    H = X.find_host('test500')
+    print(time.time() - ts)
+    ts = time.time()
+    ret = X.gen_html('nongreen', None, None, None)
+    print(f"NONGREEN GENTIME {time.time() - ts}")
+    print(X.stats)
 
     shutil.rmtree(X.xt_data)
