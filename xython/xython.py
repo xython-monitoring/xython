@@ -489,6 +489,10 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H and H.name != hostname:
             hostname = H.name
+        if not H:
+            ret = self.ghost(hostname)
+            if ret != self.RET_NEW:
+                return None
         return [hostname, ostype, hostclass]
 
     def send_client_local(self, buf):
@@ -1470,6 +1474,46 @@ class xythonsrv:
             ghostmode = "ALLOW"
         return ghostmode
 
+    def ghost(self, hostname):
+        ts_start = time.time()
+        if not is_valid_hostname(hostname):
+            self.error(f"ERROR: ghost with invalid hostname {hostname}")
+            return self.RET_ERR
+        ghostmode = self.get_ghost_mode()
+        if ghostmode not in ["ALLOW", "DROP", "LOG", "AUTOREGISTER"]:
+            self.error(f"ERROR: invalid ghost mode {ghostmode}, fallback to ALLOW")
+            # TODO I dont like this default
+            ghostmode = "ALLOW"
+        self.debug(f"DEBUG: ghost for {hostname} ghostmode={ghostmode}")
+        if ghostmode == "DROP":
+            return self.RET_OK
+        if ghostmode == "LOG":
+            # TODO get IP
+            self.error(f"ERROR: ghost client {hostname}")
+            R = {}
+            R["hostname"] = hostname
+            R["ts"] = ts_start
+            self.ghosts.append(R)
+            return self.RET_OK
+        if ghostmode == "AUTOREGISTER":
+            self.ghostfile = self.etcdir + "/ghosts.cfg"
+            try:
+                with open(self.ghostfile, "a") as f:
+                    f.write(f"0.0.0.0 {hostname}\n")
+            except PermissionError as e:
+                self.error(f"ERROR: FAIL to write to {self.ghostfile} {str(e)}")
+                return self.RET_ERR
+            self.debug(f"DEBUG: AUTOREGISTER {hostname}")
+            # self.read_hosts()
+        # default is self.ghost == "ALLOW":
+        # self.debug("DEBUG: %s not exists" % hostname)
+        self.debug(f"DEBUG: GHOST ALLOW {hostname}")
+        H = xy_host(hostname)
+        H.hostip = hostname
+        self.add_host(H)
+        return self.RET_NEW
+
+    # TODO use RET_XXX
     # return 0 if no color change
     # return 1 if color change
     # return 2 for errors
@@ -1481,39 +1525,12 @@ class xythonsrv:
         expiretime = int(ts_start + expire)
         H = self.find_host(hostname)
         if not H:
-            if not is_valid_hostname(hostname):
-                self.error(f"ERROR: ghost with invalid hostname {hostname}")
+            ret = self.ghost(hostname)
+            if ret != self.RET_NEW:
                 return 2
-            ghostmode = self.get_ghost_mode()
-            if ghostmode not in ["ALLOW", "DROP", "LOG", "AUTOREGISTER"]:
-                self.error(f"ERROR: invalid ghost mode {ghostmode}")
-                ghostmode = "ALLOW"
-            if ghostmode == "DROP":
-                return 0
-            if ghostmode == "LOG":
-                # TODO get IP
-                self.error(f"ERROR: ghost client {hostname}")
-                R = {}
-                R["hostname"] = hostname
-                R["ts"] = ts_start
-                self.ghosts.append(R)
-                return 0
-            if ghostmode == "AUTOREGISTER":
-                self.ghostfile = self.etcdir + "/ghosts.cfg"
-                try:
-                    with open(self.ghostfile, "a") as f:
-                        f.write(f"0.0.0.0 {hostname}\n")
-                except PermissionError as e:
-                    self.error(f"ERROR: FAIL to write to {self.ghostfile} {str(e)}")
-                    return 2
-                self.debug(f"DEBUG: AUTOREGISTER {hostname}")
-                #self.read_hosts()
-            # default is self.ghost == "ALLOW":
-            # self.debug("DEBUG: %s not exists" % hostname)
-            self.debug(f"DEBUG: GHOST ALLOW {hostname}")
-            H = xy_host(hostname)
-            H.hostip = hostname
-            self.xy_hosts.append(H)
+            H = self.find_host(hostname)
+            if not H:
+                return 2
         if H.dialup:
             if cname == 'conn':
                 if color == 'red':
