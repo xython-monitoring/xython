@@ -815,7 +815,7 @@ class xythonsrv:
         hlist.append('<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n')
         hlist.append('<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>')
         if pagename == 'nongreen':
-            res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' ORDER BY column")
+            res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' AND color != 'clear' ORDER BY column")
         else:
             res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
         results = self.sqc.fetchall()
@@ -827,7 +827,7 @@ class xythonsrv:
         hlist.append('</TR><TR><TD COLSPAN={len(results)}><HR WIDTH="100%%"></TD></TR>\n')
 
         if pagename == 'nongreen':
-            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue") ORDER by hostname, column')
+            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") ORDER by hostname, column')
         else:
             self.sqc.execute('SELECT hostname,column,ts,color FROM columns ORDER BY hostname,column')
         results = self.sqc.fetchall()
