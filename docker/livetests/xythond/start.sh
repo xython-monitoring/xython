@@ -37,8 +37,13 @@ cd /tmp
 wget http://127.0.0.1/xython/ || exit $?
 wget http://127.0.0.1/xython/nongreen.html || exit $?
 
+echo "=================================================================="
+echo "=================================================================="
+python -V
 cd /tests
-pytest livetest.py
+pytest-3 livetest.py || exit $?
+echo "=================================================================="
+echo "=================================================================="
 
 wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=$(hostname)&SERVICE=memory" -O memory.html
 grep -q 'Real/Physical' memory.html
@@ -78,5 +83,6 @@ if [ $? -eq 0 ];then
 	exit 1
 fi
 cat conn.html
+echo "DEBUG: everything is ok"
 exit 0
 sleep 365d
