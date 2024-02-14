@@ -393,12 +393,13 @@ jobs:
           ps aux |grep xython-tlsd
           ps aux |grep xythond
           ps aux |grep xython-client
-#      - name: Test package in a docker
-#        run: |
-#          cp *deb docker/livetests/xythond
-#          cd docker/livetests
-#          docker-compose build
-#          docker-compose up
+      - name: Test package in a docker
+        run: |
+          cp -v *deb docker/livetests/xythond
+          ls -l docker/livetests/xythond/
+          cd docker/livetests
+          docker-compose build
+          docker-compose up xythond
       - name: Keep generated deb
         uses: actions/upload-artifact@v3
         with:
