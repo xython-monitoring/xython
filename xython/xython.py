@@ -261,6 +261,7 @@ class xythonsrv:
         # xymon use 512K by default
         self.MAX_MSG_SIZE = 512 * 1024
         self.ghosts = []
+        self.quit = 0
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -3649,7 +3650,10 @@ class xythonsrv:
 
     async def do_scheduler(self):
         while True:
-            print("ca schedule")
+            if self.quit > 0:
+                if self.uptime_start + self.quit < time.time():
+                    sys.exit(0)
+            self.debug("DEBUG: scheduling")
             self.scheduler()
             await asyncio.sleep(1)
 

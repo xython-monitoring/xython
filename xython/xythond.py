@@ -62,20 +62,11 @@ def main():
     if args.dump:
         X.print()
         sys.exit(0)
+    if args.quit > 0:
+        X.quit = args.quit
 
     if args.daemon:
         asyncio.run(X.run())
-        sys.exit(0)
-        X.net_start()
-        X.unet_start()
-        while True:
-            X.unet_loop()
-            X.net_loop()
-            X.scheduler()
-            time.sleep(0.01)
-            if args.quit > 0:
-                if X.uptime_start + args.quit < time.time():
-                    sys.exit(0)
         sys.exit(0)
 
     if args.tload:
