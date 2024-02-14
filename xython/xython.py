@@ -3100,11 +3100,11 @@ class xythonsrv:
         hdata = msg["buf"]
         column = None
         # only first line is important
-        sline = hdata.split("\n")
-        line = sline[0]
-        sline = line.split(" ")
-        hostcol = sline[1]
-        color = sline[2]
+        lines = hdata.split("\n")
+        line = lines[0]
+        toks = line.split(" ")
+        hostcol = toks[1]
+        color = toks[2]
         hc = hostcol.split(".")
         if len(hc) < 2:
             return False
@@ -3115,13 +3115,15 @@ class xythonsrv:
             self.error(f"ERROR: invalid color {color}")
             return False
         expire = 30 * 60
-        wstatus = sline[0].replace("status", "")
+        wstatus = toks[0].replace("status", "")
         if len(wstatus) > 0:
             # either group and/or +x
             if wstatus[0] == '+':
                 expire = xydelay(wstatus)
-        self.debug("DEBUG: HOST.COL=%s %s %s color=%s expire=%d" % (sline[1], hostname, column, color, expire))
-
+        self.debug(f"DEBUG: HOST.COL={line} {hostname} {column} color={color} expire={expire}")
+        # remove status+x host.col color
+        remove = f"status{wstatus} {hostname}.{column} {color} "
+        hdata = hdata.replace(remove, "")
         if column is not None:
             self.column_update(hostname, column, color, int(time.time()), hdata, expire, msg["addr"])
         return False
