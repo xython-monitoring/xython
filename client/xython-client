@@ -206,9 +206,17 @@ esac
 if [ -x /bin/ip ];then
 	echo '[iproute2_route]'
 	ip route
+	ip -6 route
 	echo '[iproute2_stat]'
 	ip -s link show
 fi
+
+if [ -x /sbin/iptables ];then
+	echo '[iptables]'
+	iptables -L -v -n
+	iptables -L -v -n -t nat
+fi
+
 # Report mdstat data if it exists
 if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 if test -x /usr/bin/sensors
