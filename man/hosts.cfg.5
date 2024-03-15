@@ -334,20 +334,20 @@ The keyword "dialup" for a host means that it is OK for it to be
 off-line - this should not trigger an alert. All network tests
 will go "clear" upon failure, and any missing reports from e.g.
 cpu- and disk-status will not go purple when they are not updated.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP nonongreen
 Ignore this host on the "All non-green" page. Even if it has an active alert,
 it will not be included in the "All non-green" page. This also removes the
 host from the event-log display.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP nodisp
 Ignore this host completely when generating the Xymon webpages.
 Can be useful for monitoring a host without having it show up on
 the webpages, e.g. because it is not yet in production use. Or for
 hiding a host that is shown only on a second pageset.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP TRENDS:[*,][![graph,...]]
 Defines the RRD graphs to include in the "trends" column
