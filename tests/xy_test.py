@@ -364,10 +364,7 @@ def test_proc_check():
     assert ret["color"] == 'red'
 
 
-def test_proc_disk():
-    # f = open("./tests/disk/test0")
-    # data = f.readlines()
-    # f.close()
+def test_disk():
 
     xrd = xy_rule_disks()
     xrd.add('/ 10 30')
@@ -402,6 +399,25 @@ def test_proc_disk():
     assert ret["color"] == "yellow"
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  0% /")
     assert ret["color"] == "green"
+
+    X = xythonsrv()
+    X.lldebug = True
+    X.etcdir = './tests/etc/xython-load/'
+    setup_testdir(X, 'disk')
+    X.init()
+
+    f = open("./tests/disk/test0")
+    data = f.read()
+    f.close()
+    X.parse_df('test01', data, False, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test01" AND column == "disk"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'red'
+
+    shutil.rmtree(X.xt_data)
 
 
 def test_rule_mem():
