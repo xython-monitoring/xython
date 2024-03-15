@@ -8,7 +8,7 @@ shm                                 16399020     401960  15997060   3% /dev/shm
 /dev/md125                        3169394608 3098988796  70389428  98% /mnt/data
 /dev/mapper/_dev_dm_22              10216724    5541956   4134200  58% /home/x1
 /dev/mapper/_dev_dm_23              20449872   11005108   8380624  57% /home/x2
-none                                16399020     276136  16122884   2% /var/tmp/portage
-/dev/sda1                             523248       2660    520588   1% /boot/efi
 /dev/mapper/_dev_dm_15             205311976  157936368  36873568  82% /mnt/x3
 /dev/loop0                            554020     554020         0 100% /mnt/loop0
+none                                16399020     276136  16122884   2% /var/tmp/portage
+/dev/sda1                             523248       2660    520588   1% /boot/efi

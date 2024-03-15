@@ -3062,7 +3062,7 @@ class xythonsrv:
 
         H = self.find_host(hostname)
         if H is None:
-            self.error("ERROR: parse_ports: host is None")
+            self.error("ERROR: parse_disk: host is None")
             return 2
         sline = buf.split("\n")
         for line in sline:
@@ -3078,7 +3078,7 @@ class xythonsrv:
                 ret = None
             if ret is not None:
                 sbuf += ret["txt"] + '\n'
-                color = ret["color"]
+                color = setcolor(ret["color"], color)
                 if "pct" in ret:
                     pct = ret["pct"]
                     mnt = ret["mnt"]
@@ -3086,7 +3086,7 @@ class xythonsrv:
                 ret = self.rules[S].check(line)
                 if ret is not None:
                     sbuf += ret["txt"] + '\n'
-                    color = ret["color"]
+                    color = setcolor(ret["color"], color)
                     if "pct" in ret:
                         pct = ret["pct"]
                         mnt = ret["mnt"]
