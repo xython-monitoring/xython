@@ -120,6 +120,7 @@ class xy_host:
         self.sslalarm = 10
         self.dialup = False
         self.ping_success = False
+        self.pages = ['all', 'nongreen']
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -262,6 +263,7 @@ class xythonsrv:
         self.MAX_MSG_SIZE = 512 * 1024
         self.ghosts = []
         self.quit = 0
+        self.pagelist = ['all', 'nongreen']
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -816,7 +818,7 @@ class xythonsrv:
         hlist.append('<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n')
         hlist.append('<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>')
         if pagename == 'nongreen':
-            res = self.sqc.execute("SELECT DISTINCT column FROM columns where color != 'green' AND color != 'blue' AND color != 'clear' ORDER BY column")
+            res = self.sqc.execute("SELECT DISTINCT column FROM columns WHERE color != 'green' AND color != 'blue' AND color != 'clear' AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == 'nongreen') ORDER BY column")
         else:
             res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
         results = self.sqc.fetchall()
@@ -828,7 +830,7 @@ class xythonsrv:
         hlist.append('</TR><TR><TD COLSPAN={len(results)}><HR WIDTH="100%%"></TD></TR>\n')
 
         if pagename == 'nongreen':
-            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") ORDER by hostname, column')
+            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen") ORDER by hostname, column')
         else:
             self.sqc.execute('SELECT hostname,column,ts,color FROM columns ORDER BY hostname,column')
         results = self.sqc.fetchall()
@@ -846,7 +848,7 @@ class xythonsrv:
                 hlist.append(f'<A HREF="/xython/xython.html" ><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">{hostname}</FONT></A>')
             Cname = result[1]
             if Cname not in cols:
-                print(f"IGNORE {Cname} not in {cols}")
+                # print(f"IGNORE {Cname} not in {cols}")
                 continue
             lts = result[2]
             lcolor = result[3]
@@ -1067,6 +1069,15 @@ class xythonsrv:
                     need_conn = False
                     H.tags_known.append(tag)
                     continue
+                if tag[0:10] == 'nonongreen':
+                    H.pages.remove('nongreen')
+                    H.tags_known.append(tag)
+                    continue
+                if tag[0:6] == 'nodisp':
+                    H.pages.remove('nongreen')
+                    H.pages.remove('all')
+                    H.tags_known.append(tag)
+                    continue
                 tokens = tag.split(':')
                 test = tokens[0]
                 if test in self.protocols:
@@ -1173,6 +1184,10 @@ class xythonsrv:
                 self.log("todo", f"TODO hosts: tag={tag}")
                 self.debug(f"\tDEBUG: unknow tag={tag}xxx")
                 H.tags_unknown.append(tag)
+            # end tag
+            self.host_page_clean(H.name)
+            for page in H.pages:
+                self.host_add_to_page(page, H.name)
             if need_conn:
                 H.add_test("conn", "conn", None, "conn", True, False)
             self.gen_column_info(H.name)
@@ -3483,7 +3498,7 @@ class xythonsrv:
             lines = buf.split("\n")
             line = lines.pop(0)
             buf = "\n".join(lines)
-            self.parse_hostdata(buf, line.split(':')[1] )
+            self.parse_hostdata(buf, line.split(':')[1])
         elif cmd == "TLSproxy" or cmd == "HTTPTLSproxy":
             lines = buf.split("\n")
             line = lines.pop(0)
@@ -3597,6 +3612,8 @@ class xythonsrv:
             (hostname text, column text, ts date, duration int, color text, ocolor text)''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
             (hostname text, column text, next date, UNIQUE(hostname, column))''')
+        self.sqc.execute('''CREATE TABLE IF NOT EXISTS pages
+            (hostname text, pagename text, UNIQUE(hostname, pagename))''')
         self.sqc.execute('DELETE FROM tests')
         ret = self.read_configs()
         if not ret:
@@ -3635,6 +3652,30 @@ class xythonsrv:
         if ret == self.RET_NEW:
             self.gen_tests()
         return True
+
+    def page_add(self, pagename):
+        if pagename in self.pagelist:
+            self.error(f"ERROR: {pagename} already exists")
+            return self.RET_ERR
+        self.pagelist.append(pagename)
+        return self.RET_NEW
+
+    def page_remove(self, pagename):
+        # TODO
+        if pagename not in self.pagelist:
+            self.error(f"ERROR: {pagename} do not exists")
+            return self.RET_ERR
+
+    def host_add_to_page(self, pagename, hostname):
+        self.debug(f'DEBUG: add {hostname} to {pagename}')
+        if pagename not in self.pagelist:
+            self.error(f"ERROR: {pagename} do not exists")
+            return self.RET_ERR
+        self.sqc.execute('INSERT OR REPLACE INTO pages (pagename, hostname) VALUES (?, ?)', (pagename, hostname))
+
+    def host_page_clean(self, hostname):
+        self.debug(f"DEBUG: page clean {hostname}")
+        self.sqc.execute('DELETE FROM pages WHERE hostname == (?)', [hostname])
 
     def print(self):
         print(f"VAR is {self.xy_data}")
