@@ -13,6 +13,7 @@ import time
 import re
 import sys
 from random import randint
+import resource
 import shutil
 import socket
 from importlib.metadata import version
@@ -3748,6 +3749,11 @@ class xythonsrv:
                 return
 
     async def run(self):
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        self.debug(f"DEBUG: resources hard={hard} soft={soft}")
+        resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        self.debug(f"DEBUG: resources after hard={hard} soft={soft}")
         self.tasks = []
 
         coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.netport, backlog=1000, sock=self.s)
