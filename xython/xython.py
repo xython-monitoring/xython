@@ -3709,16 +3709,17 @@ class xythonsrv:
             writer.write(ret["bsend"])
         try:
             await writer.drain()
-        except BrokenPipeError:
-            writer.close()
-            return
+        except BrokenPipeError as e:
+            self.error(f"ERROR: {str(e)}")
+        except ConnectionResetError as e:
+            self.error(f"ERROR: {str(e)}")
         writer.close()
         return
 
     async def handle_inet_client(self, reader, writer):
         peername = writer.get_extra_info('peername')
         try:
-            data = await asyncio.wait_for(reader.readline(), timeout=5)
+            data = await asyncio.wait_for(reader.readline(), timeout=10)
         except TimeoutError:
             writer.close()
             return
@@ -3731,7 +3732,7 @@ class xythonsrv:
         i = 0
         while True:
             try:
-                data = await asyncio.wait_for(reader.read(320000), timeout=5)
+                data = await asyncio.wait_for(reader.read(320000), timeout=10)
                 message += data.decode("UTF8")
                 if len(data) == 0:
                     self.handle_net_message(message, peername)
@@ -3776,4 +3777,7 @@ class xythonsrv:
         self.tasks.append(coro)
         sc = asyncio.create_task(self.do_scheduler())
         self.tasks.append(sc)
-        await asyncio.gather(*self.tasks)
+        try:
+            await asyncio.gather(*self.tasks)
+        except OSError as e:
+            self.error(f"DEBUG: catched {str(e)}")
