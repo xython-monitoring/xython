@@ -899,7 +899,7 @@ class xythonsrv:
             if rdata is None:
                 html = "HIST not found"
                 return html
-            color = rdata["first"]
+            color = rdata["first"].split(' ')[0]
             hlist.append('<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY="Detail Status">')
             # TODO replace with first line of status (without color)
             hlist.append('<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"])
