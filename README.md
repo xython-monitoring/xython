@@ -73,6 +73,16 @@ The ebuild for gentoo could be found at <https://github.com/montjoie/montjoiegen
 #### BSD
 I plan to support freeBSD, openBSD and netBSD
 
+#### client install on currently non-packaged distro (BSD, OPNsense, openWRT)
+The easiest way to have client on such host is to use the cssh way, the server will execute client over SSH (See man page)
+
+In case you do not want that:
+- You have just to copy client/* in /usr/bin/
+- Recreate /etc/xython with etc/xython-client.cfg
+- Run xython-client.sh via a cron
+
+TODO test openWRT
+
 #### other RPM distro
 For RPM packaging, I target fedora 39 and rockylinux9. (Please ask for more if needed)
 
@@ -240,6 +250,12 @@ In the same time, all BB and hobbit compatibility will be removed probably.
 * ntpd + rtc
 * kernel log / dmesg
 * docker ps
+
+# Migrating from xymon
+TODO create a script from converting a xymon install to a xython install
+- checking consistancy of data
+- moving from xymon datadir to /var/lib/xython
+- compressing files
 
 # TODO
 This is a uncomplete list
