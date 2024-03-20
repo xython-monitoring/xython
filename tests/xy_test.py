@@ -28,6 +28,7 @@ from xython.common import event_yesterday
 from xython.common import event_today
 from xython.common import setcolor
 from xython.common import is_valid_hostname
+from xython.common import is_valid_color
 from xython.common import is_valid_column
 from xython.rules import xy_rule_disks
 from xython.rules import xy_rule_port
@@ -147,6 +148,8 @@ def test_validator():
     assert not is_valid_column("test/")
     assert not is_valid_column("test*")
     assert not is_valid_column("teséàçö")
+    assert not is_valid_color("teséàçö")
+    assert is_valid_color("green")
 
 
 def test_read_xymonserver():
