@@ -55,6 +55,7 @@ from .common import xydhm
 from .common import xydelay
 from .common import COLORS
 from .common import is_valid_hostname
+from .common import is_valid_color
 from .common import is_valid_column
 
 from .rules import xy_rule_disks
@@ -900,6 +901,9 @@ class xythonsrv:
                 html = "HIST not found"
                 return html
             color = rdata["first"].split(' ')[0]
+            if not is_valid_color(color):
+                html = 'Invalid DATA'
+                return html
             hlist.append('<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY="Detail Status">')
             # TODO replace with first line of status (without color)
             hlist.append('<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"])
