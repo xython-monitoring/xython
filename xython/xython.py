@@ -265,7 +265,9 @@ class xythonsrv:
         self.MAX_MSG_SIZE = 512 * 1024
         self.ghosts = []
         self.quit = 0
-        self.pagelist = ['all', 'nongreen']
+        self.pagelist = {}
+        self.pagelist['all'] = {}
+        self.pagelist['nongreen'] = {}
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -766,11 +768,11 @@ class xythonsrv:
             footer = 'stdnormal_footer'
         hlist = self.html_header(header)
         if pagename == 'nongreen':
-            ret = self.html_hostlist(pagename)
+            ret = self.html_hostlist(pagename, None)
             hlist += ret["html"]
             color = ret["color"]
         if pagename == 'all':
-            ret = self.html_hostlist(pagename)
+            ret = self.html_hostlist(pagename, None)
             hlist += ret["html"]
             color = ret["color"]
         if pagename == 'acknowledgements':
@@ -806,8 +808,8 @@ class xythonsrv:
         html = self.html_finalize(color, hlist, pagename)
         return html
 
-    def html_hostlist(self, pagename):
-        # self.debug(f"DEBUG: html_hostlist for {pagename}")
+    def html_hostlist(self, pagename, group):
+        self.debug(f"DEBUG: html_hostlist for {pagename} group={group}")
         now = time.time()
         hlist = []
         color = 'green'
@@ -817,16 +819,30 @@ class xythonsrv:
         hlist.append('<A NAME="hosts-blk">&nbsp;</A>\n')
         hlist.append('<A NAME=hosts-blk-1>&nbsp;</A>\n')
 
-        hlist.append('<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n')
-        hlist.append('<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>')
+        if group is not None:
+            grouptitle = group
+            if 'title' in self.pagelist[pagename]['group'][group]:
+                grouptitle = self.pagelist[pagename]['group'][group]['title']
+            hlist.append(f'<CENTER><TABLE SUMMARY="{group} Group Block" BORDER=0 CELLPADDING=2>\n')
+            hlist.append(f'<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1">{grouptitle}</FONT></CENTER></TD>')
+        else:
+            hlist.append('<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n')
+            hlist.append('<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>')
         if pagename == 'nongreen':
             res = self.sqc.execute("SELECT DISTINCT column FROM columns WHERE color != 'green' AND color != 'blue' AND color != 'clear' AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == 'nongreen') ORDER BY column")
         else:
-            res = self.sqc.execute("SELECT DISTINCT column FROM columns ORDER BY column")
+            res = self.sqc.execute(f'SELECT DISTINCT column FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "{pagename}" AND groupname == "{group}") ORDER BY column')
         results = self.sqc.fetchall()
         cols = []
         for col in results:
             colname = col[0]
+            if group is not None:
+                if 'group-only' in self.pagelist[pagename]['group'][group]:
+                    if colname not in self.pagelist[pagename]['group'][group]['group-only']:
+                        continue
+                if 'group-except' in self.pagelist[pagename]['group'][group]:
+                    if colname in self.pagelist[pagename]['group'][group]['group-except']:
+                        continue
             cols.append(colname)
             hlist.append(f'<TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n<A HREF="$XYMONSERVERCGIURL/columndoc.sh?{colname}"><FONT COLOR="#87a9e5" SIZE="-1"><B>{colname}</B></FONT></A> </TD>\n')
         hlist.append('</TR><TR><TD COLSPAN={len(results)}><HR WIDTH="100%%"></TD></TR>\n')
@@ -834,7 +850,7 @@ class xythonsrv:
         if pagename == 'nongreen':
             self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen") ORDER by hostname, column')
         else:
-            self.sqc.execute('SELECT hostname,column,ts,color FROM columns ORDER BY hostname,column')
+            self.sqc.execute(f'SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "{pagename}" AND groupname == "{group}") ORDER BY hostname,column')
         results = self.sqc.fetchall()
         chost = None
         ci = 0
@@ -875,11 +891,18 @@ class xythonsrv:
         hlist.append('</TR>\n</TABLE></CENTER><BR>')
 
         # end nongreen
-        hlist += self.html_history(now, "")
+        if pagename in ['all', 'nongreen']:
+            # TODO move this
+            hlist += self.html_history(now, "")
         ret = {}
         ret["color"] = color
         ret["html"] = hlist
         return ret
+
+    def gen_htmls(self):
+        for pagename in self.pagelist:
+            self.debug(f"DEBUG: will generate page {pagename}")
+            self.gen_html(pagename, None, None, None)
 
     # TODO template jinja ?
     def gen_html(self, pagename, hostname, column, ts):
@@ -887,11 +910,17 @@ class xythonsrv:
         color = 'green'
         hlist = self.html_header('stdnormal_header')
 
-        if pagename == 'nongreen' or pagename == 'all':
+        #if pagename == 'nongreen' or pagename == 'all':
+        if pagename != 'svcstatus':
             ts = time.time()
-            ret = self.html_hostlist(pagename)
+            ret = self.html_hostlist(pagename, None)
             hlist += ret["html"]
             color = ret["color"]
+            if 'group' in self.pagelist[pagename]:
+                for group in self.pagelist[pagename]['group']:
+                    ret = self.html_hostlist(pagename, group)
+                    hlist += ret["html"]
+                    color = setcolor(ret["color"], color)
             self.stat("HTML_hostlist", time.time() - ts)
 
         history_extra = ""
@@ -995,6 +1024,20 @@ class xythonsrv:
                 # TODO find a better solution
                 os.chmod(self.wwwdir + "/xymon.html", 0o644)
             return
+        if pagename != 'svcstatus':
+            reldir = os.path.dirname(pagename)
+            fdir = f'{self.wwwdir}/{reldir}'
+            self.debug(f'TEST {fdir}')
+            if not os.path.exists(fdir):
+                self.debug(f'CREATE {fdir}')
+                os.mkdir(fdir)
+                os.chmod(fdir, 0o755)
+            print(reldir)
+            fhtml = open(self.wwwdir + f'/{pagename}.html', 'w')
+            fhtml.write(html)
+            fhtml.close()
+            # TODO find a better solution
+            os.chmod(self.wwwdir + f"/{pagename}.html", 0o644)
         return html
 
     def dump(self, hostname):
@@ -1190,9 +1233,9 @@ class xythonsrv:
                 self.debug(f"\tDEBUG: unknow tag={tag}xxx")
                 H.tags_unknown.append(tag)
             # end tag
-            self.host_page_clean(H.name)
+            #self.host_page_clean(H.name)
             for page in H.pages:
-                self.host_add_to_page(page, H.name)
+                self.host_add_to_page(page, H.name, None)
             if need_conn:
                 H.add_test("conn", "conn", None, "conn", True, False)
             self.gen_column_info(H.name)
@@ -1246,6 +1289,29 @@ class xythonsrv:
         # TODO prevent inifine loop (like having directory hosts.d in hosts.d/file)
         return self.read_hosts_file(self.etcdir + "/hosts.cfg")
 
+    def create_host(self, host_name, host_ip, tags):
+        # if host already exists, remove it
+        host_tags = None
+        H = self.find_host(host_name)
+        if H is not None:
+            if H.rhcnt == self.read_hosts_cnt:
+                self.debug(f'DEBUG: duplicate host {H.name}')
+                return self.RET_OK
+            # old host
+            host_tags = H.tags
+            self.remove_host(H)
+            self.host_page_clean(H.name)
+        H = xy_host(host_name)
+        H.rhcnt = self.read_hosts_cnt
+        H.hostip = host_ip
+        if host_tags != tags:
+            self.log(self.daemon_name, f"host {H.name} have some changes")
+        else:
+            self.log(self.daemon_name, f"host {H.name} with no changes")
+        H.tags = tags
+        self.add_host(H)
+        return self.RET_OK
+
     def read_hosts_file(self, fpath):
         # on error it force to reload next time
         self.mtimes_hosts[fpath] = {}
@@ -1260,10 +1326,18 @@ class xythonsrv:
             return self.RET_ERR
         if fpath not in self.mtimes_hosts:
             self.mtimes_hosts[fpath] = {}
-        self.mtimes_hosts[fpath]["mtime"] = os.path.getmtime(fpath)
+        try:
+            self.mtimes_hosts[fpath]["mtime"] = os.path.getmtime(fpath)
+        except FileNotFoundError as e:
+            self.error(f"ERROR: Cannot open {fpath} {str(e)}")
+            return self.RET_ERR
+        self.page_init()
         self.debug(f"DEBUG: HOSTS: read {fpath}")
         dhosts = fhosts.read()
         dhosts = dhosts.replace('\\\n', '')
+        current_parent = 'all'
+        current_page = 'all'
+        current_group = 'None'
         for line in dhosts.split('\n'):
             line = line.rstrip()
             line = re.sub(r"\s+", " ", line)
@@ -1276,10 +1350,43 @@ class xythonsrv:
                 self.error(f"ERROR: hosts line is too short {line}")
                 continue
             keyword = sline.pop(0)
+            if keyword == 'page':
+                current_page = sline.pop(0)
+                current_parent = current_page
+                ret = self.page_add(current_page)
+                if ret != self.RET_NEW:
+                    return ret
+                if len(sline) > 0:
+                    self.pagelist[current_parent]['title'] = ' '.join(sline)
+
+            if keyword == 'subpage':
+                current_page = current_parent + '/' + sline.pop(0)
+                ret = self.page_add(current_page)
+                if ret != self.RET_NEW:
+                    return ret
+            if keyword in ['group', 'group-only', 'group-except']:
+                current_group = sline.pop(0)
+                self.debug(f'DEBUG: ============ GROUP={current_group}')
+                if 'group' not in self.pagelist[current_page]:
+                    self.pagelist[current_page]['group'] = {}
+                if current_group in self.pagelist[current_page]['group']:
+                    self.error(f'ERROR: group {current_group} already exists')
+                    continue
+                self.pagelist[current_page]['group'][current_group] = {}
+                if keyword == 'group-only' or keyword == 'group-except':
+                    if len(sline) == 0:
+                        self.error(f'ERROR: {keyword} without filter')
+                        continue
+                    gfilterraw = sline.pop(0)
+                    gfilter = gfilterraw.split('|')
+                    self.pagelist[current_page]['group'][current_group][keyword] = gfilter
+                if len(sline) > 0:
+                    self.pagelist[current_page]['group'][current_group]['title'] = ' '.join(sline)
+                continue
             if keyword in ['dispinclude', 'netinclude', 'optional',
                            'page', 'subpage', 'subparent',
-                           'vpage', 'vsubpage', 'vsubparent', 'group']:
-                self.log(f"UNHANDLED {keyword}")
+                           'vpage', 'vsubpage', 'vsubparent']:
+                self.log(self.daemon_name, f"UNHANDLED {keyword}")
                 continue
             if keyword == 'include':
                 dname = sline.pop(0)
@@ -1309,26 +1416,13 @@ class xythonsrv:
                 continue
             host_ip = keyword
             host_name = sline.pop(0)
-            if '/' in host_name:
+            if not is_valid_hostname(host_name):
                 self.error(f"ERROR: invalid hostname {host_name}")
                 continue
             self.debug("DEBUG: ip=%s host=%s" % (host_ip, host_name))
             # conn is enabled by default
-            # if host already exists, remove it
-            host_tags = None
-            H = self.find_host(host_name)
-            if H is not None:
-                host_tags = H.tags
-                self.remove_host(H)
-            H = xy_host(host_name)
-            H.rhcnt = self.read_hosts_cnt
-            H.hostip = host_ip
-            if host_tags != sline:
-                self.log(self.daemon_name, f"New host {H.name}")
-            else:
-                self.log(self.daemon_name, f"Known host {H.name}")
-            H.tags = sline
-            self.add_host(H)
+            self.create_host(host_name, host_ip, sline)
+            self.host_add_to_page(current_page, host_name, current_group)
         for hostname in list(self.xy_hosts):
             H = self.xy_hosts[hostname]
             if H.rhcnt < self.read_hosts_cnt:
@@ -2255,8 +2349,7 @@ class xythonsrv:
 
         if now > self.ts_page + self.GENPAGE_INTERVAL:
             ts_start = time.time()
-            self.gen_html("nongreen", None, None, None)
-            self.gen_html("all", None, None, None)
+            self.gen_htmls()
             ts_end = time.time()
             self.stat("HTML", ts_end - ts_start)
             self.ts_page = now
@@ -3618,7 +3711,7 @@ class xythonsrv:
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
             (hostname text, column text, next date, UNIQUE(hostname, column))''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS pages
-            (hostname text, pagename text, UNIQUE(hostname, pagename))''')
+            (hostname text NOT NULL, pagename text NOT NULL, groupname TEXT, UNIQUE(hostname, pagename, groupname))''')
         self.sqc.execute('DELETE FROM tests')
         ret = self.read_configs()
         if not ret:
@@ -3658,11 +3751,17 @@ class xythonsrv:
             self.gen_tests()
         return True
 
+    def page_init(self):
+        self.pagelist = {}
+        self.pagelist['all'] = {}
+        self.pagelist['nongreen'] = {}
+
     def page_add(self, pagename):
+        self.debug(f"DEBUG: create page {pagename}")
         if pagename in self.pagelist:
             self.error(f"ERROR: {pagename} already exists")
             return self.RET_ERR
-        self.pagelist.append(pagename)
+        self.pagelist[pagename] = {}
         return self.RET_NEW
 
     def page_remove(self, pagename):
@@ -3671,12 +3770,12 @@ class xythonsrv:
             self.error(f"ERROR: {pagename} do not exists")
             return self.RET_ERR
 
-    def host_add_to_page(self, pagename, hostname):
-        self.debug(f'DEBUG: add {hostname} to {pagename}')
+    def host_add_to_page(self, pagename, hostname, group):
+        self.debug(f'DEBUG: add {hostname} to {pagename} (group={group})')
         if pagename not in self.pagelist:
             self.error(f"ERROR: {pagename} do not exists")
             return self.RET_ERR
-        self.sqc.execute('INSERT OR REPLACE INTO pages (pagename, hostname) VALUES (?, ?)', (pagename, hostname))
+        self.sqc.execute('INSERT OR REPLACE INTO pages (pagename, hostname, groupname) VALUES (?, ?, ?)', (pagename, hostname, group))
 
     def host_page_clean(self, hostname):
         self.debug(f"DEBUG: page clean {hostname}")
