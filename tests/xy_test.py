@@ -50,6 +50,18 @@ try:
 except ImportError:
     has_rrdtool = False
 
+def clean_html(hdir):
+    dirFiles = os.listdir(hdir)
+    print(f"========= CLEAN {hdir}")
+    for file in dirFiles:
+        if file == '.empty':
+            continue
+        print(f'HANDLE {file}')
+        if 'html' in file or 'png' in file:
+            os.remove(f'{hdir}/{file}')
+            continue
+        clean_html(f'{hdir}/{file}')
+        os.rmdir(f'{hdir}/{file}')
 
 def setup_testdir(X, name):
     X.xt_data = f'./tests/data-{name}-' + str(random.randint(0, 32000))
@@ -58,7 +70,16 @@ def setup_testdir(X, name):
         os.mkdir(X.xt_data)
     if not os.path.exists(X.xt_logdir):
         os.mkdir(X.xt_logdir)
+    wwwdir = 'tests/www/'
+    if os.path.exists(wwwdir):
+        clean_html(wwwdir)
 
+def setup_clean(X):
+    shutil.rmtree(X.xt_data)
+
+    wwwdir = 'tests/www/'
+    if os.path.exists(wwwdir):
+        clean_html(wwwdir)
 
 def test_xytime():
     assert xytime(1678871776) == 'Wed Mar 15 10:16:16 2023'
@@ -1289,3 +1310,23 @@ def todo_timing():
     print(X.stats)
 
     shutil.rmtree(X.xt_data)
+
+def test_pages():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-page/'
+    setup_testdir(X, 'page')
+    X.lldebug = True
+    X.init()
+
+    X.sqc.execute('SELECT * FROM columns')
+    results = X.sqc.fetchall()
+    print(results)
+    X.sqc.execute('SELECT * FROM pages')
+    results = X.sqc.fetchall()
+    for page in results:
+        print(page)
+    print(X.pagelist)
+
+    X.gen_htmls()
+
+    setup_clean(X)

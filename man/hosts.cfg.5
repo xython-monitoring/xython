@@ -151,12 +151,12 @@ tool when generating the Xymon webpages or reports.
 This defines a page at the level below the entry page. All
 hosts following the "page" directive appear on this page, until 
 a new "page", "subpage" or "subparent" line is found.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP "subpage NAME [Page-title]"
 This defines a sub-page in the second level below the entry page.
 You must have a previous "page" line to hook this sub-page to.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP "subparent parentpage newpage [Page-title]"
 This is used to define sub-pages in whatever levels you may
@@ -217,7 +217,7 @@ following the "group" line appear inside the group, until a
 new "group" or page-line is found. The two group-directives
 are handled identically by Xymon and xymongen, but both forms
 are allowed for backwards compatibility.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP "group\-sorted [group-title]"
 Same as the "group" line, but will sort the hosts inside the
@@ -228,13 +228,13 @@ group so they appear in strict lexicographic order.
 Same as the "group" and "group\-compress" lines, but includes
 only the columns explicitly listed in the group. Any columns
 not listed will be ignored for these hosts.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP "group\-except COLUMN1|COLUMN2|COLUMN3 [group-title]"
 Same as the "group\-only" lines, but includes all columns EXCEPT
 those explicitly listed in the group. Any columns listed will 
 be ignored for these hosts - all other columns are shown.
-.BR Xython: TODO
+.BR Xython: OK
 
 .IP "title Page, group or host title text"
 The "title" tag is used to put custom headings into the
