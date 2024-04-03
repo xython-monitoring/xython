@@ -857,6 +857,10 @@ class xythonsrv:
         for result in results:
             hostname = result[0]
             if hostname != chost:
+                # finish feeding with '-'
+                while ci > 0 and ci < len(cols):
+                    ci += 1
+                    hlist.append('<TD ALIGN=CENTER>-</TD>\n')
                 if chost is not None:
                     hlist.append('</TR>\n')
                 chost = hostname
@@ -887,6 +891,10 @@ class xythonsrv:
             hlist.append(f'<A HREF="$XYMONSERVERCGIURL/xythoncgi.py?HOST={hostname}&amp;SERVICE={Cname}">')
             hlist.append(f'<IMG SRC="/xython/gifs/{gif(lcolor, lts, isack)}" ALT="{Cname}:{lcolor}:{dhm}" TITLE="{Cname}:{lcolor}:{dhm}" HEIGHT="16" WIDTH="16" BORDER=0></A></TD>')
             ci += 1
+        # finish feeding with '-'
+        while ci > 0 and ci < len(cols):
+            ci += 1
+            hlist.append('<TD ALIGN=CENTER>-</TD>\n')
 
         hlist.append('</TR>\n</TABLE></CENTER><BR>')
 
