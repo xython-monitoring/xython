@@ -521,7 +521,7 @@ class xythonsrv:
         pclientlocalcfg = f"{self.etcdir}/client-local.cfg"
         try:
             mtime = os.path.getmtime(pclientlocalcfg)
-        except:
+        except FileNotFoundError:
             self.error(f"ERROR: fail to get mtime of {pclientlocalcfg}")
             return self.RET_ERR
         # self.debug(f"DEBUG: read {pclientlocalcfg} mtime={mtime}")
@@ -562,7 +562,7 @@ class xythonsrv:
         pxserver = f"{self.etcdir}/xymonserver.cfg"
         try:
             mtime = os.path.getmtime(pxserver)
-        except:
+        except FileNotFoundError:
             self.error(f"ERROR: fail to get mtime of {pxserver}")
             return self.RET_ERR
         if self.time_read_xserver_cfg < mtime:
@@ -1068,8 +1068,8 @@ class xythonsrv:
         fname = f"{self.etcdir}/snmp.d/{hostname}"
         try:
             f = open(fname)
-        except FileNotFoundError:
-            self.error(f"Fail to open {fname}")
+        except FileNotFoundError as e:
+            self.error(f"Fail to open {fname} {str(e)}")
             return False
         except PermissionError as e:
             self.error(f"Fail to open {fname} {str(e)}")
@@ -1439,15 +1439,20 @@ class xythonsrv:
         return self.RET_NEW
 
     def read_protocols(self):
-        mtime = os.path.getmtime(self.etcdir + "/protocols.cfg")
+        path_protocols = self.etcdir + "/protocols.cfg"
+        try:
+            mtime = os.path.getmtime(path_protocols)
+        except FileNotFoundError as e:
+            self.error(f"ERROR: fail to get mtime of {path_protocols} {str(e)}")
+            return self.RET_ERR
         # self.debug(f"DEBUG: compare mtime={mtime} and time_read_protocols={self.time_read_protocols}")
         if self.time_read_protocols < mtime:
             self.time_read_protocols = mtime
         else:
             return self.RET_OK
         try:
-            fprotocols = open(self.etcdir + "/protocols.cfg", 'r')
-        except:
+            fprotocols = open(path_protocols, 'r')
+        except FileNotFoundError:
             self.error("ERROR: cannot open protocols.cfg")
             return self.RET_ERR
         dprotocols = fprotocols.read()
@@ -2564,7 +2569,7 @@ class xythonsrv:
         prrddef = f"{self.etcdir}/rrddefinitions.cfg"
         try:
             mtime = os.path.getmtime(prrddef)
-        except:
+        except FileNotFoundError:
             self.error(f"ERROR: fail to get mtime of {prrddef}")
             return self.RET_ERR
         if self.time_read_rrddef < mtime:
@@ -2607,7 +2612,10 @@ class xythonsrv:
 
     def load_graphs_cfg(self):
         pgraphs = f"{self.etcdir}/graphs.cfg"
-        mtime = os.path.getmtime(pgraphs)
+        try:
+            mtime = os.path.getmtime(pgraphs)
+        except FileNotFoundError:
+            return self.RET_ERR
         if self.time_read_graphs < mtime:
             self.time_read_graphs = mtime
         else:
