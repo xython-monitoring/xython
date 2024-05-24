@@ -24,8 +24,8 @@ This include blueing, purple, seeing history, main and nongreen HTMl page
 Handling client hostdata (cpu disk inode memory ports procs) and related hosts.cfg checks
 Handling some active tests (conn, smtp, imap, http, ssh)
 
-- 0.2: the version 0.2 will be when everything I use in my work setup will be handled.
-This include acking, RRD, page, group
+- 0.2: the version 0.2 will work on everything I use in my work setup will be handled.
+This include acking, RRD, page, group and a basic bot alerting
 
 - 0.3 Probably finishing handling remaing hostdata section (files, msgs)
 
@@ -279,6 +279,10 @@ This is a uncomplete list
 * OpenVAS integration
 * convert TLSd to asyncIO
 * interface link report (ethtool)
+* permit to run network active tests from a remote client/location (rconn,rssh,rhttp,etc...)
+* modelize depencies between hosts
+* do nslookup via ssh
+* disk: permit to set limit on Mb/Gb instead of percentage
 
 # List of xython install path (FHS)
 

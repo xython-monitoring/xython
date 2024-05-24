@@ -3529,7 +3529,7 @@ class xythonsrv:
 
     def handle_net_message(self, buf, addr):
         ret = {}
-        #if buf is None:
+        # if buf is None:
         #    buf = C["buf"]
         sbuf = buf.split(" ")
         cmd = sbuf[0]
@@ -3848,7 +3848,6 @@ class xythonsrv:
             sbuf = "\n".join(lsbuf)
             writer.write(sbuf.encode("UTF8"))
             await writer.drain()
-        i = 0
         while True:
             try:
                 data = await asyncio.wait_for(reader.read(320000), timeout=10)
