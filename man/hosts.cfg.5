@@ -905,7 +905,12 @@ default via the \-\-trace option.
 
 .BR Xython: TODO
 
-.SH Runing a remote client via SSH
+.SH Running remote tests via SSH
+.IP rssh://username[:password]@fqdn;ping:target
+Run a ping from remote destination at fqdn.
+Target is any FQDN/IP
+
+.SH Running a remote client via SSH
 .IP cssh://username[:password]@fqdn
 For remote host which cannot have xython installed,
 (like embedded systems or systems without packaging),

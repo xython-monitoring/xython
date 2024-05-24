@@ -31,6 +31,7 @@ import sqlite3
 from .xython_tests import ping
 from .xython_tests import dohttp
 from .xython_tests import do_cssh
+from .xython_tests import do_tssh
 from .xython_tests import do_snmp
 from .xython_tests import do_generic_proto
 import celery
@@ -1223,6 +1224,10 @@ class xythonsrv:
                     H.tags_known.append(tag)
                     H.add_test("cssh", tag, None, "cssh", True, False)
                     continue
+                if tag[0:7] == 'tssh://':
+                    H.tags_known.append(tag)
+                    H.add_test("tssh", tag, None, "tssh", True, False)
+                    continue
                 if tag[0:8] == 'ssldays=':
                     tokens = tag[8:].split(':')
                     if len(tokens) != 2:
@@ -2131,6 +2136,12 @@ class xythonsrv:
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 
+    def do_tssh(self, T):
+        name = f"{T.hostname}_tssh"
+        ctask = do_tssh.delay(T.hostname, T.urls)
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+
     def do_snmp(self, T):
         name = f"{T.hostname}_snmp"
         H = self.find_host(T.hostname)
@@ -2192,6 +2203,8 @@ class xythonsrv:
                             lag += 1
                     if T.type == 'cssh':
                         self.do_cssh(T)
+                    if T.type == 'tssh':
+                        self.do_tssh(T)
                     if T.type == 'snmp':
                         self.do_snmp(T)
                     if T.type == 'http':
