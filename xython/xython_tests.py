@@ -11,6 +11,7 @@ import subprocess
 import os
 import paramiko
 from paramiko import SSHClient
+import logging
 from pysnmp import hlapi
 import pysnmp
 import pyasn1
@@ -239,6 +240,246 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     return dret
 
+# xssh://[username][:password]@target[:port][;edkey=path][;rsakey=path][;ping:target]
+class xssh:
+    def __init__(self, hostname, url):
+        print(f'DEBUG: init with {url}')
+        self.dret = {}
+        self.dret["type"] = 'tssh'
+        self.dret["column"] = 'tssh'
+        self.dret["hostname"] = hostname
+        self.dret["txt"] = ""
+        self.dret["data"] = None
+        self.dret["color"] = 'green'
+        if hostname is None or url is None:
+            self.dret['color'] = 'red'
+            return
+        url.rstrip('\n')
+        self.hdata = ""
+        self.actions = []
+        self.hostname = hostname
+        self.port = 22
+        self.timeout = 60
+        self.key = None
+        tokens = url.split(';')
+        if len(tokens) <= 1:
+            self.dret['color'] = 'red'
+            self.dret['txt'] = 'No tests'
+            return
+        base = tokens.pop(0).replace("tssh://", '')
+        btoks = base.split('@')
+        if len(btoks) <= 1:
+            self.dret['color'] = 'red'
+            self.dret['txt'] = f'Invalid user@host {base}'
+            return
+        self.username = btoks[0]
+        self.chostname = btoks[1]
+        if self.chostname == '':
+            self.dret['color'] = 'red'
+            self.dret['txt'] = f'hostname is empty'
+            return
+        # handle ssh port
+        if ':' in self.chostname:
+            htoks = self.chostname.split(':')
+            if len(htoks) != 2:
+                self.dret['color'] = 'red'
+                self.dret['txt'] = f'ERROR: invalid hostname:port'
+                return
+            self.chostname = htoks[0]
+            try:
+                port = int(htoks[1])
+            except ValueError:
+                self.dret['color'] = 'red'
+                self.dret['txt'] = f'ERROR: port {htoks[1]} is not a number'
+                return
+            if port < 0 or port > 65535:
+                self.dret['color'] = 'red'
+                self.dret['txt'] = f'ERROR: port {port} is out of range'
+                return
+            self.port = port
+        self.password = None
+        self.ts_start = time.time()
+        if ':' in self.username:
+            usertok = self.username.split(':')
+            self.username = usertok.pop(0)
+            self.password = ':'.join(usertok)
+            self.hdata += "&clear password found\n"
+        if self.username == '':
+            self.dret['color'] = 'red'
+            self.dret['txt'] = f'ERROR: username is empty'
+            return
+        if self.password == '':
+            self.dret['color'] = 'red'
+            self.dret['txt'] = f'ERROR: password is empty'
+            return
+        for token in tokens:
+            if not self.check_token(token):
+                self.dret['color'] = 'red'
+        print(f'DEBUG: RSSH init with user={self.username} chostname={self.chostname}')
+
+    def check_token(self, token):
+        print(f'DEBUG: RSSH check token={token}')
+        if token[0:8] == 'timeout=':
+            ktoken = token.split("=")
+            if len(ktoken) != 2:
+                self.dret["txt"] += f"status+10m {self.hostname}.tssh red\n&red Wrong timeout token {token}\n"
+                return False
+            try:
+                timeout = int(ktoken[1])
+            except ValueError:
+                self.dret['color'] = 'red'
+                self.dret['txt'] = f'ERROR: timeout {ktoken[1]} is not a number'
+                return False
+            if timeout < 0:
+                self.dret['color'] = 'red'
+                self.dret['txt'] = f'ERROR: timeout {timeout} is out of range'
+                return
+            self.timeout = timeout
+            return True
+        if token[0:6] == 'edkey=':
+            ktoken = token.split("=")
+            if len(ktoken) != 2:
+                self.dret["txt"] += f"status+10m {self.hostname}.tssh red\n&red Wrong key token {token}\n"
+                return False
+            keypath = ktoken[1]
+            try:
+                self.key = paramiko.Ed25519Key.from_private_key_file(keypath)
+            except FileNotFoundError as e:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to load {keypath}: {str(e)}\n"
+                return False
+            except paramiko.ssh_exception.SSHException as e:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to load {keypath}: {str(e)}\n"
+                return False
+            except PermissionError as e:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to load {keypath}: {str(e)}\n"
+                return False
+            self.hdata += f"Loaded {keypath}\n"
+            return True
+        if token[0:7] == 'rsakey=':
+            ktoken = token.split("=")
+            if len(ktoken) != 2:
+                self.dret["txt"] += f"status+10m {self.hostname}.tssh red\n&red Wrong key token {token}\n"
+                return False
+            keypath = ktoken[1]
+            try:
+                self.key = paramiko.RSAKey.from_private_key_file(keypath)
+            except FileNotFoundError as e:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to load {keypath}: {str(e)}\n"
+                return False
+            except paramiko.ssh_exception.SSHException as e:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to load {keypath}: {str(e)}\n"
+                return False
+            except PermissionError as e:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to load {keypath}: {str(e)}\n"
+                return False
+            self.dret["txt"] += f"Loaded {keypath}\n"
+            return True
+        if token[0:5] == 'ping:':
+            ktoken = token.split(":")
+            if len(ktoken) != 2:
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red invalid ping\n"
+                return False
+            if ktoken[1] == '':
+                self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red empty target\n"
+                return False
+            action = {}
+            action['type'] = 'ping'
+            action['target'] = ktoken[1]
+            self.actions.append(action)
+            return True
+        if token == 'client':
+            action = {}
+            action['type'] = 'client'
+            self.actions.append(action)
+            return True
+        print(f"DEBUG: RSSH unknow keyword {token}")
+        self.dret["txt"] = f"status+11m {self.hostname}.tssh red\n&red unknown parameter {token}\n"
+        return False
+
+    def run(self):
+        print('DEBUG: RSSH run')
+        if len(self.actions) == 0:
+            print('DEBUG: RSSH no action setup')
+            self.dret['color'] = 'red'
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red no actions"
+            return self.dret
+        if self.dret['color'] == 'red':
+            print('DEBUG: RSSH already red')
+            print(self.dret)
+            return self.dret
+        client = SSHClient()
+        client.load_system_host_keys()
+        print('DEBUG: RSSH run2')
+        # TODO permit to choose the policy
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
+        # logger remove the paramiko.ssh_exception.IncompatiblePeer log
+        # https://github.com/paramiko/paramiko/pull/2157
+        # TODO do something better
+        logging.getLogger("paramiko").setLevel(logging.CRITICAL)
+        try:
+            client.connect(self.chostname, username=self.username, password=self.password, timeout=self.timeout, port=self.port, pkey=self.key)
+        except socket.gaierror as e:
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to connect on {self.chostname}: {str(e)}\n"
+            self.dret["color"] = 'red'
+            return self.dret
+        # Authentication failed
+        except paramiko.ssh_exception.SSHException as e:
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to connect(SSHException) on {self.chostname}: {str(e)}\n"
+            self.dret["color"] = 'red'
+            return self.dret
+        # TODO when I got that ? how to test
+        except PermissionError as e:
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to setup for {self.chostname}: {str(e)}\n"
+            self.dret["color"] = 'red'
+            return self.dret
+        # connexion refused
+        except paramiko.ssh_exception.NoValidConnectionsError as e:
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to connect(NoValidConnectionsError) on {self.chostname}: {str(e)}\n"
+            self.dret["color"] = 'red'
+            return self.dret
+        except TimeoutError as e:
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to connect(TimeoutError) on {self.chostname}: {str(e)}\n"
+            self.dret["color"] = 'red'
+            return self.dret
+        except socket.timeout as e:
+            self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to connect(TimeoutError) on {self.chostname}: {str(e)}\n"
+            self.dret["color"] = 'red'
+            return self.dret
+
+        for action in self.actions:
+            # action client
+            if action['type'] == 'client':
+                scp = paramiko.SFTPClient.from_transport(client.get_transport())
+                try:
+                    scp.put("/usr/bin/xython-client", "/tmp/xython-client")
+                # TODO when I got that ? how to test
+                except PermissionError as e:
+                    self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to scp on {self.chostname}: {str(e)}\n"
+                    return self.dret
+                scp.chmod("/tmp/xython-client", 0o770)
+                stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
+                self.dret["txt"] += f"status+10m {self.hostname}.tssh green\n&green tssh OK\n" + self.hdata
+                errorlog = '"'.join(stderr.readlines())
+                if errorlog:
+                    self.dret["color"] = 'yellow'
+                self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
+                self.dret["data"] = ''.join(stdout.readlines())
+                scp.close()
+            if action['type'] == 'ping':
+                stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}')
+                self.dret["txt"] += f"status+10m {self.hostname}.tssh green\n&green tssh OK\n" + self.hdata
+                errorlog = '"'.join(stderr.readlines())
+                if errorlog:
+                    self.dret["color"] = 'yellow'
+                if stdout.channel.recv_exit_status() != 0:
+                    self.dret["color"] = 'red'
+                self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
+                self.dret["txt"] += ''.join(stdout.readlines())
+        client.close()
+
+        test_duration = time.time() - self.ts_start
+        self.dret["txt"] += f"\nSeconds: {test_duration}\n"
+        return self.dret
 
 @app.task
 def do_cssh(hostname, urls):
@@ -343,6 +584,10 @@ def do_cssh(hostname, urls):
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     return dret
 
+@app.task
+def do_tssh(hostname, urls):
+    tssh = xssh(hostname, urls[0])
+    return tssh.run()
 
 @app.task
 def ping(hostname, t, doipv4, doipv6):
