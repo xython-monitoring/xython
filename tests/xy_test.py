@@ -43,6 +43,7 @@ from xython.xython_tests import hex_compare
 from xython.xython_tests import ping
 from xython.xython_tests import dohttp
 from xython.xython_tests import do_generic_proto
+from xython.xython_tests import xssh
 
 try:
     import rrdtool
@@ -1212,6 +1213,222 @@ def test_celery_protocols():
     ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "\\x47\\x45\\x54\\x20\\x2F\\x47HTTP/1.1\\x13\\x10Host: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
     assert ret["color"] == 'green'
 
+
+def test_celery_tssh():
+    r = xssh(None, None)
+    assert r.dret['color'] == 'red'
+    r = xssh('hostname', None)
+    assert r.dret['color'] == 'red'
+    r = xssh(None, 'invalid')
+    assert r.dret['color'] == 'red'
+
+    # no tssh://
+    r = xssh('valid', 'invalid')
+    assert r.dret['color'] == 'red'
+
+    # miss ;
+    r = xssh('valid', 'tssh://')
+    assert r.dret['color'] == 'red'
+
+    # no @
+    r = xssh('valid', 'tssh://hostname;')
+    assert r.dret['color'] == 'red'
+
+    # empty host
+    r = xssh('valid', 'tssh://root@;')
+    assert r.dret['color'] == 'red'
+
+    # empty user
+    r = xssh('valid', 'tssh://@hostname;')
+    assert r.dret['color'] == 'red'
+
+    # empty test
+    r = xssh('valid', 'tssh://root@hostname;')
+    assert r.dret['color'] == 'red'
+
+    # test is invalid
+    r = xssh('valid', 'tssh://root@hostname;invalid')
+    assert r.dret['color'] == 'red'
+
+    # test invalid user:pass
+    r = xssh('valid', 'tssh://root:@test;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == 'ERROR: password is empty'
+
+    # test invalid user:pass
+    r = xssh('valid', 'tssh://:password@test;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == 'ERROR: username is empty'
+
+    # test invalid port
+    r = xssh('valid', 'tssh://root@test:invalid:extraarg;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == 'ERROR: invalid hostname:port'
+
+    # test invalid port
+    r = xssh('valid', 'tssh://root@test:invalid;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == 'ERROR: port invalid is not a number'
+
+    # test invalid port
+    r = xssh('valid', 'tssh://root@test:70000;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == 'ERROR: port 70000 is out of range'
+
+    r = xssh('valid', 'tssh://root@test:7000;rsakey=x=;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Wrong key token rsakey=x=\n"
+    r = xssh('valid', 'tssh://root@test:7000;edkey=x=;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Wrong key token edkey=x=\n"
+
+
+    r = xssh('valid', 'tssh://root@test:7000;edkey=;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load : [Errno 2] No such file or directory: ''\n"
+    r = xssh('valid', 'tssh://root@test:7000;rsakey=;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load : [Errno 2] No such file or directory: ''\n"
+
+    # test non existant rsakey
+    r = xssh('valid', 'tssh://root@test:7000;rsakey=notexists;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load notexists: [Errno 2] No such file or directory: 'notexists'\n"
+    r = xssh('valid', 'tssh://root@test:7000;edkey=notexists;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load notexists: [Errno 2] No such file or directory: 'notexists'\n"
+
+    # test invalid rsakey
+    r = xssh('valid', 'tssh://root@test:7000;rsakey=./tests/ssh/invalid;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/invalid: not a valid RSA private key file\n"
+
+    # test invalid edkey
+    r = xssh('valid', 'tssh://root@test:7000;edkey=./tests/ssh/invalid;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/invalid: not a valid OPENSSH private key file\n"
+
+    # test permission denied
+    os.chmod('tests/ssh/eperm', 0)
+    r = xssh('valid', 'tssh://root@test:7000;edkey=./tests/ssh/eperm;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/eperm: [Errno 13] Permission denied: './tests/ssh/eperm'\n"
+    r = xssh('valid', 'tssh://root@test:7000;rsakey=./tests/ssh/eperm;client')
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/eperm: [Errno 13] Permission denied: './tests/ssh/eperm'\n"
+
+    r = xssh('valid', 'tssh://root@test:22;ping:')
+    assert r.dret['color'] == 'red'
+    r = xssh('valid', 'tssh://root@test:22;ping:192.168.1.1:')
+    assert r.dret['color'] == 'red'
+
+    # test invalid timeout
+    r = xssh('valid', 'tssh://root@test;timeout=;ping:192.168.1.1:')
+    assert r.dret['color'] == 'red'
+    r = xssh('valid', 'tssh://root@test;timeout=4=;ping:192.168.1.1:')
+    assert r.dret['color'] == 'red'
+    r = xssh('valid', 'tssh://root@test;timeout=invalid;ping:192.168.1.1:')
+    assert r.dret['color'] == 'red'
+    r = xssh('valid', 'tssh://root@test;timeout=-4;ping:192.168.1.1:')
+    assert r.dret['color'] == 'red'
+
+    # valid tests cases
+    r = xssh('valid', 'tssh://root@test;client')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+
+    r = xssh('valid', 'tssh://root@test:22;client')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+
+    r = xssh('valid', 'tssh://root@test:22;edkey=./tests/ssh/ed25519/valid;client')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+    r = xssh('valid', 'tssh://root@test:22;rsakey=./tests/ssh/rsa/valid;client')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+
+    r = xssh('valid', 'tssh://root@test;timeout=600;client')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+
+    r = xssh('valid', 'tssh://root@test:22;ping:192.168.1.1')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+
+    r = xssh('valid', 'tssh://root@test:7777;ping:192.168.1.1')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+    assert r.port == 7777
+
+
+    # this live tests could be performed anywhere
+    r = xssh('valid', 'tssh://root@test.invalid;ping:192.168.1.1')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+    r.run()
+    assert r.dret['color'] == 'red'
+    assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to connect on test.invalid: [Errno -2] Name or service not known\n"
+
+    r = xssh('valid', 'tssh://root@169.254.254.254;timeout=1;ping:192.168.1.1')
+    assert r.dret['color'] == 'green'
+    assert len(r.actions) > 0
+    r.run()
+    assert r.dret['color'] == 'red'
+
+    # tested with sshd-openssh-macs-only docker
+    if 'TESTS_XSSH_OPENSSH_MACS_ONLY' in os.environ:
+        x = os.environ['TESTS_XSSH_OPENSSH_MACS_ONLY']
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:192.168.1.1')
+        print(r.dret)
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        assert r.dret['color'] == 'red'
+
+    # tested with sshd-openssh-mac-only docker
+    if 'TESTS_XSSH_CONNECTION_REFUSED' in os.environ:
+        x = os.environ['TESTS_XSSH_CONNECTION_REFUSED']
+        r = xssh('valid', f'tssh://{x};ping:192.168.1.1')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        assert r.dret['color'] == 'red'
+
+    # tested with sshd-debian-noping docker
+    if 'TESTS_XSSH_SUCCESS_NOPING' in os.environ:
+        x = os.environ['TESTS_XSSH_SUCCESS_NOPING']
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:192.168.1.1')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        assert r.dret['color'] == 'red'
+        assert re.search('sh: 1: ping: not found', r.dret['txt'])
+
+    # tested with sshd-debian-ping docker
+    if 'TESTS_XSSH_SUCCESS_PING' in os.environ:
+        x = os.environ['TESTS_XSSH_SUCCESS_PING']
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:192.168.1.1')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        assert r.dret['color'] == 'green'
+        assert re.search('PING 192.168.1.1 \(192.168.1.1\)', r.dret['txt'])
+
+    # sshd-debian
+    if 'TESTS_XSSH_SUCCESS_CLIENT' in os.environ:
+        x = os.environ['TESTS_XSSH_SUCCESS_CLIENT']
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;client')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        assert r.dret['color'] == 'green'
+        assert 'data' in r.dret
+        assert re.search('client debian.linux linux', r.dret['data'])
+
+
+    if 'TESTS_SSH' not in os.environ:
+        pytest.skip('need a target with ssh')
 
 def test_net():
     X = xythonsrv()
