@@ -81,7 +81,7 @@ class xy_rule_disks():
         part = sline[5]
         rawpc = sline[4]
         if rawpc[-1] != '%':
-            print("ERROR: invalid percent")
+            print("ERROR: invalid percent in {line}")
             return None
         pc = int(rawpc.rstrip('%'))
         if part in self.ignore:
