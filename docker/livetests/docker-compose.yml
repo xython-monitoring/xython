@@ -1,7 +1,8 @@
 services:
   xythond:
     build:
-      context: xythond
+      context: ../..
+      dockerfile: docker/livetests/xythond/Dockerfile
     ports:
       - 10080:80
     hostname: xython-server
@@ -33,4 +34,37 @@ services:
     build:
       context: xymon-client
     hostname: xymon-client
+  sshd-debian-ping:
+    build:
+      context: sshd/debian
+      args:
+        PACKAGES: iputils-ping
+    hostname: debian
+    ports:
+      - "223:22"
+  sshd-debian-noping:
+    build:
+      context: sshd/debian
+    hostname: debian
+    ports:
+      - "222:22"
+  sshd-openssh-macs-only:
+    build:
+      context: sshd/openssh-macs-only
+    hostname: debian
+    ports:
+      - "2222:22"
+      - "2223:23"
+  pytests:
+    build:
+      context: ../..
+      dockerfile: docker/livetests/pytests/Dockerfile
+    environment:
+      PING_TARGET: sshd-debian-ping
+      TESTS_XSSH_OPENSSH_MACS_ONLY: userpass@sshd-openssh-macs-only:2222
+      TESTS_XSSH_CONNECTION_REFUSED: userpass@sshd-openssh-macs-only:2223
+    depends_on:
+      - sshd-openssh-macs-only
+      - sshd-debian-noping
+      - sshd-debian-ping
 version: '3'
