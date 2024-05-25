@@ -910,6 +910,14 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
             thostname = hs[1]
         i += 1
 
+    if port is None:
+        dret['txt'] = '&red ERROR: port is None'
+        return dret
+    if port < 0 or port > 65535:
+        dret['txt'] = '&red ERROR: port is out of range'
+        return dret
+
+
     print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname}")
 
     try:

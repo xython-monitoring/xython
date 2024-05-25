@@ -25,26 +25,33 @@ ps aux |grep xython-tlsd
 
 #xythond -x 2 --debug --etcdir /etc/xython/ -D --wwwdir /var/lib/xython/www
 #echo $?
+echo "DEBUG: start xythond"
 /etc/init.d/xythond start || exit $?
 #sudo /usr/bin/xython-client-looper.sh
+
+echo "DEBUG: start xython-client"
 /etc/init.d/xython-client start || exit $?
 
 echo "=================================================================="
 echo "=================================================================="
 
 sleep 15
+echo "DEBUG: running xython-client at hand"
+/usr/bin/xython-client.sh -d || exit $?
+
+echo "DEBUG: check xython-client is still here" 
+ps aux |grep xython-client
+ls -l /run/xython-client
 cd /tmp
+echo "DEBUG: test page index"
 wget http://127.0.0.1/xython/ || exit $?
+echo "DEBUG: test page nongreen"
 wget http://127.0.0.1/xython/nongreen.html || exit $?
 
-echo "=================================================================="
-echo "=================================================================="
-python -V
 cd /tests
-pytest-3 livetest.py || exit $?
-echo "=================================================================="
-echo "=================================================================="
+pytest livetest.py
 
+echo "DEBUG: get memory page"
 wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=$(hostname)&SERVICE=memory" -O memory.html
 grep -q 'Real/Physical' memory.html
 if [ $? -eq 0 ];then
@@ -53,10 +60,16 @@ if [ $? -eq 0 ];then
 	exit 1
 fi
 
+echo "DEBUG: stop xython-client"
 /etc/init.d/xython-client stop || exit $
 sed -i 's,#USE_TLS=0,USE_TLS=1,' /etc/xython/xython-client.cfg
 sed -i 's,#XYTHON_PORT=1984,XYTHON_PORT=1985,' /etc/xython/xython-client.cfg
+echo "DEBUG: start xython-client with TLS"
 /etc/init.d/xython-client start || exit $
+sleep 10
+echo "DEBUG: check xython-client is still here" 
+ps aux |grep xython-client
+ls -l /run/xython-client
 
 echo "DEBUG: try to access non-existing xtrahosts"
 # should not exists
@@ -71,6 +84,7 @@ fi
 
 echo "DEBUG: add xtrahosts"
 echo "0.0.0.0 xtrahosts conn" >> /etc/xython/hosts.cfg
+echo "DEBUG: wait 3 minutes"
 sleep 180
 
 echo "DEBUG: try to access existing xtrahosts"

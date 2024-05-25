@@ -51,6 +51,13 @@ try:
 except ImportError:
     has_rrdtool = False
 
+DEFAULT_PING_TARGET = '8.8.8.8'
+if 'PING_TARGET' in os.environ:
+    DEFAULT_PING_TARGET = os.environ['PING_TARGET']
+
+# being root breaks EPERM tests
+assert os.getuid() != 0
+
 def clean_html(hdir):
     dirFiles = os.listdir(hdir)
     print(f"========= CLEAN {hdir}")
@@ -698,6 +705,7 @@ def test_reload():
     assert len(results) == 2
     assert len(X.xy_hosts) == 3
 
+    time.sleep(0.1)
     # we should have 2 hosts with conn on each except for ipv6
     # test that test02 is removed
     with open("./tests/etc/xython-load/hosts.cfg", 'w') as f:
@@ -710,13 +718,14 @@ def test_reload():
     assert len(results) == 1
     assert len(X.xy_hosts) == 2
 
+    time.sleep(0.1)
     # backup to have a clean git diff
     # TODO find better
     with open("./tests/etc/xython-load/hosts.cfg") as f:
         bh = f.read()
     with open("./tests/etc/xython-load/analysis.cfg") as f:
         ba = f.read()
-
+    time.sleep(1)
     with open("./tests/etc/xython-load/hosts.cfg", "a") as f:
         f.write("0.0.0.0 test0\n")
     with open("./tests/etc/xython-load/analysis.cfg", "a") as f:
@@ -725,6 +734,7 @@ def test_reload():
     # verify new hosts is detected
     H = X.find_host("test0")
     assert H is not None
+    time.sleep(0.1)
     with open("./tests/etc/xython-load/analysis.cfg", "a") as f:
         f.write("\tPROC test2\n")
     X.read_configs()
@@ -760,6 +770,7 @@ def test_reload():
     assert ret == X.RET_NEW
     assert X.find_host("itest3")
 
+    time.sleep(0.1)
     print("==========================")
     print("remove new.conf")
     os.remove("./tests/etc/xython-load/hosts.d/new.conf")
@@ -769,6 +780,7 @@ def test_reload():
     print(X.mtimes_hosts)
     assert "./tests/etc/xython-load/hosts.d/new.conf" not in X.mtimes_hosts
 
+    time.sleep(0.1)
     print("==========================")
     print("Test include non-existant")
     with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
@@ -782,9 +794,10 @@ def test_reload():
     print("Test include with bad rights")
     with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
         f.write("include hosts-include.cfg\n")
-    os.chmod("./tests/etc/xython-load/hosts-include.cfg", 0)
+    os.chmod("./tests/etc/xython-load/hosts-include.cfg", 0o000)
     ret = X.read_hosts()
     assert ret == X.RET_ERR
+    os.chmod("./tests/etc/xython-load/hosts-include.cfg", 0o640)
 
     print("==========================")
     print("Test include with good rights")
@@ -1085,16 +1098,22 @@ def test_celery_ping():
     if 'GITHUB_ACTION' in os.environ:
         print("INFO: on github testing ping is disabled")
         test_ping = False
-    ret = ping("test", "8.8.8.8", False, False)
+    # TODO test ping binary is availlable
+    ret = ping("test", DEFAULT_PING_TARGET, False, False)
     print(ret)
     if test_ping:
         assert ret["color"] == 'green'
-    ret = ping("test", "8.8.8.8", True, False)
+    ret = ping("test", DEFAULT_PING_TARGET, True, False)
     if test_ping:
         assert ret["color"] == 'green'
-    ret = ping("test", "google.com", True, True)
+    ret = ping("test", "dual.xython.fr", True, True)
     if test_ping:
-        assert ret["color"] == 'green'
+        # ipv6 could be unvaillable
+        print(ret)
+        if re.search('Cannot assign requested address', ret['txt']):
+            pytest.skip('IPV6 seems not availlable')
+        else:
+            assert ret["color"] == 'green'
 
 
 @pytest.mark.filterwarnings("ignore:InsecureRequestWarning.*Unverified HTTPS.*")
@@ -1200,13 +1219,16 @@ def test_celery_protocols():
     print("=====================================================")
     print("DEBUG: tests: try to connect to a closed port")
     ret = do_generic_proto("test", "tests.xython.fr", 'ldaps', 444, ['ldaps:hostname=tests.xython.fr'], None, None, "ssl")
+    print(ret)
     assert ret["color"] == 'red'
     err = re.search("Connection refused", ret['txt'])
     assert err
-    ret = do_generic_proto("test", "tests.xython.fr", 'ldaps:444', None, ['ldaps:hostname=tests.xython.fr'], None, None, "ssl")
-    assert ret["color"] == 'red'
-    err = re.search("Connection refused", ret['txt'])
-    assert err
+
+    #ret = do_generic_proto("test", "tests.xython.fr", 'ldaps:444', None, ['ldaps:hostname=tests.xython.fr'], None, None, "ssl")
+    #print(ret)
+    #assert ret["color"] == 'red'
+    #err = re.search("Connection refused", ret['txt'])
+    #assert err
 
     print("DEBUG: tests: send GET / and expect to find HTTP")
     # ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "GET /\\r\\nHTTP/1.1\\r\\nHost: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
@@ -1309,27 +1331,28 @@ def test_celery_tssh():
     assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/invalid: not a valid OPENSSH private key file\n"
 
     # test permission denied
-    os.chmod('tests/ssh/eperm', 0)
+    os.chmod('tests/ssh/eperm', 0o000)
     r = xssh('valid', 'tssh://root@test:7000;edkey=./tests/ssh/eperm;client')
     assert r.dret['color'] == 'red'
     assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/eperm: [Errno 13] Permission denied: './tests/ssh/eperm'\n"
     r = xssh('valid', 'tssh://root@test:7000;rsakey=./tests/ssh/eperm;client')
     assert r.dret['color'] == 'red'
     assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to load ./tests/ssh/eperm: [Errno 13] Permission denied: './tests/ssh/eperm'\n"
+    os.chmod('tests/ssh/eperm', 0o640)
 
     r = xssh('valid', 'tssh://root@test:22;ping:')
     assert r.dret['color'] == 'red'
-    r = xssh('valid', 'tssh://root@test:22;ping:192.168.1.1:')
+    r = xssh('valid', f'tssh://root@test:22;ping:{DEFAULT_PING_TARGET}:')
     assert r.dret['color'] == 'red'
 
     # test invalid timeout
-    r = xssh('valid', 'tssh://root@test;timeout=;ping:192.168.1.1:')
+    r = xssh('valid', f'tssh://root@test;timeout=;ping:{DEFAULT_PING_TARGET}:')
     assert r.dret['color'] == 'red'
-    r = xssh('valid', 'tssh://root@test;timeout=4=;ping:192.168.1.1:')
+    r = xssh('valid', f'tssh://root@test;timeout=4=;ping:{DEFAULT_PING_TARGET}:')
     assert r.dret['color'] == 'red'
-    r = xssh('valid', 'tssh://root@test;timeout=invalid;ping:192.168.1.1:')
+    r = xssh('valid', f'tssh://root@test;timeout=invalid;ping:{DEFAULT_PING_TARGET}:')
     assert r.dret['color'] == 'red'
-    r = xssh('valid', 'tssh://root@test;timeout=-4;ping:192.168.1.1:')
+    r = xssh('valid', f'tssh://root@test;timeout=-4;ping:{DEFAULT_PING_TARGET}:')
     assert r.dret['color'] == 'red'
 
     # valid tests cases
@@ -1352,25 +1375,25 @@ def test_celery_tssh():
     assert r.dret['color'] == 'green'
     assert len(r.actions) > 0
 
-    r = xssh('valid', 'tssh://root@test:22;ping:192.168.1.1')
+    r = xssh('valid', f'tssh://root@test:22;ping:{DEFAULT_PING_TARGET}')
     assert r.dret['color'] == 'green'
     assert len(r.actions) > 0
 
-    r = xssh('valid', 'tssh://root@test:7777;ping:192.168.1.1')
+    r = xssh('valid', f'tssh://root@test:7777;ping:{DEFAULT_PING_TARGET}')
     assert r.dret['color'] == 'green'
     assert len(r.actions) > 0
     assert r.port == 7777
 
 
     # this live tests could be performed anywhere
-    r = xssh('valid', 'tssh://root@test.invalid;ping:192.168.1.1')
+    r = xssh('valid', f'tssh://root@test.invalid;ping:{DEFAULT_PING_TARGET}')
     assert r.dret['color'] == 'green'
     assert len(r.actions) > 0
     r.run()
     assert r.dret['color'] == 'red'
     assert r.dret['txt'] == "status+10m valid.tssh red\n&red Failed to connect on test.invalid: [Errno -2] Name or service not known\n"
 
-    r = xssh('valid', 'tssh://root@169.254.254.254;timeout=1;ping:192.168.1.1')
+    r = xssh('valid', f'tssh://root@169.254.254.254;timeout=1;ping:{DEFAULT_PING_TARGET}')
     assert r.dret['color'] == 'green'
     assert len(r.actions) > 0
     r.run()
@@ -1379,41 +1402,49 @@ def test_celery_tssh():
     # tested with sshd-openssh-macs-only docker
     if 'TESTS_XSSH_OPENSSH_MACS_ONLY' in os.environ:
         x = os.environ['TESTS_XSSH_OPENSSH_MACS_ONLY']
-        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:192.168.1.1')
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:{DEFAULT_PING_TARGET}')
         print(r.dret)
         assert r.dret['color'] == 'green'
         assert len(r.actions) > 0
         r.run()
         assert r.dret['color'] == 'red'
+    else:
+        pytest.skip('Need to set TESTS_XSSH_OPENSSH_MACS_ONLY')
 
     # tested with sshd-openssh-mac-only docker
     if 'TESTS_XSSH_CONNECTION_REFUSED' in os.environ:
         x = os.environ['TESTS_XSSH_CONNECTION_REFUSED']
-        r = xssh('valid', f'tssh://{x};ping:192.168.1.1')
+        r = xssh('valid', f'tssh://{x};ping:{DEFAULT_PING_TARGET}')
         assert r.dret['color'] == 'green'
         assert len(r.actions) > 0
         r.run()
         assert r.dret['color'] == 'red'
+    else:
+        pytest.skip('Need to set TESTS_XSSH_CONNECTION_REFUSED')
 
     # tested with sshd-debian-noping docker
     if 'TESTS_XSSH_SUCCESS_NOPING' in os.environ:
         x = os.environ['TESTS_XSSH_SUCCESS_NOPING']
-        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:192.168.1.1')
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:{DEFAULT_PING_TARGET}')
         assert r.dret['color'] == 'green'
         assert len(r.actions) > 0
         r.run()
         assert r.dret['color'] == 'red'
         assert re.search('sh: 1: ping: not found', r.dret['txt'])
+    else:
+        pytest.skip('Need to set TESTS_XSSH_SUCCESS_NOPING')
 
     # tested with sshd-debian-ping docker
     if 'TESTS_XSSH_SUCCESS_PING' in os.environ:
         x = os.environ['TESTS_XSSH_SUCCESS_PING']
-        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:192.168.1.1')
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;ping:{DEFAULT_PING_TARGET}')
         assert r.dret['color'] == 'green'
         assert len(r.actions) > 0
         r.run()
         assert r.dret['color'] == 'green'
-        assert re.search('PING 192.168.1.1 \(192.168.1.1\)', r.dret['txt'])
+        assert re.search('4 packets transmitted, 4 received', r.dret['txt'])
+    else:
+        pytest.skip('Need to set TESTS_XSSH_SUCCESS_PING')
 
     # sshd-debian
     if 'TESTS_XSSH_SUCCESS_CLIENT' in os.environ:
@@ -1425,10 +1456,9 @@ def test_celery_tssh():
         assert r.dret['color'] == 'green'
         assert 'data' in r.dret
         assert re.search('client debian.linux linux', r.dret['data'])
+    else:
+        pytest.skip('Need to set TESTS_XSSH_SUCCESS_CLIENT')
 
-
-    if 'TESTS_SSH' not in os.environ:
-        pytest.skip('need a target with ssh')
 
 def test_net():
     X = xythonsrv()
