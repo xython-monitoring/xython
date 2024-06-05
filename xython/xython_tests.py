@@ -34,14 +34,14 @@ urllib3.disable_warnings()
 app = Celery('tasks', backend='redis://localhost', broker='redis://localhost')
 
 
-def snmp_get(oid, hostname, snmp_community):
+def snmp_get(oid, hostname, port, snmp_community):
     ret = {}
     ret["err"] = -1
     try:
         iterator = hlapi.getCmd(
             hlapi.SnmpEngine(),
             hlapi.CommunityData(snmp_community, mpModel=0),
-            hlapi.UdpTransportTarget((hostname, 161)),
+            hlapi.UdpTransportTarget((hostname, port)),
             hlapi.ContextData(),
             hlapi.ObjectType(hlapi.ObjectIdentity(oid))
         )
@@ -74,7 +74,7 @@ def do_snmpd_disk(hostname, hostip, snmp_community):
     snmp_disk_oid = []
     i = 0
     while i < 100:
-        ret = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{i}', hostip, snmp_community)
+        ret = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{i}', hostip, 161, snmp_community)
         if ret['err'] == 0:
             partname = str(ret['v'])
             oid = str(ret['oid'])
@@ -89,20 +89,20 @@ def do_snmpd_disk(hostname, hostip, snmp_community):
     buf += '[df]\n'
     for oid in snmp_disk_oid:
         # print(f"DEBUG: SNMP DISK check {oid}")
-        disk_name = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{oid}', hostip, snmp_community)
+        disk_name = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{oid}', hostip, 161, snmp_community)
         if disk_name['err'] != 0:
             buf += f'ERROR getting {oid}\n'
             continue
         dname = disk_name['v']
-        disk_block_size = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', hostip, snmp_community)
+        disk_block_size = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', hostip, 161, snmp_community)
         if disk_block_size['err'] != 0:
             buf += f'ERROR getting {dname} block size\n'
             continue
-        disk_total = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', hostip, snmp_community)
+        disk_total = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', hostip, 161, snmp_community)
         if disk_total['err'] != 0:
             buf += f'ERROR getting {dname} total size\n'
             continue
-        disk_used = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', hostip, snmp_community)
+        disk_used = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', hostip, 161, snmp_community)
         if disk_used['err'] != 0:
             buf += f'ERROR getting {dname} used size\n'
             continue
@@ -120,23 +120,23 @@ def do_snmpd_disk(hostname, hostip, snmp_community):
 def do_snmpd_memory(hostname, hostip, snmp_community):
     ret = {}
     ret['snmp'] = ""
-    swap_total = snmp_get('.1.3.6.1.4.1.2021.4.3.0', hostip, snmp_community)
+    swap_total = snmp_get('.1.3.6.1.4.1.2021.4.3.0', hostip, 161, snmp_community)
     if swap_total["err"] != 0:
         ret['snmp'] = f'&red do_snmpd_memory: error with swap_total: {swap_total["errmsg"]}\n'
         return ret
     ret['snmp'] += swap_total["pretty"]
-    swap_free = snmp_get('.1.3.6.1.4.1.2021.4.4.0', hostip, snmp_community)
+    swap_free = snmp_get('.1.3.6.1.4.1.2021.4.4.0', hostip, 161, snmp_community)
     if swap_free["err"] != 0:
         ret['snmp'] = f'&red do_snmpd_memory: error with swap_free: {swap_free["errmsg"]}\n'
         return ret
-    memory_total = snmp_get('.1.3.6.1.4.1.2021.4.5.0', hostip, snmp_community)
+    memory_total = snmp_get('.1.3.6.1.4.1.2021.4.5.0', hostip, 161, snmp_community)
     if memory_total["err"] != 0:
         ret['snmp'] = f'&red do_snmpd_memory: error with memory_total: {memory_total["errmsg"]}\n'
         return ret
-    memory_used = snmp_get('.1.3.6.1.4.1.2021.4.6.0', hostip, snmp_community)
-    memory_free = snmp_get('.1.3.6.1.4.1.2021.4.11.0', hostip, snmp_community)
-    memory_shared = snmp_get('.1.3.6.1.4.1.2021.4.13.0', hostip, snmp_community)
-    memory_buffered = snmp_get('.1.3.6.1.4.1.2021.4.14.0', hostip, snmp_community)
+    memory_used = snmp_get('.1.3.6.1.4.1.2021.4.6.0', hostip, 161, snmp_community)
+    memory_free = snmp_get('.1.3.6.1.4.1.2021.4.11.0', hostip, 161, snmp_community)
+    memory_shared = snmp_get('.1.3.6.1.4.1.2021.4.13.0', hostip, 161, snmp_community)
+    memory_buffered = snmp_get('.1.3.6.1.4.1.2021.4.14.0', hostip, 161, snmp_community)
     memt = memory_total['v']
     memf = memory_free['v']
     memu = memory_used['v']
@@ -156,7 +156,7 @@ def do_snmpd_client(hostname, hostip, snmp_columns, snmp_community):
     color = 'green'
     status = ""
     # TODO check linux
-    sysdscr = snmp_get('.1.3.6.1.2.1.1.1.0', hostip, snmp_community)
+    sysdscr = snmp_get('.1.3.6.1.2.1.1.1.0', hostip, 161, snmp_community)
     err = sysdscr['err']
     if err == 0:
         osname = str(sysdscr['v']).split(' ')[0].lower()
@@ -214,7 +214,7 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
                     # print(f"DEBUG: handle rrd={rrd} oid={oid}")
                     dsnames.append(oid['dsname'])
                     dsspecs.append(oid['dsspec'])
-                    ret = snmp_get(oid['oid'], hostip, snmp_community)
+                    ret = snmp_get(oid['oid'], hostip, 161, snmp_community)
                     if ret['err'] == 0:
                         buf += f"&green did {rrd} {obj} {oid['oid']} {oid['dsname']} value={ret['v']}\n"
                         rrdbuf += f"&green did {rrd} {obj} {oid['oid']} {oid['dsname']} value={ret['v']}\n"
