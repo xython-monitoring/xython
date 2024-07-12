@@ -1202,11 +1202,16 @@ def test_celery_ping():
     assert ret["color"] == 'red'
 
     test_ping = True
+    test_ping6 = True
     # on github ping do not work
     # so do not check result if ping do not work, but still run it to at least catch some possible unhandled exceptions
     if 'GITHUB_ACTION' in os.environ:
         print("INFO: on github testing ping is disabled")
         test_ping = False
+    if 'HAS_IPV6' in os.environ:
+        if os.environ['HAS_IPV6'] == 'False':
+            print("INFO: IPV6 ping is disabled")
+            test_ping6 = False
     # TODO test ping binary is availlable
     ret = ping("test", DEFAULT_PING_TARGET, False, False)
     print(ret)
@@ -1216,12 +1221,13 @@ def test_celery_ping():
     if test_ping:
         assert ret["color"] == 'green'
     ret = ping("test", "dual.xython.fr", True, True)
-    if test_ping:
+    if test_ping and test_ping6:
         # ipv6 could be unvaillable
         print(ret)
         if re.search('Cannot assign requested address', ret['txt']):
             pytest.skip('IPV6 seems not availlable')
         else:
+            print(os.environ)
             assert ret["color"] == 'green'
 
 
