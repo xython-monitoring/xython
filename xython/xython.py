@@ -2253,7 +2253,7 @@ class xythonsrv:
                 ret = ctask.get()
                 hostname = ret["hostname"]
                 testtype = ret["type"]
-                if testtype in ['cssh', 'snmp']:
+                if testtype in ['cssh', 'snmp', 'tssh']:
                     if ret["data"] is not None:
                         self.parse_hostdata(ret["data"], f"{testtype} for {hostname}")
                 if "rrds" in ret:

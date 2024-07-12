@@ -447,37 +447,53 @@ class xssh:
             return self.dret
 
         for action in self.actions:
+            acolor = 'green'
             # action client
             if action['type'] == 'client':
-                scp = paramiko.SFTPClient.from_transport(client.get_transport())
-                try:
-                    scp.put("/usr/bin/xython-client", "/tmp/xython-client")
+                # handle case where sftp-server is not present
+                transport = client.get_transport()
+                with transport.open_channel(kind='session') as channel:
+                    file_data = open('/usr/bin/xython-client', 'rb').read()
+                    channel.exec_command('cat > /tmp/xython-client')
+                    channel.sendall(file_data)
+                with transport.open_channel(kind='session') as channel:
+                    channel.exec_command('chmod 770 /tmp/xython-client')
+                #try:
+                #    scp = paramiko.SFTPClient.from_transport(client.get_transport())
+                #except paramiko.ssh_exception.SSHException as e:
+                #    self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to scp on {self.chostname}: {str(e)}\n"
+                #    self.dret["color"] = 'red'
+                #    return self.dret
+                #try:
+                #    scp.put("/usr/bin/xython-client", "/tmp/xython-client")
                 # TODO when I got that ? how to test
-                except PermissionError as e:
-                    self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to scp on {self.chostname}: {str(e)}\n"
-                    return self.dret
-                scp.chmod("/tmp/xython-client", 0o770)
+                #except PermissionError as e:
+                #    self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to scp on {self.chostname}: {str(e)}\n"
+                #    self.dret["color"] = 'red'
+                #    return self.dret
+                # cp.chmod("/tmp/xython-client", 0o770)
                 stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
-                self.dret["txt"] += f"status+10m {self.hostname}.tssh green\n&green tssh OK\n" + self.hdata
                 errorlog = '"'.join(stderr.readlines())
                 if errorlog:
-                    self.dret["color"] = 'yellow'
+                    acolor = 'yellow'
                 self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
                 self.dret["data"] = ''.join(stdout.readlines())
-                scp.close()
+                #scp.close()
             if action['type'] == 'ping':
                 stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}')
-                self.dret["txt"] += f"status+10m {self.hostname}.tssh green\n&green tssh OK\n" + self.hdata
                 errorlog = '"'.join(stderr.readlines())
                 if errorlog:
-                    self.dret["color"] = 'yellow'
+                    acolor = 'yellow'
                 if stdout.channel.recv_exit_status() != 0:
-                    self.dret["color"] = 'red'
+                    acolor = 'red'
+                self.dret["txt"] += f'&{acolor}ping {action["target"]}\n<fieldset><legend>output log</legend>\n' + ''.join(stdout.readlines()) + "\n</fieldset>"
                 self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
-                self.dret["txt"] += ''.join(stdout.readlines())
+            self.dret["color"] = setcolor(acolor, self.dret["color"])
         client.close()
 
         test_duration = time.time() - self.ts_start
+        #self.dret["txt"] = f'status+10m {self.hostname}.tssh {self.dret["color"]}\n' + self.hdata + self.dret["txt"]
+        self.dret["txt"] = self.hdata + '\n' + self.dret["txt"]
         self.dret["txt"] += f"\nSeconds: {test_duration}\n"
         return self.dret
 
