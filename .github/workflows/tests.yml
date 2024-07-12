@@ -278,7 +278,7 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install python packages
-        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-wheel iputils-ping openssl python3-paramiko
+        run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-wheel iputils-ping openssl python3-paramiko python3-pysnmp4
       - name: Try to setup.py
         run: |
           python setup.py install --prefix ~/.local
@@ -422,5 +422,6 @@ jobs:
       - name: pytest in a docker
         run: |
           cd docker/livetests
-          docker-compose build
-          docker-compose up --abort-on-container-exit pytests
+          sed -i 's,HAS_IPV6:.*,HAS_IPV6: "False",' docker-compose.yml
+          docker compose build
+          docker compose up --abort-on-container-exit pytests

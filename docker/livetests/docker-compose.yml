@@ -20,9 +20,10 @@ services:
       - "21:21"
       - "8009:8009"
       - "389:389"
+      - "636:636"
       - "110:110"
       - "993:993"
-      - "25:25"
+      - "125:25"
       - "143:143"
   snmpd:
     build:
@@ -63,7 +64,10 @@ services:
       PING_TARGET: sshd-debian-ping
       TESTS_XSSH_OPENSSH_MACS_ONLY: userpass@sshd-openssh-macs-only:2222
       TESTS_XSSH_CONNECTION_REFUSED: userpass@sshd-openssh-macs-only:2223
+      HAS_IPV6: 'True'
     depends_on:
+      - snmpd
+      - protocols
       - sshd-openssh-macs-only
       - sshd-debian-noping
       - sshd-debian-ping
