@@ -129,6 +129,8 @@ get_value PROXYCGI /etc/xython/xython-client.cfg && PROXYCGI="$V"
 echo "$XYTHON_SRV" |grep -q ':'
 if [ $? -eq 0 ];then
 	NC_OPTS="-6"
+else
+	NC_OPTS="-4"
 fi
 
 if [ $NOACT -ge 1 ];then
@@ -141,7 +143,7 @@ case $USE_TLS in
 	debug "DEBUG: NO TLS"
 	# TODO there a re multiple version of netcat
 	if [ -x /usr/bin/nc ];then
-		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT"
+		debug "DEBUG: nc on $XYTHON_SRV $XYTHON_PORT NC_OPTS=$NC_OPTS"
 		xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
 		# TODO send error as part of message
 		cat "$XYTHON_TMP/xython.msg" | nc "$NC_OPTS" -w 5 -q 5 "$XYTHON_SRV" "$XYTHON_PORT" > "$XYTHON_TMP/logfetch.$(uname -n).cfg"
