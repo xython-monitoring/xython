@@ -44,6 +44,10 @@ from xython.xython_tests import ping
 from xython.xython_tests import dohttp
 from xython.xython_tests import do_generic_proto
 from xython.xython_tests import xssh
+from xython.xython_tests import snmp_get
+from xython.xython_tests import do_generic_proto
+from xython.xython_tests import do_snmpd_disk
+from xython.xython_tests import do_snmpd_memory
 
 try:
     import rrdtool
@@ -988,6 +992,111 @@ def test_snmpd2():
     # do_snmpd(X)
     shutil.rmtree(X.xt_data)
 
+def test_snmp_get():
+    if 'TESTS_SNMP_GET' not in os.environ:
+        pytest.skip('Need to set TESTS_SNMP_GET')
+        return
+    x = os.environ['TESTS_SNMP_GET']
+    r = snmp_get('.1.3.6.1.2.1.1.1.0', x, 162, 'public')
+    print(r)
+    assert r['err'] == -1
+    assert r['errmsg'] == 'No SNMP response received before timeout'
+
+    r = snmp_get('.1.3.6.1.2.1.1.1.0', x, 161, 'nopublic')
+    print(r)
+    assert r['err'] == 0
+
+    r = do_snmpd_disk(x, x, 'nopublic')
+    print(r)
+    #assert r['err'] == 0
+    r = do_snmpd_memory(x, x, 'nopublic')
+    print(r)
+
+def test_generic_proto():
+    return
+    r = do_generic_proto('hostname', '192.168.1.92', 'ftp', 21, ['ftp'], "quit\r\n", '220', ['banner'])
+    assert 'txt' in r
+    assert 'vsFTPd' in r['txt']
+    print(r)
+
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldap', 389, ['ldap:invalid'], None, None, ['banner'])
+    assert r['color'] == 'red'
+    assert 'unknow token' in r['txt']
+
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps:invalid'], None, None, ['banner', 'ssl'])
+    print(r)
+    assert r['color'] == 'red'
+    assert 'unknow token' in r['txt']
+
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps:timeout=2a'], None, None, ['banner', 'ssl'])
+    print(r)
+    assert r['color'] == 'red'
+    assert 'invalid timeout' in r['txt']
+
+    ts_start = time.time()
+    # this should timeout, since no banner will come
+    r = do_generic_proto('hostname', '192.168.1.92', 'ldap', 389, ['ldap:timeout=2'], None, None, ['banner'])
+    now = time.time()
+    assert now - ts_start < 5
+    assert r['color'] == 'red'
+    assert 'timed out' in r['txt']
+
+    # it should timeout since no banner will come
+    ts_start = time.time()
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps:timeout=2'], None, None, ['banner', 'ssl'])
+    now = time.time()
+    assert now - ts_start < 5
+    assert r['color'] == 'red'
+
+    r = do_generic_proto('hostname', '192.168.1.92', 'ldap', 389, ['ldap'], None, None, None)
+    assert r['color'] == 'green'
+    r = do_generic_proto('hostname', '192.168.1.92', 'ldap', 389, ['ldap:389'], None, None, None)
+    assert r['color'] == 'green'
+
+    r = do_generic_proto('hostname', '192.168.1.92', 'imap', 110, ['imap'], "ABC123 LOGOUT\r\n", '+OK', ['banner'])
+    assert r['color'] == 'green'
+
+    # self signed certif
+    r = do_generic_proto('hostname', '192.168.1.92', 'imaps', 993, ['imaps'], "quit\r\n", '220', ['banner', 'ssl'])
+    assert r['color'] == 'red'
+    assert 'CERTIFICATE_VERIFY_FAILED' in r['txt']
+    r = do_generic_proto('hostname', '192.168.1.92', 'imaps', 993, ['imaps:verify=0'], "quit\r\n", '220', ['banner', 'ssl'])
+    print(r)
+    assert r['color'] == 'green'
+    return
+
+    # port should be override by url
+    r = do_generic_proto('hostname', '192.168.1.92', 'imaps', 993, ['imaps:636'], "quit\r\n", '220', ['banner', 'ssl'])
+    print(r)
+    assert r['color'] == 'red'
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps'], None, None, ['ssl'])
+    print(r)
+    assert r['color'] == 'green'
+    r = do_generic_proto('tests2.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps'], None, None, ['ssl'])
+    print(r)
+    assert r['color'] == 'red'
+
+    # test the binary comp with JNI
+    r = do_generic_proto('hostname', '192.168.1.92', 'ajp13', 8009, ['ajp13'], '\x12\x34\x00\x01\x0a', '\x41\x42\x00\x01\x09', None)
+    print(r)
+    assert r['color'] == 'green'
+    r = do_generic_proto('hostname', '192.168.1.92', 'ajp13', 8009, ['ajp13'], '\\x12\\x34\\x00\\x01\\x0a', '\\x41\\x42\\x00\\x01\\x09', None)
+    print(r)
+    assert r['color'] == 'green'
+
+    r = do_generic_proto('hostname', '192.168.1.92', 'ajp13', 8009, ['ajp13'], '\x12\x34\x00\x01\x0a', '\x41\x42\x00\x01\x08', None)
+    print(r)
+    assert r['color'] == 'red'
+    r = do_generic_proto('hostname', '192.168.1.92', 'ajp13', 8009, ['ajp13'], '\\x12\\x34\\x00\\x01\\x0a', '\\x41\\x42\\x00\\x01\\x08', None)
+    print(r)
+    assert r['color'] == 'red'
+
+    r = do_generic_proto('hostname', 'hostname.invalid', 'imaps', 993, ['imaps'], "quit\r\n", '220', ['banner', 'ssl'])
+    assert r['color'] == 'red'
+    assert 'Name or service not known' in r['txt']
+    r = do_generic_proto('hostname', 'hostname.invalid', 'imap', 110, ['imaps'], "quit\r\n", '220', ['banner', ])
+    assert r['color'] == 'red'
+    assert 'Name or service not known' in r['txt']
 
 def test_tests():
     X = xythonsrv()
@@ -1235,6 +1344,22 @@ def test_celery_protocols():
     ret = do_generic_proto("test", "tests.xython.fr", 'ldap', 443, ['ldaps:hostname=tests.xython.fr'], "\\x47\\x45\\x54\\x20\\x2F\\x47HTTP/1.1\\x13\\x10Host: test.xython.fr\\x13\\x10\\r\\n", "\\x48\\x54\\x54\\x50", "banner, ssl")
     assert ret["color"] == 'green'
 
+def test_celery_protocols_timeout():
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldap', 389, ['ldap:timeout='], None, None, ['banner'])
+    assert r['color'] == 'red'
+    assert 'invalid timeout' in r['txt']
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldap', 389, ['ldap:timeout=x'], None, None, ['banner'])
+    assert r['color'] == 'red'
+    assert 'invalid timeout' in r['txt']
+
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps:timeout='], None, None, ['banner', 'ssl'])
+    assert r['color'] == 'red'
+    assert 'invalid timeout' in r['txt']
+    r = do_generic_proto('tests.xython.fr', 'tests.xython.fr', 'ldaps', 443, ['ldaps:timeout=x'], None, None, ['banner', 'ssl'])
+    print(r)
+    assert r['color'] == 'red'
+    assert 'invalid timeout' in r['txt']
+
 
 def test_celery_tssh():
     r = xssh(None, None)
@@ -1399,6 +1524,7 @@ def test_celery_tssh():
     r.run()
     assert r.dret['color'] == 'red'
 
+def test_celery_tssh_macs_mismatch():
     # tested with sshd-openssh-macs-only docker
     if 'TESTS_XSSH_OPENSSH_MACS_ONLY' in os.environ:
         x = os.environ['TESTS_XSSH_OPENSSH_MACS_ONLY']
@@ -1411,6 +1537,7 @@ def test_celery_tssh():
     else:
         pytest.skip('Need to set TESTS_XSSH_OPENSSH_MACS_ONLY')
 
+def test_celery_tssh_crefused():
     # tested with sshd-openssh-mac-only docker
     if 'TESTS_XSSH_CONNECTION_REFUSED' in os.environ:
         x = os.environ['TESTS_XSSH_CONNECTION_REFUSED']
@@ -1422,6 +1549,7 @@ def test_celery_tssh():
     else:
         pytest.skip('Need to set TESTS_XSSH_CONNECTION_REFUSED')
 
+def test_celery_tssh_ping_notfound():
     # tested with sshd-debian-noping docker
     if 'TESTS_XSSH_SUCCESS_NOPING' in os.environ:
         x = os.environ['TESTS_XSSH_SUCCESS_NOPING']
@@ -1434,6 +1562,7 @@ def test_celery_tssh():
     else:
         pytest.skip('Need to set TESTS_XSSH_SUCCESS_NOPING')
 
+def test_celery_tssh_ping_success():
     # tested with sshd-debian-ping docker
     if 'TESTS_XSSH_SUCCESS_PING' in os.environ:
         x = os.environ['TESTS_XSSH_SUCCESS_PING']
@@ -1446,6 +1575,7 @@ def test_celery_tssh():
     else:
         pytest.skip('Need to set TESTS_XSSH_SUCCESS_PING')
 
+def test_celery_tssh_client_success():
     # sshd-debian
     if 'TESTS_XSSH_SUCCESS_CLIENT' in os.environ:
         x = os.environ['TESTS_XSSH_SUCCESS_CLIENT']
