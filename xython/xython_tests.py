@@ -908,6 +908,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
     dret['certs'] = {}
     thostname = hostname
     tokens = url.split(':')
+    timeout = 60
     i = 1
     verify = ssl.CERT_REQUIRED
     while i < len(tokens):
@@ -918,12 +919,22 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
         elif tokens[i][0:7] == 'column=':
             hs = tokens[i].split('=')
             dret['column'] = hs[1]
+        elif tokens[i][0:8] == 'timeout=':
+            hs = tokens[i].split('=')
+            try:
+                timeout = int(hs[1])
+            except ValueError:
+                dret['txt'] = '&red invalid timeout'
+                return dret
         elif tokens[i][0:7] == 'verify=':
             verify = ssl.CERT_NONE
             print(f"DEBUG: no certificate check for {thostname}")
         elif tokens[i][0:9] == 'hostname=':
             hs = tokens[i].split('=')
             thostname = hs[1]
+        else:
+            dret['txt'] = '&red ERROR: unknow token {tokens[i]}'
+            return dret
         i += 1
 
     if port is None:
@@ -934,13 +945,14 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
         return dret
 
 
-    print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname}")
+    print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} timeout={timeout}")
 
     try:
         context = ssl.create_default_context()
         context.check_hostname = not (verify == ssl.CERT_NONE)
         context.verify_mode = verify
         sock = socket.create_connection((address, port))
+        sock.settimeout(timeout)
         ssock = context.wrap_socket(sock, server_hostname=thostname)
         if p_send:
             if '\\x' in p_send:
@@ -1025,20 +1037,32 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
     dret = {}
     dret["color"] = 'red'
     dret['column'] = protoname
+    timeout=60
 
     tokens = url.split(':')
-    print(f"DEBUG: {url} {tokens} {len(tokens)}")
+    print(f"DEBUG: {url} {tokens} {len(tokens)} p_send={p_send} p_expect={p_expect}")
     i = 1
     while i < len(tokens):
         option = tokens[i]
         print(f"DEBUG: generic proto notls: check {option}")
-        if tokens[i].isdigit():
-            port = int(tokens[i])
+        if option.isdigit():
+            port = int(option)
+        elif tokens[i][0:8] == 'timeout=':
+            hs = tokens[i].split('=')
+            try:
+                timeout = int(hs[1])
+            except ValueError:
+                dret['txt'] = '&red invalid timeout'
+                return dret
+        else:
+            dret['txt'] = '&red ERROR: unknow token {tokens[i]}'
+            return dret
         i += 1
 
     try:
         s = socket.socket()
         s.connect((address, port))
+        s.settimeout(timeout)
         if p_send:
             if '\\x' in p_send:
                 s.send(hex_to_binary(p_send))
