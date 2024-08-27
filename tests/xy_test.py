@@ -1714,3 +1714,60 @@ def test_pages():
     X.gen_htmls()
 
     setup_clean(X)
+
+def test_purple():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'purple')
+    X.lldebug = True
+    X.init()
+
+    # check error condition with empty colname
+    err = X.column_update('testpurple', '', 'green', 0, 'test', 120, "xython-tests")
+    assert err == 2
+
+    err = X.column_update('testpurple', 'coltest', 'green', 0, 'test', 120, "xython-tests")
+    assert err == 1
+
+    X.check_purples()
+    assert X.get_column_color('testpurple', 'coltest') == 'green'
+
+    assert X.parse_disable('disable testpurple.coltest 30d whynot')
+    assert X.get_column_color('testpurple', 'coltest') == 'blue'
+
+    # TODO test enable
+    #err = X.parse_enable('enable testpurple.coltest')
+
+    # timing test
+    err = X.column_update('testpurple', 'coltest2', 'green', 0, 'test', 1, "xython-tests")
+    assert err == 1
+    time.sleep(2)
+    X.check_purples()
+
+    assert X.get_column_color('testpurple', 'coltest2') == 'purple'
+
+
+    # final test with multiple column which shout not be touched
+    err = X.column_update('testpurple', 'colgreen', 'green', 0, 'test', 120, "xython-tests")
+    assert err == 1
+    err = X.column_update('testpurple', 'colyellow', 'yellow', 0, 'test', 120, "xython-tests")
+    assert err == 1
+    err = X.column_update('testpurple', 'colred', 'red', 0, 'test', 120, "xython-tests")
+    assert err == 1
+    err = X.column_update('testpurple', 'colbad', 'red', 0, 'test', 0, "xython-tests")
+    assert err == 1
+    time.sleep(1)
+
+    X.check_purples()
+    assert X.get_column_color('testpurple', 'colbad') == 'purple'
+    assert X.get_column_color('testpurple', 'colgreen') == 'green'
+    assert X.get_column_color('testpurple', 'colyellow') == 'yellow'
+    assert X.get_column_color('testpurple', 'colred') == 'red'
+
+    assert X.parse_disable('disable testpurple.colbad 30d whynot')
+    assert X.get_column_color('testpurple', 'colbad') == 'blue'
+    assert X.get_column_color('testpurple', 'colgreen') == 'green'
+    assert X.get_column_color('testpurple', 'colyellow') == 'yellow'
+    assert X.get_column_color('testpurple', 'colred') == 'red'
+
+    setup_clean(X)
