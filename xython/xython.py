@@ -70,7 +70,7 @@ RRD_COLOR = ["0000FF", "FF0000", "00CC00", "FF00FF", "555555", "880000", "000088
              "008888", "888888", "880088", "FFFF00", "888800", "00FFFF", "00FF00", "AA8800",
              "AAAAAA", "DD8833", "DDCC33", "8888FF", "5555AA", "B428D3", "FF5555", "DDDDDD",
              "AAFFAA", "AAFFFF", "FFAAFF", "FFAA55", "55AAFF", "AA55FF"]
-
+COLUMN_COLOR = 4
 
 class xy_protocol:
     def __init__(self):
@@ -1614,6 +1614,12 @@ class xythonsrv:
             return results[0]
         return None
 
+    def get_column_color(self, hostname, cname):
+        col = self.get_column_state(hostname, cname)
+        if col is None:
+            return None
+        return col[COLUMN_COLOR]
+
     def get_ghost_mode(self):
         ghostmode = self.xython_getvar("GHOSTMODE")
         if ghostmode is None:
@@ -1664,6 +1670,9 @@ class xythonsrv:
     # return 1 if color change
     # return 2 for errors
     def column_update(self, hostname, cname, color, ts, data, expire, updater):
+        if cname == '':
+            self.error(f'column_update: {hostname} cname is empty')
+            return 2
         color_changed = False
         # self.debug(f"DEBUG: column_update {hostname} {cname} ts={ts} expire={expire}")
         color = gcolor(color)
@@ -1805,6 +1814,9 @@ class xythonsrv:
     def save_state(self, hostname, cname, color, ts_start, ts_expire):
         if self.xythonmode == 0:
             return
+        if cname == '':
+            self.error(f'save_state: {hostname} cname is empty')
+            return
         expdir = f"{self.xt_state}/{hostname}"
         if not os.path.exists(expdir):
             os.mkdir(expdir)
@@ -1813,6 +1825,11 @@ class xythonsrv:
         f.write(f"{color} {ts_start} {ts_expire}")
         f.close()
 
+    # histlog format
+    # first line colorSPACEdata
+    # status unchanged in
+    # Message received from xxxx
+    # Client data ID xxxx
     def get_histlogs(self, hostname, column, ts):
         if hostname is None or column is None or ts is None:
             return None
@@ -1859,7 +1876,8 @@ class xythonsrv:
         f.write("%s " % color)
         f.write(buf)
         # TODO calcul
-        f.write("status unchanged in 0.00 minutes\n")
+        # add a \n since buf could not have one at end
+        f.write("\nstatus unchanged in 0.00 minutes\n")
         # TODO get IP
         f.write(f"Message received from {updater}\n")
         # TODO what is the purpose of this ?
