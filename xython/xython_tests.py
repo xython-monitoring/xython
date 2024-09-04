@@ -1064,6 +1064,9 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
         s.connect((address, port))
         s.settimeout(timeout)
         if p_send:
+            # HACK 554 5.5.0 Error: SMTP protocol synchronization
+            if protoname in ['smtp', 'smtps']:
+                time.sleep(0.5)
             if '\\x' in p_send:
                 s.send(hex_to_binary(p_send))
             else:
