@@ -8,7 +8,6 @@
 
 import argparse
 import asyncio
-import time
 from xython import xythonsrv
 import sys
 from importlib.metadata import version

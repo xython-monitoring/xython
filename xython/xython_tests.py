@@ -240,6 +240,7 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     return dret
 
+
 # xssh://[username][:password]@target[:port][;edkey=path][;rsakey=path][;ping:target]
 class xssh:
     def __init__(self, hostname, url):
@@ -276,14 +277,14 @@ class xssh:
         self.chostname = btoks[1]
         if self.chostname == '':
             self.dret['color'] = 'red'
-            self.dret['txt'] = f'hostname is empty'
+            self.dret['txt'] = 'hostname is empty'
             return
         # handle ssh port
         if ':' in self.chostname:
             htoks = self.chostname.split(':')
             if len(htoks) != 2:
                 self.dret['color'] = 'red'
-                self.dret['txt'] = f'ERROR: invalid hostname:port'
+                self.dret['txt'] = 'ERROR: invalid hostname:port'
                 return
             self.chostname = htoks[0]
             try:
@@ -306,11 +307,11 @@ class xssh:
             self.hdata += "&clear password found\n"
         if self.username == '':
             self.dret['color'] = 'red'
-            self.dret['txt'] = f'ERROR: username is empty'
+            self.dret['txt'] = 'ERROR: username is empty'
             return
         if self.password == '':
             self.dret['color'] = 'red'
-            self.dret['txt'] = f'ERROR: password is empty'
+            self.dret['txt'] = 'ERROR: password is empty'
             return
         for token in tokens:
             if not self.check_token(token):
@@ -458,27 +459,12 @@ class xssh:
                     channel.sendall(file_data)
                 with transport.open_channel(kind='session') as channel:
                     channel.exec_command('chmod 770 /tmp/xython-client')
-                #try:
-                #    scp = paramiko.SFTPClient.from_transport(client.get_transport())
-                #except paramiko.ssh_exception.SSHException as e:
-                #    self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to scp on {self.chostname}: {str(e)}\n"
-                #    self.dret["color"] = 'red'
-                #    return self.dret
-                #try:
-                #    scp.put("/usr/bin/xython-client", "/tmp/xython-client")
-                # TODO when I got that ? how to test
-                #except PermissionError as e:
-                #    self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to scp on {self.chostname}: {str(e)}\n"
-                #    self.dret["color"] = 'red'
-                #    return self.dret
-                # cp.chmod("/tmp/xython-client", 0o770)
                 stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
                 errorlog = '"'.join(stderr.readlines())
                 if errorlog:
                     acolor = 'yellow'
                 self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
                 self.dret["data"] = ''.join(stdout.readlines())
-                #scp.close()
             if action['type'] == 'ping':
                 stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}')
                 errorlog = '"'.join(stderr.readlines())
@@ -492,10 +478,11 @@ class xssh:
         client.close()
 
         test_duration = time.time() - self.ts_start
-        #self.dret["txt"] = f'status+10m {self.hostname}.tssh {self.dret["color"]}\n' + self.hdata + self.dret["txt"]
+        # self.dret["txt"] = f'status+10m {self.hostname}.tssh {self.dret["color"]}\n' + self.hdata + self.dret["txt"]
         self.dret["txt"] = self.hdata + '\n' + self.dret["txt"]
         self.dret["txt"] += f"\nSeconds: {test_duration}\n"
         return self.dret
+
 
 @app.task
 def do_cssh(hostname, urls):
@@ -600,10 +587,12 @@ def do_cssh(hostname, urls):
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     return dret
 
+
 @app.task
 def do_tssh(hostname, urls):
     tssh = xssh(hostname, urls[0])
     return tssh.run()
+
 
 @app.task
 def ping(hostname, t, doipv4, doipv6):
@@ -786,7 +775,7 @@ def hex_to_binary(hs):
             if C == 'x':
                 if i + 3 >= len(hs):
                     return None
-                v = hs[i+2:i+4]
+                v = hs[i + 2:i + 4]
                 # print(f"DEBUG: value is {v}")
                 hexs += f'{v} '
                 i += 4
@@ -944,7 +933,6 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
         dret['txt'] = '&red ERROR: port is out of range'
         return dret
 
-
     print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} timeout={timeout}")
 
     try:
@@ -1037,7 +1025,7 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
     dret = {}
     dret["color"] = 'red'
     dret['column'] = protoname
-    timeout=60
+    timeout = 60
 
     tokens = url.split(':')
     print(f"DEBUG: {url} {tokens} {len(tokens)} p_send={p_send} p_expect={p_expect}")

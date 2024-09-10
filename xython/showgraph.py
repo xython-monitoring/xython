@@ -9,7 +9,6 @@
 
 import os
 import socket
-import re
 import sys
 
 POST = {}
@@ -17,7 +16,7 @@ stdin = sys.stdin.read()
 args = stdin.split('&')
 for arg in args:
     t = arg.split('=')
-    if len(t)>1:
+    if len(t) > 1:
         k, v = arg.split('=')
         POST[k] = v
 if "QUERY_STRING" in os.environ:
@@ -25,7 +24,7 @@ if "QUERY_STRING" in os.environ:
     args = QUERY_STRING.split('&')
     for arg in args:
         t = arg.split('=')
-        if len(t)>1:
+        if len(t) > 1:
             k, v = arg.split('=')
             POST[k] = v
 
@@ -58,8 +57,8 @@ debug = False
 if "debug" in POST:
     debug = True
 
-SOCKPATH='/run/xython/xython.sock'
-#if "sockpath" in POST:
+SOCKPATH = '/run/xython/xython.sock'
+# if "sockpath" in POST:
 #    sockpath = POST['sockpath']
 #    print(f"DEBUG: check {sockpath}")
 #    if re.match("./tests/.*", sockpath):
@@ -78,7 +77,7 @@ if action == 'menu':
     print("Content-type: text/html\n")
     print('<html>')
     sys.exit(0)
-    
+
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
     sock.connect(SOCKPATH)

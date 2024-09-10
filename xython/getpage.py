@@ -15,13 +15,13 @@ import sys
 print("Content-type: text/html\n")
 print("\n")
 
-#arguments = cgi.FieldStorage()
+# arguments = cgi.FieldStorage()
 POST = {}
 stdin = sys.stdin.read()
 args = stdin.split('&')
 for arg in args:
     t = arg.split('=')
-    if len(t)>1:
+    if len(t) > 1:
         k, v = arg.split('=')
         POST[k] = v
 if "QUERY_STRING" in os.environ:
@@ -29,7 +29,7 @@ if "QUERY_STRING" in os.environ:
     args = QUERY_STRING.split('&')
     for arg in args:
         t = arg.split('=')
-        if len(t)>1:
+        if len(t) > 1:
             k, v = arg.split('=')
             POST[k] = v
 
@@ -45,6 +45,7 @@ if page is None:
     sys.exit(0)
 
 buf = f"GETPAGE {page}"
+
 
 async def unix_xython(buf):
     reader, writer = await asyncio.open_unix_connection(path='/run/xython/xython.sock')
