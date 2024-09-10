@@ -73,6 +73,7 @@ RRD_COLOR = ["0000FF", "FF0000", "00CC00", "FF00FF", "555555", "880000", "000088
              "AAFFAA", "AAFFFF", "FFAAFF", "FFAA55", "55AAFF", "AA55FF"]
 COLUMN_COLOR = 4
 
+
 class xy_protocol:
     def __init__(self):
         self.send = None
@@ -840,9 +841,9 @@ class xythonsrv:
             hlist.append('<CENTER><TABLE SUMMARY=" Group Block" BORDER=0 CELLPADDING=2>\n')
             hlist.append('<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT COLOR="#FFFFF0" SIZE="+1"></FONT></CENTER></TD>')
         if pagename == 'nongreen':
-            res = self.sqc.execute("SELECT DISTINCT column FROM columns WHERE color != 'green' AND color != 'blue' AND color != 'clear' AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == 'nongreen') ORDER BY column")
+            self.sqc.execute("SELECT DISTINCT column FROM columns WHERE color != 'green' AND color != 'blue' AND color != 'clear' AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == 'nongreen') ORDER BY column")
         else:
-            res = self.sqc.execute(f'SELECT DISTINCT column FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "{pagename}" AND groupname == "{group}") ORDER BY column')
+            self.sqc.execute(f'SELECT DISTINCT column FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "{pagename}" AND groupname == "{group}") ORDER BY column')
         results = self.sqc.fetchall()
         cols = []
         for col in results:
@@ -929,7 +930,6 @@ class xythonsrv:
         color = 'green'
         hlist = self.html_header('stdnormal_header')
 
-        #if pagename == 'nongreen' or pagename == 'all':
         if pagename != 'svcstatus':
             ts = time.time()
             ret = self.html_hostlist(pagename, None)
@@ -1256,7 +1256,7 @@ class xythonsrv:
                 self.debug(f"\tDEBUG: unknow tag={tag}xxx")
                 H.tags_unknown.append(tag)
             # end tag
-            #self.host_page_clean(H.name)
+            # self.host_page_clean(H.name)
             for page in H.pages:
                 self.host_add_to_page(page, H.name, None)
             if need_conn:
@@ -1796,7 +1796,7 @@ class xythonsrv:
                 self.channel.basic_publish(exchange='xython-status', routing_key='', body=status, properties=properties)
             # pika.exceptions.StreamLostError: Stream connection lost: ConnectionResetError(104, 'Connection reset by peer')
             # pika.exceptions.ChannelWrongStateError: Channel is closed.
-            except pika.exceptions.ChannelWrongStateError as e:
+            except pika.exceptions.ChannelWrongStateError:
                 # TODO what to do ?
                 self.error("ERROR: pika connection closed")
                 if self.channel.is_closed:
@@ -2352,7 +2352,7 @@ class xythonsrv:
         buf += f"Up since {xytime(self.uptime_start)} ({xydhm(self.uptime_start, now)})\n"
         if "COLUPDATE" in self.stats:
             if "count" in self.stats["COLUPDATE"]:
-                buf += f'UPDATE/m: {int(self.stats["COLUPDATE"]["count"]/uptimem)}\n'
+                buf += f'UPDATE/m: {int(self.stats["COLUPDATE"]["count"] / uptimem)}\n'
         # for worker in self.celery_workers:
         #    print(worker)
         self.sqc.execute('SELECT count(DISTINCT hostname) FROM columns')
@@ -3693,8 +3693,8 @@ class xythonsrv:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host='127.0.0.1', port=5672, credentials=credentials, heartbeat=5
-                )
             )
+        )
         self.channel = connection.channel()
         self.channel.exchange_declare(exchange='xython-status', exchange_type='fanout')
         self.channel.exchange_declare(exchange='xython-ping', exchange_type='fanout')

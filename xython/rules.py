@@ -17,6 +17,7 @@ def xlog_error(message):
     logger = logging.getLogger('xython')
     logger.error(message)
 
+
 class xy_rule_disk():
     def __init__(self, fs, warn, panic):
         self.fs = fs
@@ -117,7 +118,7 @@ class xy_rule_sensor():
 
     def check(self, sname, pc):
         color = 'green'
-        #print(f"DEBUG: check {self.mpanic} {self.mwarn} {self.warn} {self.panic} vs {pc}")
+        # print(f"DEBUG: check {self.mpanic} {self.mwarn} {self.warn} {self.panic} vs {pc}")
         ret = {}
         if pc < self.warn:
             if self.mwarn != SENSOR_DISABLE:
@@ -156,8 +157,8 @@ class xy_rule_sensors():
         print(f"SENSORS RULE {self.name} warn={self.warn} panic={self.panic}")
 
     def add(self, sensorruleline):
-        #print("===========================================================")
-        #print(f"DEBUG: add {sensorruleline}")
+        # print("===========================================================")
+        # print(f"DEBUG: add {sensorruleline}")
         sensorruleline = re.sub(r"\s+", ' ', sensorruleline)
         tokens = tokenize(sensorruleline)
         adapter = tokens.pop(0)
@@ -166,7 +167,7 @@ class xy_rule_sensors():
         if adapter[0] == '%':
             adapter = adapter[1:]
             regex = True
-        #print(f"DEBUG: adapter is {adapter}, sname is {sname}")
+        # print(f"DEBUG: adapter is {adapter}, sname is {sname}")
         if adapter not in self.rules:
             self.rules[adapter] = {}
             self.rules[adapter]["rules"] = {}
@@ -199,7 +200,7 @@ class xy_rule_sensors():
         if sname[0] == '%':
             sname = sname.lstrip('%')
             regex = True
-        #print(f"DEBUG: sname is {sname}")
+        # print(f"DEBUG: sname is {sname}")
         self.rules[adapter]["rules"][sname] = {}
         self.rules[adapter]["rules"][sname]["rule"] = xrd
         self.rules[adapter]["rules"][sname]["regex"] = regex
@@ -207,7 +208,7 @@ class xy_rule_sensors():
 
 # return name of sensor, or None
     def is_sensor(self, line):
-        #print(f"DEBUG: is {line} sensor ?")
+        # print(f"DEBUG: is {line} sensor ?")
         if len(line) < 4:
             return None
         sline = line.split(":")
@@ -218,12 +219,12 @@ class xy_rule_sensors():
             return None
         line = sline[1]
         line = re.sub(r"^^\s+", '', line)
-        #line = re.sub(r"\s+", ' ', line)
+        # line = re.sub(r"\s+", ' ', line)
         line = line.replace("°C", " °C")
         sline = line.split(' ')
-        #print(sline)
+        # print(sline)
         if len(sline) < 2:
-            #print("DEBUG: not enough token")
+            # print("DEBUG: not enough token")
             return None
         if sline[1] == 'RPM':
             return [sname, sline[0], 'RPM']
@@ -236,29 +237,29 @@ class xy_rule_sensors():
         # °C and C related to locale
         if sline[1] == '°C' or sline[1] == 'C':
             return [sname, sline[0].lstrip("+"), 'C']
-        #TODO joule J ?
+        # TODO joule J ?
         print("DEBUG: did not found a known unit")
         return None
 
     def find_rule_for_adapter(self, rule, sname):
-        #print(f"DEBUG: find_rule_for_adapter {sname}")
+        # print(f"DEBUG: find_rule_for_adapter {sname}")
         if sname in rule["rules"]:
-            #print(f"DEBUG: exact match for {sname}")
+            # print(f"DEBUG: exact match for {sname}")
             return rule["rules"][sname]["rule"]
         for srul in rule["rules"]:
-            #print(f"TRY {srul}")
+            # print(f"TRY {srul}")
             if "regex" not in rule["rules"][srul] or not rule["rules"][srul]["regex"]:
                 continue
-            #print(f"DEBUG: search for {sname} with regex={srul}")
+            # print(f"DEBUG: search for {sname} with regex={srul}")
             ret = re.search(srul, sname)
             if ret:
                 return rule["rules"][srul]["rule"]
         return None
 
     def check(self, adapter, line):
-        #print("DEBUG: ======================================")
-        #print(f"DEBUG: adapter={adapter} line={line}")
-        #print(self.rules)
+        # print("DEBUG: ======================================")
+        # print(f"DEBUG: adapter={adapter} line={line}")
+        # print(self.rules)
         ret = self.is_sensor(line)
         if ret is None:
             return None
@@ -280,27 +281,27 @@ class xy_rule_sensors():
             rs = self.find_rule_for_adapter(rule, sname)
             if rs is not None:
                 return rs.check(sname, float(rawv))
-        #print(f"DEBUG: check {adapter} via regex")
+        # print(f"DEBUG: check {adapter} via regex")
         # now check for regex
         for adapt in self.rules:
             if "regex" not in self.rules[adapt]:
                 continue
-            #print(f"DEBUG: regex is {adapt}")
+            # print(f"DEBUG: regex is {adapt}")
             ret = re.search(adapt, adapter)
             if ret:
-                #print(f"DEBUG: regex is {adapt} and match {self.rules[adapt]}")
+                # print(f"DEBUG: regex is {adapt} and match {self.rules[adapt]}")
                 rs = self.find_rule_for_adapter(self.rules[adapt], sname)
                 if rs is not None:
                     return rs.check(sname, float(rawv))
 
-        #print("DEBUG: default search")
+        # print("DEBUG: default search")
         # no rule matched, so we need to go back to default rule
         if "DEFAULT" not in self.rules:
             # no default
-            #print("DEBUG: no default")
+            # print("DEBUG: no default")
             return None
         if sunit not in self.rules["DEFAULT"]["rules"]:
-            #print(f"DEBUG: no {sunit} in DEFAULT")
+            # print(f"DEBUG: no {sunit} in DEFAULT")
             return None
         rule = self.rules["DEFAULT"]["rules"][sunit]["rule"]
         return rule.check(sname, float(rawv))
@@ -610,7 +611,7 @@ class xy_rule_port():
                 # proto = sline[0]
                 if self.local:
                     local = sline[iLOCAL]
-                    #print(f"DEBUG: PORTRULE local {self.local} vs {local}")
+                    # print(f"DEBUG: PORTRULE local {self.local} vs {local}")
                     ret = re.search(self.local, local)
                     if not ret:
                         continue
@@ -618,7 +619,7 @@ class xy_rule_port():
                     if len(sline) <= iSTATE:
                         continue
                     state = sline[iSTATE]
-                    #print(f"DEBUG: PORTRULE rstate {self.rstate} vs {state}")
+                    # print(f"DEBUG: PORTRULE rstate {self.rstate} vs {state}")
                     ret = re.search(self.rstate, state)
                     if not ret:
                         continue
@@ -626,11 +627,11 @@ class xy_rule_port():
                     if len(sline) <= iSTATE:
                         continue
                     state = sline[iSTATE]
-                    #print(f"DEBUG: PORTRULE state {self.state} vs {state}")
+                    # print(f"DEBUG: PORTRULE state {self.state} vs {state}")
                     if self.state != state:
                         continue
                 self._count += 1
-                #print(f"DEBUG: {self.text} count={self._count}")
+                # print(f"DEBUG: {self.text} count={self._count}")
         ret = {}
         txt = f"&green {self.text} (found {self._count}, req. {self.min} or more)"
         color = 'green'
