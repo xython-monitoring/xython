@@ -971,7 +971,17 @@ def test_full():
     f.close()
 
     X.handle_net_message(f"proxy: test\n{data}", "fake")
-    shutil.rmtree(X.xt_data)
+
+    # TODO
+    lstat = os.stat(X.xt_logdir + '/logging.log')
+    size_orig = lstat.st_size
+    X.enable_debug()
+    X.debug('test')
+    lstat = os.stat(X.xt_logdir + '/logging.log')
+    final_size = lstat.st_size
+    assert final_size > size_orig
+
+    setup_clean(X)
 
 
 def test_snmpd():
