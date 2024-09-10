@@ -404,7 +404,7 @@ def test_proc_check():
 def test_disk():
 
     xrd = xy_rule_disks()
-    xrd.add('/ 10 30')
+    assert xrd.add('/ 10 30')
     assert xrd.rules['/'].warn == 10
     assert xrd.rules['/'].panic == 30
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  90% /")
@@ -415,8 +415,8 @@ def test_disk():
     assert ret["color"] == "green"
 
     xrd = xy_rule_disks()
-    xrd.add('/ 98 99')
-    xrd.add('%.* 90 95')
+    assert xrd.add('/ 98 99')
+    assert xrd.add('%.* 90 95')
     assert xrd.rules['/'].warn == 98
     assert xrd.rules['/'].panic == 99
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  95% /")
@@ -436,6 +436,9 @@ def test_disk():
     assert ret["color"] == "yellow"
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  0% /")
     assert ret["color"] == "green"
+    ret = xrd.check("/dev/root                          229640100  194555144  23347072  0 /")
+    assert ret is None
+
 
     X = xythonsrv()
     X.lldebug = True
@@ -453,6 +456,10 @@ def test_disk():
     assert len(results) == 1
     result = results[0]
     assert result[4] == 'red'
+
+    # test errors
+    xrd = xy_rule_disks()
+    assert not xrd.add('%.* 90')
 
     shutil.rmtree(X.xt_data)
 
