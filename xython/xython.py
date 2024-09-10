@@ -8,6 +8,7 @@
 
 import asyncio
 import bz2
+import logging
 import os
 import time
 import re
@@ -269,6 +270,8 @@ class xythonsrv:
         self.pagelist = {}
         self.pagelist['all'] = {}
         self.pagelist['nongreen'] = {}
+        self.logger = logging.getLogger('xython')
+        self.logger.setLevel(logging.INFO)
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -308,9 +311,14 @@ class xythonsrv:
         req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts_expire}, "{color}")'
         self.sqc.execute(req)
 
+    def enable_debug(self):
+        self.lldebug = True
+        self.logger.setLevel(logging.DEBUG)
+
     def debug(self, buf):
         if self.lldebug:
             print(buf)
+        self.logger.debug(buf)
 
     def debugdev(self, facility, buf):
         if self.lldebug and facility in self.debugs:
@@ -320,6 +328,7 @@ class xythonsrv:
         f = open("%s/%s.log" % (self.xt_logdir, facility), 'a')
         f.write(f"{xytime(time.time())} {buf}\n")
         f.close()
+        self.logger.info(buf)
 
     def error(self, buf):
         print(buf)
@@ -328,6 +337,7 @@ class xythonsrv:
         elog["ts"] = time.time()
         elog["msg"] = buf
         self.errors.append(elog)
+        self.logger.error(buf)
 
     def get_last_error(self):
         return self.errors[-1]
@@ -3743,6 +3753,9 @@ class xythonsrv:
                 os.mkdir(self.xt_acks)
             if not os.path.exists(self.xt_state):
                 os.mkdir(self.xt_state)
+        FileOutputHandler = logging.FileHandler(self.xt_logdir + 'logging.log')
+        FileOutputHandler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
+        self.logger.addHandler(FileOutputHandler)
         self.db = self.xt_data + '/xython.db'
         self.debug(f"DEBUG: DB is {self.db}")
         print(f"DEBUG: DB === {self.db}")
