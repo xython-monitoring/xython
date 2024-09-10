@@ -1,3 +1,4 @@
+import logging
 import re
 
 from xython.common import gcolor
@@ -10,6 +11,11 @@ from xython.common import xydelay
     SPDX-License-Identifier: GPL-2.0
 """
 
+
+def xlog_error(message):
+    print(message)
+    logger = logging.getLogger('xython')
+    logger.error(message)
 
 class xy_rule_disk():
     def __init__(self, fs, warn, panic):
@@ -48,13 +54,13 @@ class xy_rule_disks():
     def add(self, fsruleline):
         tokens = tokenize(fsruleline)
         fs = tokens.pop(0)
+        if len(tokens) == 0:
+            xlog_error(f"ERROR: fs: no token in {fsruleline}")
+            return False
         regex = False
         if fs[0] == '%':
             fs = fs[1:]
             regex = True
-        if len(tokens) == 0:
-            print("ERROR: fs:")
-            return False
         if tokens[0] == 'IGNORE':
             if regex:
                 self.rignore.append(fs)
@@ -62,7 +68,7 @@ class xy_rule_disks():
                 self.ignore[fs] = True
             return True
         if len(tokens) != 2:
-            print("ERROR: fs: not enough tokens")
+            xlog_error("ERROR: fs: not enough tokens")
             return False
         warn = int(tokens.pop(0))
         panic = int(tokens.pop(0))
@@ -81,7 +87,7 @@ class xy_rule_disks():
         part = sline[5]
         rawpc = sline[4]
         if rawpc[-1] != '%':
-            print("ERROR: invalid percent in {line}")
+            xlog_error(f"ERROR: invalid percent in {line}")
             return None
         pc = int(rawpc.rstrip('%'))
         if part in self.ignore:
@@ -166,7 +172,7 @@ class xy_rule_sensors():
             self.rules[adapter]["rules"] = {}
             self.rules[adapter]["regex"] = regex
         if len(tokens) == 0:
-            print("ERROR: sensor:")
+            xlog_error("ERROR: sensor:")
             return False
         # if sname == 'IGNORE':
         # TODO ignore a whole adapter
@@ -176,7 +182,7 @@ class xy_rule_sensors():
             self.rules[adapter]["rules"][sname]["ignore"] = True
             return True
         if len(tokens) < 2:
-            print(f"ERROR: sensor: not enough tokens got {tokens}")
+            xlog_error(f"ERROR: sensor: not enough tokens got {tokens}")
             return False
         warn = int(tokens.pop(0))
         panic = int(tokens.pop(0))
@@ -348,7 +354,7 @@ class xy_rule_cpu():
         ret = {}
         loadavg = re.search(r"load average[s]*: [0-9]+[,\.][0-9]+,\s([0-9]+[,\.][0-9]+),", upline)
         if not loadavg:
-            print("ERROR: fail to find load")
+            xlog_error("ERROR: fail to find load in {upline}")
             return None
         load = loadavg.group(1).replace(',', '.')
         self.xload = float(load)
@@ -373,7 +379,7 @@ class xy_rule_cpu():
             rup = re.search(r"[AP]M (.*),\s[0-9]+\suser.*load average", upline)
         if not rup:
             # TODO return an ret["error"]
-            print(f"ERROR: failed to find uptime in {upline}")
+            xlog_error(f"ERROR: failed to find uptime in {upline}")
             return None
         sup = rup.group(1)
         sup.replace(",", '')
@@ -508,7 +514,7 @@ class xy_rule_proc():
         self.color = tokens.pop(0)
         if len(tokens) == 0:
             return True
-        print("UNHANDLED")
+        xlog_error("ERROR: UNHANDLED {portruleline}")
         return False
 
     def check(self, data):
@@ -559,7 +565,7 @@ class xy_rule_port():
         for token in tokens:
             toks = token.split("=")
             if len(toks) != 2:
-                print(f"ERROR: rule_port: init toklen={len(toks)} token={token}")
+                xlog_error(f"ERROR: rule_port: init toklen={len(toks)} token={token}")
                 return None
             left = toks[0]
             right = toks[1]
@@ -576,7 +582,7 @@ class xy_rule_port():
             elif toks[0] == 'TEXT':
                 self.text = right
             else:
-                print("UNHANDLED %s" % left)
+                xlog_error("ERROR: UNHANDLED %s" % left)
 
     def check(self, data):
         if self.text is None:
