@@ -12,67 +12,65 @@ from pytz import timezone
 
 
 # Xymon use a format for day number not availlable on python
-def xytime(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def xytime(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     first = date.strftime("%a %b %d").replace(" 0", ' ')
     last = date.strftime(" %H:%M:%S %Y")
     return first + last
 
 
-def xytime_(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def xytime_(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     first = date.strftime("%a_%b_%d").replace("_0", '_')
     last = date.strftime("_%H:%M:%S_%Y")
     return first + last
 
 
-def xyts(sts, tz):
+def xyts(sts, tz='Europe/Paris'):
     sts = re.sub(r' ([0-9]) ', r' 0\1 ', sts)
     date = datetime.strptime(sts, "%a %b %d %H:%M:%S %Y")
-    if tz is not None:
-        date = date.replace(tzinfo=timezone(tz))
+    date = timezone(tz).localize(date)
     return date.timestamp()
+    return date.astimezone(timezone('utc')).timestamp()
 
 
-def xyts_(sts, tz):
+def xyts_(sts, tz='Europe/Paris'):
     sts = re.sub(r'_([0-9])_', r'_0\1_', sts)
     date = datetime.strptime(sts, "%a_%b_%d_%H:%M:%S_%Y")
-    if tz is not None:
-        date = date.replace(tzinfo=timezone(tz))
+    date = timezone(tz).localize(date)
     return date.timestamp()
 
 
-def xyevent_to_ts(sts, tz):
+def xyevent_to_ts(sts, tz='Europe/Paris'):
     date = datetime.strptime(sts, "%Y/%m/%d@%H:%M:%S")
-    if tz is not None:
-        date = date.replace(tzinfo=timezone(tz))
+    date = timezone(tz).localize(date)
     return date.timestamp()
 
 
-def xyevent(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def xyevent(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     first = date.strftime("%Y/%m/%d")
     last = date.strftime("@%H:%M:%S")
     return first + last
 
 
-def event_thisyear(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def event_thisyear(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     return f"{date.year}/01/01@00:00:00"
 
 
-def event_lastyear(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def event_lastyear(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     return f"{date.year - 1}/01/01@00:00:00"
 
 
-def event_thismonth(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def event_thismonth(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     return f"{date.year}/{date.month:02}/01@00:00:00"
 
 
-def event_lastmonth(ts):
-    date = datetime.fromtimestamp(ts, timezone('Europe/Paris'))
+def event_lastmonth(ts, tz='Europe/Paris'):
+    date = datetime.fromtimestamp(ts, timezone(tz))
     lm = date.replace(day=1) - timedelta(days=1)
     return f"{lm.year}/{lm.month:02}/01@00:00:00"
 
