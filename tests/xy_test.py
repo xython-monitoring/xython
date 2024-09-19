@@ -1019,6 +1019,12 @@ def test_snmpd2():
     # do_snmpd(X)
     shutil.rmtree(X.xt_data)
 
+def test_snmp_fail():
+    r = snmp_get('.1.3.6.1.2.1.1.1.0', '127.0.0.1', 162, 'public')
+    print(r)
+    assert r['err'] == -1
+    assert r['errmsg'] == 'No SNMP response received before timeout'
+
 def test_snmp_get():
     if 'TESTS_SNMP_GET' not in os.environ:
         pytest.skip('Need to set TESTS_SNMP_GET')

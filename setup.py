@@ -29,7 +29,7 @@ requires = [
     "celery>=2",
     "requests>=2",
     "paramiko",
-    "pysnmp",
+    "pysnmp==5.1.0",
     "pytz"
 ]
 test_requirements = [
@@ -63,7 +63,7 @@ setup(
     python_requires=">=3.7",
     install_requires=requires,
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
