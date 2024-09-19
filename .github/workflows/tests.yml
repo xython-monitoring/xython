@@ -164,9 +164,9 @@ jobs:
         run: sudo apt-get update
       - name: Install python packages
         run: sudo apt-get -y install python3 python3-pip python-is-python3 python3-celery cmake python3-setuptools python3-wheel iputils-ping openssl python3-paramiko python3-pysnmp4
-      - name: Try to setup.py
+      - name: Install package
         run: |
-          python setup.py install --prefix ~/.local
+          pip install  .
       - name: build with cmake
         run: |
           cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local/ -DXYTHON_ETC=etc/xython .
@@ -179,6 +179,7 @@ jobs:
           mkdir log www data
       - name: Run for 90 s
         run: |
+          find -iname xythond
           xythond --quit 90 -d --logdir log -x 0 -R --wwwdir www --vardir data --etcdir $HOME/.local/etc/xython/
 
   yamllint:
