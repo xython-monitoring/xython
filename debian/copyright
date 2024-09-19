@@ -12,7 +12,7 @@ Upstream Authors:
 -------------------------------------------------------------------------------
 
 Files: *
-Copyright: © 2023 Corentin LABBE <clabbe.montjoie@gmail.com>
+Copyright: © 2023-2024 Corentin LABBE <clabbe.montjoie@gmail.com>
 License: GPL-2
 
 On Debian systems, the complete text of the GNU General
@@ -27,7 +27,7 @@ License: GPL-2 with OpenSSL exception
 -------------------------------------------------------------------------------
 
 Files: debian/*
-Copyright: © 2023 Corentin LABBE <clabbe.montjoie@gmail.com>
+Copyright: © 2023-2024 Corentin LABBE <clabbe.montjoie@gmail.com>
 License: PD
    The packaging done by Corentin LABBE <clabbe.montjoie@gmail.com> is hereby
    released as public domain.

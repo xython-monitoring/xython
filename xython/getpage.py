@@ -2,7 +2,7 @@
 
 """
     xython: a xymon monitoring replacement in python
-    Copyright (C) 2023 Corentin LABBE <clabbe.montjoie@gmail.com>
+    Copyright (C) 2023-2024 Corentin LABBE <clabbe.montjoie@gmail.com>
     SPDX-License-Identifier: GPL-2.0
 """
 
