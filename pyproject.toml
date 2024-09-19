@@ -1,4 +1,73 @@
+[project]
+name = "xython"
+version = "0.2.1"
+description="xython is a rewrite in python of xymon"
+readme = "README.md"
+authors=[
+	{name = "Corentin LABBE", email = "clabbe.montjoie@gmail.com"}
+]
+requires-python = ">=3.7"
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: System :: Monitoring",
+    ]
+license = {text = "LGPL-2.1-or-later"}
+dependencies = [
+    "celery>=2",
+    "requests>=2",
+    "paramiko",
+    "pyasn1<0.4.9",
+    "pysnmp==5.1.0",
+    "pytz"
+]
+
+[tool.setuptools]
+py-modules = ['xython']
+
+[tool.poetry]
+packages = [
+	{ include = "xython", from = "xython" },
+]
+
+[project.optional-dependencies]
+dev = [
+  "coverage",
+  "pytest",
+]
+
+[tool.setuptools.package-data]
+xython = ["LICENSE", "NOTICE"]
+
+[project.urls]
+Homepage = "https://github.com/xython-monitoring/xython"
+Documentation = "https://github.com/xython-monitoring/xython"
+Repository = "https://github.com/xython-monitoring/xython"
+
+[project.scripts]
+xythond = "xython:main"
+xython-tlsd = "xython_tlsd.xython_tlsd:main"
+xythonc = "xython.xython_client:main"
+xython-nshow = "xython_ncurses.xython_nshow:main"
+
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
 ]
+
