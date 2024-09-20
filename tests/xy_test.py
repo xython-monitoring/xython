@@ -982,6 +982,18 @@ def test_full():
 
     X.handle_net_message(f"proxy: test\n{data}", "fake")
 
+    r = X.handle_net_message('GETSTATUS', '127.0.0.1')
+    assert 'ERROR: need more parameters' in r["send"]
+    r = X.handle_net_message('GETSTATUS invalid', '127.0.0.1')
+    assert 'ERROR: need more parameters' in r["send"]
+
+    r = X.handle_net_message('GETSTATUS invalid invalid', '127.0.0.1')
+    assert 'ERROR: no service named' in r["send"]
+
+    r = X.handle_net_message('GETSTATUS test1 coltest', '127.0.0.1')
+    print(r)
+    assert 'HTML' in r["send"]
+
     # TODO
     lstat = os.stat(X.xt_logdir + '/logging.log')
     size_orig = lstat.st_size

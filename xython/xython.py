@@ -3596,6 +3596,10 @@ class xythonsrv:
             #    self.error("Client get away")
             #    pass
         elif cmd == 'GETSTATUS':
+            if len(sbuf) < 3:
+                ret["send"] = f"ERROR: need more parameters\n"
+                ret["done"] = 1
+                return ret
             hostname = sbuf[1]
             service = sbuf[2].rstrip()
             if not is_valid_column(service):

@@ -20,10 +20,12 @@ COPY docker/livetests/pytests/start.sh /home/xtest/
 RUN chmod 755 /home/xtest/start.sh
 USER xtest
 WORKDIR /home/xtest
+ADD --chown=xtest xymon /home/xtest/xymon
 ADD --chown=xtest tests /home/xtest/tests
 ADD --chown=xtest cgi /home/xtest/cgi
 ADD --chown=xtest xython /home/xtest/xython
-
+RUN find
+RUN ls
 
 
 ENTRYPOINT ["/home/xtest/start.sh"]
