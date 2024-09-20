@@ -273,6 +273,7 @@ class xythonsrv:
         self.pagelist['nongreen'] = {}
         self.logger = logging.getLogger('xython')
         self.logger.setLevel(logging.INFO)
+        self.tz = 'Europe/Paris'
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -2005,7 +2006,7 @@ class xythonsrv:
                 bbuf = self.get_histlogs(H.name, column, tsb)
                 edate = bbuf['first'].replace('blue Disabled until ', '').rstrip()
                 # self.debug(f"DEBUG: disable date is {edate}X")
-                ets = xyts(edate, None)
+                ets = xyts(edate, self.tz)
                 expire = ets - int(time.time())
             if self.readonly:
                 self.column_update(H.name, column, st_new, int(tsb), None, 3 * 60, "xython")
@@ -2703,7 +2704,7 @@ class xythonsrv:
     # TODO we can generate RRD while writing to it https://www.mail-archive.com/rrd-users@lists.oetiker.ch/msg13016.html
     def gen_rrd(self, hostname):
         basedir = f"{self.xt_rrd}/{hostname}"
-        rrdbuf = f"{xytime(time.time())} - xrrd\n"
+        rrdbuf = f"{xytime(time.time(), self.tz)} - xrrd\n"
         color = 'green'
         allrrds = os.listdir(basedir)
         if 'sensor' in allrrds:
@@ -2803,7 +2804,7 @@ class xythonsrv:
                     line = line.replace('@RRDPARAM@', f"{label}")
                     base.append(line)
                 i += 1
-            rrdup = xytime(time.time()).replace(':', '\\:')
+            rrdup = xytime(time.time(), self.tz).replace(':', '\\:')
             base.append(f'COMMENT:Updated\\: {rrdup}')
             try:
                 # ret = rrdtool.graph(base)
@@ -3030,7 +3031,7 @@ class xythonsrv:
         # self.debug(f"DEBUG: parse_free for {hostname}")
         # TODO handle other OS case
         color = 'green'
-        sbuf = f"{xytime(now)} - Memory OK\n"
+        sbuf = f"{xytime(now, self.tz)} - Memory OK\n"
         sbuf += "          Memory        Used       Total      Percentage\n"
 
         for memtype in ["MEMPHYS", "MEMACT", "MEMSWAP"]:
@@ -3061,7 +3062,7 @@ class xythonsrv:
             self.error(f"ERROR: parse_uptime: host is None for {hostname}")
             return 2
         udisplay = re.sub(r"^.*up ", "up", buf)
-        sbuf = f"{xytime(now)} {udisplay}\n"
+        sbuf = f"{xytime(now, self.tz)} {udisplay}\n"
         # Check with global rules
         gret = self.rules["CPU"].cpucheck(buf)
         self.do_rrd(hostname, 'la', 'la', 'la', gret['la'], ['DS:la:GAUGE:600:0:U'])
@@ -3089,7 +3090,7 @@ class xythonsrv:
         ts_start = time.time()
         now = int(ts_start)
         color = 'green'
-        sbuf = f"{xytime(now)} - procs Ok\n"
+        sbuf = f"{xytime(now, self.tz)} - procs Ok\n"
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_ps: host is None for {hostname}")
@@ -3116,7 +3117,7 @@ class xythonsrv:
         now = int(time.time())
         devices = []
         color = 'green'
-        sbuf = f"{xytime(now)} - RAID Ok\n"
+        sbuf = f"{xytime(now, self.tz)} - RAID Ok\n"
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_mdstat: host is None for {hostname}")
@@ -3136,7 +3137,7 @@ class xythonsrv:
     def parse_ports(self, hostname, buf, sender):
         now = int(time.time())
         color = 'clear'
-        sbuf = f"{xytime(now)} - ports Ok\n"
+        sbuf = f"{xytime(now, self.tz)} - ports Ok\n"
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_ports: host is None for {hostname}")
@@ -3178,7 +3179,7 @@ class xythonsrv:
         now = int(ts_start)
         adapter = None
         color = 'green'
-        sbuf = f"{xytime(now)} - sensors Ok\n"
+        sbuf = f"{xytime(now, self.tz)} - sensors Ok\n"
         H = self.find_host(hostname)
         if H is None:
             self.error("ERROR: parse_sensors: host is None")
@@ -3228,7 +3229,7 @@ class xythonsrv:
             column = 'disk'
             S = "DISK"
         color = 'green'
-        sbuf = f"{xytime(now)} - disk Ok\n"
+        sbuf = f"{xytime(now, self.tz)} - disk Ok\n"
 
         H = self.find_host(hostname)
         if H is None:
@@ -3330,11 +3331,11 @@ class xythonsrv:
                 # TODO ignore it and delete it
                 continue
             why = ' '.join(tokens)
-            self.debug(f"DEBUG: ack {hostname}.{cname} until {xytime(expire)} why={why}")
+            self.debug(f"DEBUG: ack {hostname}.{cname} until {xytime(expire, self.tz)} why={why}")
             self.do_ack(hostname, cname, expire, why)
 
     def store_ack(self, hostname, column, start, expire, msg):
-        fname = f"{self.xt_acks}/{xytime_(start)}"
+        fname = f"{self.xt_acks}/{xytime_(start, self.tz)}"
         f = open(fname, 'w')
         f.write(f"{hostname} {column} {start} {expire} {msg}\n")
         f.close()
@@ -3457,7 +3458,7 @@ class xythonsrv:
         else:
             columns.append(testname)
         for cname in columns:
-            blue_status = f"Disabled until {xytime(expire)}\n\n{why}\n\nStatus message when disabled follows:\n\n"
+            blue_status = f"Disabled until {xytime(expire, self.tz)}\n\n{why}\n\nStatus message when disabled follows:\n\n"
             result = self.get_column_state(hostname, cname)
             if result is None:
                 self.error("ERROR: cannot disable an empty column")
@@ -3602,7 +3603,7 @@ class xythonsrv:
                 ret["done"] = 1
                 return ret
             if len(sbuf) > 3:
-                ts = xyts_(sbuf[3], None)
+                ts = xyts_(sbuf[3], self.tz)
             else:
                 res = self.sqc.execute('SELECT ts FROM columns WHERE hostname == ? AND column == ?', (hostname, service))
                 results = self.sqc.fetchall()
