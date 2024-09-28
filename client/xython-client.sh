@@ -41,6 +41,7 @@ tls_curl() {
 	if [ -n "$CAFILE" ];then
 		CURLOPTS="--cacert $CAFILE"
 	fi
+	debug "CURLOPTS=$CURLOPTS"
 	curl "$CURLOPTS" --no-progress-meter -F "data=@$XYTHON_TMP/xython.msg" "https://$XYTHON_SRV/$PROXYCGI" --output "$XYTHON_TMP/logfetch.$(uname -n).cfg"
 }
 
@@ -50,6 +51,8 @@ tls_openssl() {
 	fi
 	# TODO -servername
 	xython-client 2>$XYTHON_TMP/xython.err >$XYTHON_TMP/xython.msg || exit $?
+	debug "OPENSSLOPTS=$OPENSSLOPTS"
+	debug "OPENSSL: Connect to $XYTHON_SRV:$XYTHON_TLS_PORT"
 	cat "$XYTHON_TMP/xython.msg" | openssl s_client -quiet "$OPENSSLOPTS" -connect "$XYTHON_SRV:$XYTHON_TLS_PORT" > "$XYTHON_TMP/logfetch.$(uname -n).cfg"
 	# TODO openssl dont like TLSD closing its connection
 }
@@ -68,6 +71,7 @@ case $1 in
 --tlsmode)
 	shift
 	TLS_MODE="$1"
+	USE_TLS=1
 	shift
 ;;
 *)
