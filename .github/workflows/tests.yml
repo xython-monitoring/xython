@@ -260,13 +260,15 @@ jobs:
       - name: update pkglist
         run: sudo apt-get update
       - name: Install shellcheck
-        run: sudo apt-get -y install shellcheck devscripts
+        run: sudo apt-get -y install shellcheck devscripts curl openssl netcat-openbsd
       - name: Run checkbashisms
         run: checkbashisms client/*
       - name: Run shellcheck
         run: shellcheck -e SC2181 -e SC2002 client/*
       - name: Run client with sh
         run: sh client/xython-client
+      - name: Run client with network
+        run: sh tests/testclient.sh
       # TODO run client in a busybox/other OS docker
   pytest-in-docker:
     runs-on: ubuntu-latest
