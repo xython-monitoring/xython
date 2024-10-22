@@ -249,7 +249,7 @@ Linux)
 	fi
 	# busybox does not like -w
 	if [ $PSBUSYBOX -eq 1 ];then
-		ps -ww
+		ps
 	else
 		ps -Aww f -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
 	fi
