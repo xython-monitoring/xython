@@ -347,8 +347,11 @@ class xythonsrv:
 
     # get configuration values from xython
     def xython_getvar(self, varname):
-        # TODO handle fail
-        f = open(f"{self.etcdir}/xython.cfg", 'r')
+        try:
+            f = open(f"{self.etcdir}/xython.cfg", 'r')
+        except FileNotFoundError:
+            self.error("ERROR: Fail to open xython.cfg")
+            return None
         for line in f:
             line = line.rstrip()
             if len(line) == 0:
