@@ -13,6 +13,7 @@ import os
 import pytz
 import time
 import re
+import ssl
 import sys
 from random import randint
 import resource
@@ -191,6 +192,7 @@ class xythonsrv:
         self.s = None
         self.us = None
         self.netport = 1984
+        self.tlsport = 1985
         self.ipv6 = False
         self.lldebug = False
         self.readonly = False
@@ -275,6 +277,8 @@ class xythonsrv:
         self.logger = logging.getLogger('xython')
         self.logger.setLevel(logging.INFO)
         self.tz = 'Europe/Paris'
+        self.tls_cert = None
+        self.tls_key = None
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -3685,6 +3689,12 @@ class xythonsrv:
         self.netport = port
         return True
 
+    def set_tlsport(self, port):
+        if port <= 0 or port > 65535:
+            return False
+        self.tlsport = port
+        return True
+
     def set_xymonvar(self, p):
         self.xy_data = p
         self.vars["XYMONVAR"] = p
@@ -3780,6 +3790,10 @@ class xythonsrv:
         # we always restart with a clean DB
         if os.path.exists(self.db):
             os.remove(self.db)
+        if self.tls_key is None:
+            self.tls_key = self.xython_getvar('XYTHON_TLS_KEY')
+        if self.tls_cert is None:
+            self.tls_cert = self.xython_getvar('XYTHON_TLS_CRT')
         self.sqconn = sqlite3.connect(self.db)
         self.sqc = self.sqconn.cursor()
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS columns
@@ -3942,6 +3956,14 @@ class xythonsrv:
         if self.ipv6:
             coro = asyncio.start_server(self.handle_inet_client, '::', self.netport, backlog=1000)
             self.tasks.append(coro)
+        if self.tls_cert and self.tls_key:
+            ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_ctx.load_cert_chain(self.tls_cert, self.tls_key)
+            self.log("TLS", "START TLS");
+            coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.tlsport, backlog=1000, ssl=ssl_ctx)
+            self.tasks.append(coro)
+        else:
+            self.log("TLS", f"DO NOT START TLS")
         if os.path.exists(self.unixsock):
             os.unlink(self.unixsock)
         self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

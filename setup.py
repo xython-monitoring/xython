@@ -48,13 +48,12 @@ setup(
     author="Corentin Labbe",
     author_email="clabbe.montjoie@gmail.com",
     url="https://github.com/xython-monitoring/xython",
-    packages=["xython", "xython_tlsd", "xython_ncurses"],
+    packages=["xython", "xython_ncurses"],
     package_data={"": ["LICENSE", "NOTICE"]},
-    package_dir={"xython": "xython", "xython_tlsd": "xython-tlsd", "xython_ncurses": "xython-ncurses"},
+    package_dir={"xython": "xython", "xython_ncurses": "xython-ncurses"},
     entry_points={
         'console_scripts': [
             "xythond = xython:main",
-            "xython-tlsd = xython_tlsd.xython_tlsd:main",
             "xythonc = xython.xython_client:main",
             "xython-nshow = xython_ncurses.xython_nshow:main",
         ],

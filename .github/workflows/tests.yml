@@ -57,9 +57,9 @@ jobs:
       - name: Run xythond for 10 s
         run: |
           xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data
-      - name: Run xython-tlsd for 10 s
+      - name: Run xythond wth TLS for 10 s
         run: |
-          xython-tlsd --quit 10 --tlskey tests/xython.key --tlscrt tests/xython.crt --etcdir etc/
+          xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data --tlskey tests/xython.key --tlscrt tests/xython.crt
 
   build-with-pika:
     runs-on: ubuntu-latest
@@ -119,9 +119,9 @@ jobs:
       - name: Run xythond for 10 s
         run: |
           xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data
-      - name: Run xython-tlsd for 10 s
+      - name: Run xythond with TLS for 10 s
         run: |
-          xython-tlsd --quit 10 --tlskey tests/xython.key --tlscrt tests/xython.crt --etcdir etc/
+          xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data --tlskey tests/xython.key --tlscrt tests/xython.crt
       - name: Run xython-nshow
         run: |
           xython-nshow -V
@@ -230,21 +230,17 @@ jobs:
       - name: Test systemd service file
         run: |
           sudo systemctl start xython-celery
-          sudo systemctl start xython-tlsd
           sudo systemctl start xythond
           sudo systemctl start xython-client
           sleep 2
           ps aux |grep celery
-          ps aux |grep xython-tlsd
           ps aux |grep xythond
           ps aux |grep xython-client
           sudo systemctl stop xython-celery
-          sudo systemctl stop xython-tlsd
           sudo systemctl stop xythond
           sudo systemctl stop xython-client
           sleep 2
           ps aux |grep celery
-          ps aux |grep xython-tlsd
           ps aux |grep xythond
           ps aux |grep xython-client
       - name: Keep generated deb
