@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--dump", help="test reading configuration and data", action="store_true")
     parser.add_argument("--readonly", "-R", help="Readonly mode, do not write anything in XYMONVAR (except web pages)", action="store_true")
     parser.add_argument("--netport", help="Network port", default=1984)
+    parser.add_argument("--tlsport", help="Network port", default=1985)
     parser.add_argument("--logdir", help="Override xython log directory", default="/var/log/xython/")
     parser.add_argument("--etcdir", help="Override xymon etc directory", default="/etc/xymon/")
     parser.add_argument("--xythonsock", help="Override xython socker patch", default="/run/xython/xython.sock")
@@ -32,11 +33,18 @@ def main():
     parser.add_argument("--vardir", help="Override xython var directory")
     parser.add_argument("--debugs", help="Extra debug section separated by comma")
     parser.add_argument("--quit", help="Quit after x seconds", type=int, default=0)
+    parser.add_argument("--tlskey", help="Override xython TLS key")
+    parser.add_argument("--tlscrt", help="Override xython TLS certificate")
     args = parser.parse_args()
 
     X = xythonsrv()
     X.unixsock = args.xythonsock
     X.set_netport(int(args.netport))
+    X.set_tlsport(int(args.tlsport))
+    if args.tlskey:
+        X.tls_key = args.tlskey
+    if args.tlscrt:
+        X.tls_cert = args.tlscrt
     X.lldebug = args.debug
     X.readonly = args.readonly
     X.xythonmode = args.xython

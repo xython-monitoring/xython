@@ -16,10 +16,6 @@ sudo chmod 640 /etc/xython/xython.key
 ls -l /etc/xython
 
 cat /etc/xython/xython.cfg
-/usr/bin/xython-tlsd --quit 5
-
-sudo /etc/init.d/xython-tlsd start || exit $?
-ps aux |grep xython-tlsd
 
 sudo /etc/init.d/xythond start || exit $?
 # wait for xythond to generate files

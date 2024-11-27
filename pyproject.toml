@@ -62,7 +62,6 @@ Repository = "https://github.com/xython-monitoring/xython"
 
 [project.scripts]
 xythond = "xython:main"
-xython-tlsd = "xython_tlsd.xython_tlsd:main"
 xythonc = "xython.xython_client:main"
 xython-nshow = "xython_ncurses.xython_nshow:main"
 

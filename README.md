@@ -181,14 +181,14 @@ You have 2 choices:
 You can enable push of client data via the xython HTTP proxy by setting USE_TLS=1
 If you use a custom CA (or self-signed certificate), dont forget to set CAFILE
 
-#### USE xython-tlsd
+#### Use xythond
 
-TLS communication with the client is handled by xython-tlsd.
+TLS communication with the client is handled by xythond.
 You need to have a working PKI (CA + key + cert).
-The key and cert used by xython-tlsd could be configured by:
+The key and cert used by xythond could be configured by:
 
 * setting XYTHON_TLS_KEY=path and XYTHON_TLS_CRT=path in $etcdir/xython.cfg
-* giving path directly to xython-tlsd arguments (--tlskey/--tlscrt)
+* giving path directly to xythond arguments (--tlskey/--tlscrt)
 
 TODO: TLS server is still a PoC which simply works, I need to bench it.
 
@@ -198,7 +198,7 @@ You can generate a self signed certificate with:
 TODO: authentification of client will be done later
 
 You can enable TLS for client by setting USE_TLS=1 and set TLS_MODE="openssl"
-You will need to change port to the one used by xython-tlsd.
+You will need to change port to the one used by xythond.
 You will need also so set the CAfile path.
 
 ## Architecture
