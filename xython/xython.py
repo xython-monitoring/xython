@@ -10,6 +10,7 @@ import asyncio
 import bz2
 import logging
 import os
+import pytz
 import time
 import re
 import sys
@@ -2364,6 +2365,7 @@ class xythonsrv:
         buf += f"Active tests: {results[0][0]}\n"
         buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
         buf += f"xymonserver.cfg mtime {xytime(self.time_read_xserver_cfg)}\n"
+        buf += f"Local time: {xytime(now)} TZ={self.tz}\n"
         nghost = 0
         for ghost in self.ghosts:
             if ghost["ts"] + 300 < now:
@@ -3761,6 +3763,14 @@ class xythonsrv:
         FileOutputHandler = logging.FileHandler(self.xt_logdir + 'logging.log')
         FileOutputHandler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         self.logger.addHandler(FileOutputHandler)
+        # TODO get timezone from /etc/timezone ?
+        tz = self.xython_getvar('TIMEZONE')
+        if tz is not None:
+            if tz not in pytz.all_timezones:
+                self.error(f"ERROR: Invalid timezone name {tz}")
+                sys.exit(1)
+            self.tz = tz
+            self.debug(f'DEBUG: set timezone to {self.tz}')
         self.db = self.xt_data + '/xython.db'
         self.debug(f"DEBUG: DB is {self.db}")
         print(f"DEBUG: DB === {self.db}")
