@@ -7,6 +7,21 @@ services:
     ports:
       - 10080:80
     hostname: xython-server
+  xython-client:
+    build:
+      context: ../..
+      dockerfile: docker/livetests/xython-client/Dockerfile
+    hostname: client0
+  xython-client-tls-curl:
+    build:
+      context: ../..
+      dockerfile: docker/livetests/xython-client/Dockerfile
+    hostname: client-tls-curl0
+  xython-client-tls-openssl:
+    build:
+      context: ../..
+      dockerfile: docker/livetests/xython-client/Dockerfile
+    hostname: client-tls-openssl0
   apache:
     build:
       context: apache

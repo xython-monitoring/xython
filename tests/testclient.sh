@@ -23,12 +23,12 @@ md5sum /run/xython-client/xython.msg
 md5sum /tmp/result
 
 
-echo '======================='
-nc -l -p 1985 > /tmp/result &
-sh client/xython-client.sh -d --tlsmode openssl
-cat /run/xython-client/xython.err
-md5sum /run/xython-client/xython.msg
-md5sum /tmp/result
+#echo '======================='
+#nc -l -p 1985 > /tmp/result &
+#sh client/xython-client.sh -d --tlsmode openssl
+#cat /run/xython-client/xython.err
+#md5sum /run/xython-client/xython.msg
+#md5sum /tmp/result
 
 echo '======================='
 sudo sed -i 's,#XYTHON_SRV=127.0.0.1,XYTHON_SRV=127.0.0.1:1984,' /etc/xython/xython-client.cfg
