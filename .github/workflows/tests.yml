@@ -277,3 +277,4 @@ jobs:
           sed -i 's,HAS_IPV6:.*,HAS_IPV6: "False",' docker-compose.yml
           docker compose build
           docker compose up --abort-on-container-exit pytests
+          docker compose up --abort-on-container-exit xythond xython-client xython-client-tls-curl
