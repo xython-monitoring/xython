@@ -64,6 +64,18 @@ And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
 Or the old way:
 > apt-key add pgp-key.public
 
+Then install packages
+> apt-get install xython apache2 redis-server
+
+Enable necessary apache modules
+> a2enmod cgi
+> a2enconf xython
+> systemctl restart apache2
+
+Start services
+> /etc/init.d/redis-server start
+> /etc/init.d/xython start
+
 <!--
 #### manual debian setup
 Github pipelines generates a debian package, so you can download it and install it via:
