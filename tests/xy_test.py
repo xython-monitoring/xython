@@ -448,6 +448,8 @@ def test_disk():
     assert ret["color"] == "green"
     ret = xrd.check("/dev/root                          229640100  194555144  23347072  0 /")
     assert ret is None
+    ret = xrd.check("/dev/mmcblk0p1                     0        0         0     - /boot/efi")
+    assert ret is None
 
 
     X = xythonsrv()

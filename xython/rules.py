@@ -87,6 +87,9 @@ class xy_rule_disks():
         sline = line.split(" ")
         part = sline[5]
         rawpc = sline[4]
+        # returned by df -i, for FS without inode
+        if rawpc[-1] == '-':
+            return None
         if rawpc[-1] != '%':
             xlog_error(f"ERROR: invalid percent in {line}")
             return None
