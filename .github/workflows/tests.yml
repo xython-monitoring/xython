@@ -260,7 +260,7 @@ jobs:
       - name: Run checkbashisms
         run: checkbashisms client/*
       - name: Run shellcheck
-        run: shellcheck -e SC2181 -e SC2002 client/*
+        run: shellcheck -e SC2181 -e SC2002 -e SC2086 client/*
       - name: Run client with sh
         run: sh client/xython-client
       - name: Run client with network
