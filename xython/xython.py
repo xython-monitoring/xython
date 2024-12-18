@@ -2026,8 +2026,17 @@ class xythonsrv:
         return True
 
     def gen_top_changes(self, dstart, dend):
-        ts_start = int(xyevent_to_ts(dstart, None))
-        ts_end = int(xyevent_to_ts(dend, None))
+        ts = xyevent_to_ts(dstart, self.tz)
+        if ts is None:
+            ts_start = 0
+        else:
+            ts_start = int(ts)
+        ts = xyevent_to_ts(dend, self.tz)
+        if ts is None:
+            # TODO print error
+            ts_end = 0
+        else:
+            ts_end = int(ts)
         hlist = self.html_header("topchanges_header")
         byhost = {}
         byservice = {}
