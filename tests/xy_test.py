@@ -114,6 +114,7 @@ def test_xytime():
     assert xyevent(1702846434) == '2023/12/17@21:53:54'
     assert xyevent_to_ts("2023/12/17@21:53:54", 'CET') == 1702846434
     assert xyevent_to_ts("2023/12/17@21:53:54", 'Europe/Paris') == 1702846434
+    assert xyevent_to_ts("") is None
     assert event_thisyear(1702846434) == '2023/01/01@00:00:00'
     assert event_lastyear(1702846434) == '2022/01/01@00:00:00'
     assert event_thismonth(1702846434) == '2023/12/01@00:00:00'

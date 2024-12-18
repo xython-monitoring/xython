@@ -4,12 +4,18 @@
     SPDX-License-Identifier: GPL-2.0
 """
 
+import logging
 import time
 import re
 from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
 
+
+def xlog_error(message):
+    print(message)
+    logger = logging.getLogger('xython')
+    logger.error(message)
 
 # Xymon use a format for day number not availlable on python
 def xytime(ts, tz='Europe/Paris'):
@@ -42,7 +48,11 @@ def xyts_(sts, tz='Europe/Paris'):
 
 
 def xyevent_to_ts(sts, tz='Europe/Paris'):
-    date = datetime.strptime(sts, "%Y/%m/%d@%H:%M:%S")
+    try:
+        date = datetime.strptime(sts, "%Y/%m/%d@%H:%M:%S")
+    except ValueError:
+        xlog_error(f"ERROR: xyevent_to_ts: Invalid TS {sts}")
+        return None
     date = timezone(tz).localize(date)
     return date.timestamp()
 
