@@ -2074,7 +2074,7 @@ class xythonsrv:
             cid = None
             cmax = 0
             for h in byhost:
-                if byhost[h] > cmax:
+                if byhost[h] >= cmax:
                     cmax = byhost[h]
                     cid = h
             del byhost[cid]
@@ -2088,11 +2088,11 @@ class xythonsrv:
         # sort values
         bysvcs = []
         stotal = 0
-        while len(bysvcs) < 10 and len(byhost.keys()) > 0:
+        while len(bysvcs) < 10 and len(byhost.keys()) > 0 and len(byservice) > 0:
             cid = None
             cmax = 0
             for h in byservice:
-                if byservice[h] > cmax:
+                if byservice[h] >= cmax:
                     cmax = byservice[h]
                     cid = h
             del byservice[cid]
