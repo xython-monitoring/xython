@@ -774,6 +774,8 @@ class xythonsrv:
         return html
 
     def html_page(self, pagename):
+        now = time.time()
+        history_extra = ""
         color = 'blue'
         if pagename == 'acknowledgements':
             header = 'acknowledge_header'
@@ -788,14 +790,6 @@ class xythonsrv:
             header = 'stdnormal_header'
             footer = 'stdnormal_footer'
         hlist = self.html_header(header)
-        if pagename == 'nongreen':
-            ret = self.html_hostlist(pagename, None)
-            hlist += ret["html"]
-            color = ret["color"]
-        if pagename == 'all':
-            ret = self.html_hostlist(pagename, None)
-            hlist += ret["html"]
-            color = ret["color"]
         if pagename == 'acknowledgements':
             req = "SELECT hostname, column, ackend, ackcause FROM columns WHERE ackend != 0"
             self.sqc.execute(req)
@@ -807,7 +801,7 @@ class xythonsrv:
                 ackend = res[2]
                 ackcause = res[3]
                 hlist.append(f"{hostname} {column} {ackcause} {ackend} {xytime(ackend)}\n<br>")
-        if pagename == 'expires':
+        elif pagename == 'expires':
             req = "SELECT hostname, column, expire FROM columns ORDER BY expire ASC"
             self.sqc.execute(req)
             results = self.sqc.fetchall()
@@ -816,7 +810,7 @@ class xythonsrv:
                 column = res[1]
                 expire = res[2]
                 hlist.append(f"{hostname} {column} {expire} {xytime(expire)}\n<br>")
-        if pagename == 'topchanges':
+        elif pagename == 'topchanges':
             fname = f"{self.webdir}/topchanges_form"
             try:
                 fh = open(fname, "r")
@@ -825,6 +819,17 @@ class xythonsrv:
             except FileNotFoundError as e:
                 hlist.append(f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>")
                 self.error(f"ERROR: fail to open {fname}")
+        else:
+            ret = self.html_hostlist(pagename, None)
+            hlist += ret["html"]
+            color = ret["color"]
+            if 'group' in self.pagelist[pagename]:
+                for group in self.pagelist[pagename]['group']:
+                    ret = self.html_hostlist(pagename, group)
+                    hlist += ret["html"]
+                    color = setcolor(ret["color"], color)
+            if pagename in ['all', 'nongreen']:
+                hlist += self.html_history(now, history_extra)
         hlist += self.html_footer(footer)
         html = self.html_finalize(color, hlist, pagename)
         return html
@@ -920,18 +925,44 @@ class xythonsrv:
         hlist.append('</TR>\n</TABLE></CENTER><BR>')
 
         # end nongreen
-        if pagename in ['all', 'nongreen']:
+        #if pagename in ['all', 'nongreen']:
             # TODO move this
-            hlist += self.html_history(now, "")
+        #    hlist += self.html_history(now, "")
         ret = {}
         ret["color"] = color
         ret["html"] = hlist
         return ret
 
+    def write_html(self, pagename, html):
+        fhtml = open(self.wwwdir + f'/{pagename}.html', 'w')
+        fhtml.write(html)
+        fhtml.close()
+        # TODO find a better solution
+        os.chmod(self.wwwdir + f"/{pagename}.html", 0o644)
+
     def gen_htmls(self):
         for pagename in self.pagelist:
             self.debug(f"DEBUG: will generate page {pagename}")
-            self.gen_html(pagename, None, None, None)
+            #html = self.gen_html(pagename, None, None, None)
+            html = self.html_page(pagename)
+            if pagename == 'nongreen':
+                self.write_html(pagename, html)
+                continue
+            if pagename == 'all':
+                self.write_html('xython', html)
+                if self.xythonmode > 0:
+                    self.write_html('xymon', html)
+                continue
+            if pagename != 'svcstatus':
+                reldir = os.path.dirname(pagename)
+                fdir = f'{self.wwwdir}/{reldir}'
+                self.debug(f'TEST {fdir}')
+                if not os.path.exists(fdir):
+                    self.debug(f'CREATE {fdir}')
+                    os.mkdir(fdir)
+                    os.chmod(fdir, 0o755)
+                print(reldir)
+                self.write_html(pagename, html)
 
     # TODO template jinja ?
     def gen_html(self, pagename, hostname, column, ts):
@@ -1025,47 +1056,13 @@ class xythonsrv:
                         hlist.append(f'<CENTER><img src="$XYMONSERVERCGIURL/showgraph.py?hostname={hostname}&service={rrdname}"></CENTER>')
 
         # history
-        if pagename in ["svcstatus"]:
+        if pagename in ["svcstatus", "all", "nongreen"]:
             hlist += self.html_history(now, history_extra)
 
         hlist += self.html_footer('stdnormal_footer')
 
         html = self.html_finalize(color, hlist, pagename)
 
-        if pagename == 'nongreen':
-            fhtml = open(self.wwwdir + '/nongreen.html', 'w')
-            fhtml.write(html)
-            fhtml.close()
-            # TODO find a better solution
-            os.chmod(self.wwwdir + "/nongreen.html", 0o644)
-            return
-        if pagename == 'all':
-            fhtml = open(self.wwwdir + '/xython.html', 'w')
-            fhtml.write(html)
-            fhtml.close()
-            # TODO find a better solution
-            os.chmod(self.wwwdir + "/xython.html", 0o644)
-            if self.xythonmode > 0:
-                fhtml = open(self.wwwdir + '/xymon.html', 'w')
-                fhtml.write(html)
-                fhtml.close()
-                # TODO find a better solution
-                os.chmod(self.wwwdir + "/xymon.html", 0o644)
-            return
-        if pagename != 'svcstatus':
-            reldir = os.path.dirname(pagename)
-            fdir = f'{self.wwwdir}/{reldir}'
-            self.debug(f'TEST {fdir}')
-            if not os.path.exists(fdir):
-                self.debug(f'CREATE {fdir}')
-                os.mkdir(fdir)
-                os.chmod(fdir, 0o755)
-            print(reldir)
-            fhtml = open(self.wwwdir + f'/{pagename}.html', 'w')
-            fhtml.write(html)
-            fhtml.close()
-            # TODO find a better solution
-            os.chmod(self.wwwdir + f"/{pagename}.html", 0o644)
         return html
 
     def dump(self, hostname):
@@ -1390,12 +1387,14 @@ class xythonsrv:
                     return ret
                 if len(sline) > 0:
                     self.pagelist[current_parent]['title'] = ' '.join(sline)
+                continue
 
             if keyword == 'subpage':
                 current_page = current_parent + '/' + sline.pop(0)
                 ret = self.page_add(current_page)
                 if ret != self.RET_NEW:
                     return ret
+                continue
             if keyword in ['group', 'group-only', 'group-except']:
                 current_group = sline.pop(0)
                 self.debug(f'DEBUG: ============ GROUP={current_group}')
@@ -1416,7 +1415,7 @@ class xythonsrv:
                     self.pagelist[current_page]['group'][current_group]['title'] = ' '.join(sline)
                 continue
             if keyword in ['dispinclude', 'netinclude', 'optional',
-                           'page', 'subpage', 'subparent',
+                           'subparent',
                            'vpage', 'vsubpage', 'vsubparent']:
                 self.log(self.daemon_name, f"UNHANDLED {keyword}")
                 continue
