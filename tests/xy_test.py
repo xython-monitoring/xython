@@ -1761,6 +1761,63 @@ def test_pages():
 
     X.gen_htmls()
 
+    f = open(f"{X.wwwdir}/xython.html")
+    html = f.read()
+    f.close()
+
+    assert "default01" in html
+    assert "italy01" in html
+    assert "donotexists" not in html
+
+    f = open(f"{X.wwwdir}/france.html")
+    html = f.read()
+    f.close()
+
+    assert "france01" in html
+    assert "paris01" not in html
+
+    f = open(f"{X.wwwdir}/france/paris.html")
+    html = f.read()
+    f.close()
+
+    assert "france01" not in html
+    assert "paris01" in html
+
+    f = open(f"{X.wwwdir}/england.html")
+    html = f.read()
+    f.close()
+
+    assert "default01" not in html
+    assert "england01" in html
+    assert "www01" in html
+    assert "www02" in html
+    assert "databases" in html
+    assert "db01" in html
+    assert "db02" in html
+
+    f = open(f"{X.wwwdir}/test.html")
+    html = f.read()
+    f.close()
+
+    assert "A group title with spaces" in html
+
+    X.html_page("acknowledgements")
+    X.html_page("expires")
+    X.html_page("topchanges")
+
+    X.gen_top_changes(xyevent(time.time() - 180), xyevent(time.time()))
+    # error cases
+    X.gen_top_changes(xyevent(time.time() - 60), "")
+    X.gen_top_changes("", xyevent(time.time() - 60))
+
+    print("DEBUG: Add color changes")
+    err = X.column_update('england01', 'coltest', 'green', time.time(), 'test', 120, "xython-tests")
+    assert err == 1
+    err = X.column_update('england01', 'coltest', 'red', time.time(), 'test', 120, "xython-tests")
+    assert err == 1
+    time.sleep(1)
+    X.gen_top_changes(xyevent(time.time() - 180), xyevent(time.time()))
+
     setup_clean(X)
 
 def test_purple():
