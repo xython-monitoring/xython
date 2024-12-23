@@ -2601,6 +2601,12 @@ class xythonsrv:
         if self.rules["SENSOR"] is None:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
+        self.rules["SENSOR"].add("DEFAULT MJ 400 500 0 0")
+        self.rules["SENSOR"].add("DEFAULT A 30 50 0 0")
+        self.rules["SENSOR"].add("DEFAULT W 300 500 0 0")
+        self.rules["SENSOR"].add("DEFAULT % 100 200 10 0")
+        self.rules["SENSOR"].add("DEFAULT V 1000 2000 -1 -2")
+        self.rules["SENSOR"].add("DEFAULT RPM 4000 5000 100 0")
         return self.RET_NEW
 
     def rrd_pathname(self, cname, ds):
@@ -2952,10 +2958,13 @@ class xythonsrv:
 
     # give a DS name from a sensor name
     def rrd_getdsname(self, sname):
-        dsname = sname.replace(" ", '_')
+        dsname = sname
+        dsname = dsname.replace(".", '_')
+        dsname = dsname.replace("+", 'plus')
+        dsname = dsname.replace(" ", '_')
         # dsname is 19 char max
         if len(dsname) > 19:
-            dsname = sname.replace(" ", '')
+            dsname = dsname.replace(" ", '')
         return dsname[:19]
 
     def get_ds_name(self, info):
@@ -2991,7 +3000,13 @@ class xythonsrv:
                 # this should not happen
                 rras = "RRA:AVERAGE:0.5:1:1200"
             self.debug(f"Create RRD with {rras}")
-            rrdtool.create(rrdfpath, "--start", "now", "--step", "60", rras, dsspec)
+            try:
+                rrdtool.create(rrdfpath, "--start", "now", "--step", "60", rras, dsspec)
+            except rrdtool.OperationalError as e:
+                self.error(f"ERROR: fail to create RRD for {hostname} {rrdname} {str(e)}")
+                self.debug(dsname)
+                self.debug(value)
+                return False
         self.debugdev("rrd", f"DEBUG: update RRD {rrdpath} for {dsname} value={value}")
         rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
         return True
@@ -2999,7 +3014,7 @@ class xythonsrv:
     def do_sensor_rrd(self, hostname, adapter, sname, value):
         # self.debug(f"DEBUG: do_sensor_rrd for {hostname} {adapter} {sname} {value}")
         if not has_rrdtool:
-            return
+            return True
         fname = self.rrd_pathname('sensor', sname)
         rrdpath = f"{self.xt_rrd}/{hostname}"
         if not os.path.exists(rrdpath):
@@ -3025,15 +3040,31 @@ class xythonsrv:
                 self.debugdev("rrd", f"DEBUG: {self.rrddef}")
                 # this should not happen
                 rras = "RRA:AVERAGE:0.5:1:1200"
-            rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
-                           rras, f"DS:{dsname}:GAUGE:600:-280:5000")
+            try:
+                rrdtool.create(rrdfpath, "--start", "now", "--step", "60",
+                               rras, f"DS:{dsname}:GAUGE:600:-280:5000")
+            except rrdtool.OperationalError as e:
+                self.error(f"ERROR: fail to create RRD for {hostname} {sname} {str(e)}")
+                self.debug(dsname)
+                self.debug(value)
+                return False
         else:
-            info = rrdtool.info(rrdfpath)
+            try:
+                info = rrdtool.info(rrdfpath)
+            except SystemError as e:
+                self.error(f"ERROR: fail to info RRD for {hostname} {sname}: {str(e)}")
+                return False
             allds = self.get_ds_name(info)
             # print(f"DEBUG: already exists with {allds} we have {dsname}")
             if dsname not in allds:
                 rrdtool.tune(rrdfpath, f"DS:{dsname}:GAUGE:600:-280:5000")
-        rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
+        try:
+            self.debug(f"DEBUG. update {hostname} {sname} {dsname} {value}")
+            rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
+        except rrdtool.OperationalError as e:
+            self.error(f"ERROR: fail to update RRD for {hostname} {sname}: {str(e)}")
+            return False
+        return True
 
     # return 0 if no color change
     # return 1 on color change
@@ -3209,10 +3240,9 @@ class xythonsrv:
             if line[0] == ' ':
                 # TODO some crit/emerg are on thoses lines
                 continue
-            # self.debug(f"DEBUG: check {line}XX")
-            continue
+            # self.debug(f"DEBUG: SENSOR: check {line}XX")
             if len(line) > 0 and ':' not in line:
-                # self.debug(f"DEBUG: {hostname} adapter={line}")
+                # self.debug(f"DEBUG: SENSOR: {hostname} adapter={line}")
                 adapter = line
                 sbuf += '<br>\n' + line + '\n'
                 continue
