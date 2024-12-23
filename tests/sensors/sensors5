@@ -1,0 +1,36 @@
+it8720-isa-0a10
+Adapter: ISA adapter
+in0:           1.07 V  (min =  +0.00 V, max =  +4.08 V)
+in1:           3.02 V  (min =  +0.00 V, max =  +4.08 V)
+in2:           1.49 V  (min =  +0.00 V, max =  +4.08 V)
++5V:           2.99 V  (min =  +0.00 V, max =  +4.08 V)
+in4:           2.99 V  (min =  +0.00 V, max =  +4.08 V)
+in5:           1.09 V  (min =  +0.00 V, max =  +4.08 V)
+in6:           3.33 V  (min =  +0.00 V, max =  +4.08 V)
+5VSB:          2.99 V  (min =  +0.00 V, max =  +4.08 V)
+Vbat:          3.26 V  
+fan1:        1618 RPM  (min =    0 RPM)
+fan2:        1599 RPM  (min =    0 RPM)
+fan3:           0 RPM  (min =    0 RPM)
+temp1:        +39.0°C  (low  = +127.0°C, high = +80.0°C)  sensor = thermal diode
+temp2:        +31.0°C  (low  =  -1.0°C, high = +127.0°C)  sensor = thermistor
+temp3:        +35.0°C  (low  =  -1.0°C, high = +127.0°C)  sensor = Intel PECI
+pwm1:            127%  (freq = 23437 Hz)
+pwm2:            127%  (freq = 23437 Hz)
+pwm3:             64%  (freq = 23437 Hz)
+intrusion0:  ALARM
+
+acpitz-acpi-0
+Adapter: ACPI interface
+temp1:        +30.0°C  
+
+drivetemp-scsi-0-0
+Adapter: SCSI adapter
+temp1:        +40.0°C  (low  =  +0.0°C, high = +60.0°C)
+                       (crit low = -41.0°C, crit = +85.0°C)
+                       (lowest = +21.0°C, highest = +41.0°C)
+
+coretemp-isa-0000
+Adapter: ISA adapter
+Core 0:       +47.0°C  (crit = +100.0°C)
+Core 1:       +40.0°C  (crit = +100.0°C)

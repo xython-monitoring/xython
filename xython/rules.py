@@ -164,6 +164,9 @@ class xy_rule_sensors():
         # print(f"DEBUG: add {sensorruleline}")
         sensorruleline = re.sub(r"\s+", ' ', sensorruleline)
         tokens = tokenize(sensorruleline)
+        if len(tokens) < 3:
+            xlog_error(f"ERROR: sensor: invalid line {sensorruleline}")
+            return False
         adapter = tokens.pop(0)
         sname = tokens.pop(0)
         regex = False
@@ -188,14 +191,14 @@ class xy_rule_sensors():
         if len(tokens) < 2:
             xlog_error(f"ERROR: sensor: not enough tokens got {tokens}")
             return False
-        warn = int(tokens.pop(0))
-        panic = int(tokens.pop(0))
+        warn = float(tokens.pop(0))
+        panic = float(tokens.pop(0))
         if len(tokens) > 0:
-            mwarn = int(tokens.pop(0))
+            mwarn = float(tokens.pop(0))
         else:
             mwarn = SENSOR_DISABLE
         if len(tokens) > 0:
-            mpanic = int(tokens.pop(0))
+            mpanic = float(tokens.pop(0))
         else:
             mpanic = SENSOR_DISABLE
         xrd = xy_rule_sensor(warn, panic, mwarn, mpanic)
@@ -217,13 +220,14 @@ class xy_rule_sensors():
         sline = line.split(":")
         if len(sline) != 2:
             return None
-        sname = sline[0]
+        sname = sline[0].rstrip(' ')
         if sname == 'Adapter':
             return None
         line = sline[1]
         line = re.sub(r"^^\s+", '', line)
         # line = re.sub(r"\s+", ' ', line)
         line = line.replace("°C", " °C")
+        line = line.replace("%", " %")
         sline = line.split(' ')
         # print(sline)
         if len(sline) < 2:
@@ -234,14 +238,23 @@ class xy_rule_sensors():
         if sline[1] == 'V':
             return [sname, sline[0], 'V']
         if sline[1] == 'mV':
-            return [sname, sline[0], 'V']
+            rawv = float(sline[0]) / 1000
+            return [sname, rawv, 'V']
+        if sline[1] == 'A':
+            return [sname, sline[0], 'A']
+        if sline[1] == 'mA':
+            rawv = float(sline[0]) / 1000
+            return [sname, rawv, 'A']
         if sline[1] == 'W':
             return [sname, sline[0], 'W']
+        if sline[1] == '%':
+            return [sname, sline[0], '%']
+        if sline[1] == 'MJ':
+            return [sname, sline[0], 'MJ']
         # °C and C related to locale
         if sline[1] == '°C' or sline[1] == 'C':
             return [sname, sline[0].lstrip("+"), 'C']
-        # TODO joule J ?
-        print("DEBUG: did not found a known unit")
+        xlog_error(f"TODO: did not found a known unit in {line}")
         return None
 
     def find_rule_for_adapter(self, rule, sname):
@@ -289,7 +302,8 @@ class xy_rule_sensors():
         for adapt in self.rules:
             if "regex" not in self.rules[adapt]:
                 continue
-            # print(f"DEBUG: regex is {adapt}")
+            if not self.rules[adapt]["regex"]:
+                continue
             ret = re.search(adapt, adapter)
             if ret:
                 # print(f"DEBUG: regex is {adapt} and match {self.rules[adapt]}")

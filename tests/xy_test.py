@@ -609,6 +609,9 @@ def test_lmsensors():
     assert xs.is_sensor("in0: 30 V") is not None
     assert xs.is_sensor("in0: 30 mV") is not None
     assert xs.is_sensor("in0: 30 RPM") is not None
+    assert xs.is_sensor("pwm2: 26%  (mode = pwm)  MANUAL CONTROL") is not None
+    assert xs.is_sensor("APSS 15 :  83.38 MJ") is not None
+    assert xs.is_sensor("Chip 0 GPU:              141.01 MJ") is not None
     ret = xs.is_sensor("in0: +30°C")
     assert ret is not None
     assert len(ret) == 3
@@ -652,10 +655,10 @@ def test_lmsensors():
 
     # test ignore
     xs = xy_rule_sensors()
-    xs.add("DEFAULT C 20 30 0 -10")
+    assert xs.add("DEFAULT C 20 30 0 -10")
     ret = xs.check("fake2", "temp0: -40.7°C")
     assert ret["color"] == 'red'
-    xs.add("fake2 temp0 IGNORE")
+    assert xs.add("fake2 temp0 IGNORE")
     print(xs.rules)
     ret = xs.check("fake2", "temp0: -40.7°C")
     assert ret["color"] == 'clear'
@@ -665,6 +668,12 @@ def test_lmsensors():
     # xs.add("fake2 IGNORE")
     # ret = xs.check("fake2", "temp1: -40.7°C")
     # assert ret["color"] == 'clear'
+
+    # tests invalid lines
+    assert not xs.add("")
+    assert not xs.add("adapter")
+    assert not xs.add("adapter temp")
+    assert not xs.add("adapter temp A")
 
     X = xythonsrv()
     X.etcdir = './tests/etc/xython-load/'
@@ -688,9 +697,43 @@ def test_lmsensors():
     f.close()
     X.parse_sensors("test01", data, "fake")
 
-    shutil.rmtree(X.xt_data)
-
     print(X.stats["parsesensor"])
+    setup_clean(X)
+
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-sensors/'
+    X.lldebug = True
+    setup_testdir(X, 'sensors')
+    X.init()
+
+    X.parse_sensors("test01", data, "fake")
+
+    f = open("./tests/sensors/sensors8")
+    data8 = f.read()
+    f.close()
+    X.parse_sensors("test01", data8, "fake")
+    res = X.sqc.execute('SELECT ts FROM columns WHERE hostname == "test01" AND column == "sensor"')
+    results = X.sqc.fetchall()
+    ts = results[0][0]
+    d = X.get_histlogs("test01", "sensor", ts)
+    raw = ''.join(d['raw'])
+    assert 'yellow Chip 0 Vdd CHECK=(0.841 => 0.8)' in raw
+    assert 'red APSS 14 CHECK=(104.14 => 30.0)' in raw
+    assert 'yellow System CHECK=(226.0 <= MINWARN=1000.0)' in raw
+    assert 'red APSS 0 CHECK=(865.94 <= MINPANIC=999.0)' in raw
+
+    f = open("./tests/sensors/sensors5")
+    data5 = f.read()
+    f.close()
+    X.parse_sensors("test01", data5, "fake")
+    res = X.sqc.execute('SELECT ts FROM columns WHERE hostname == "test01" AND column == "sensor"')
+    results = X.sqc.fetchall()
+    ts = results[0][0]
+    d = X.get_histlogs("test01", "sensor", ts)
+    raw = ''.join(d['raw'])
+    assert 'yellow pwm1 CHECK=(127.0 => 100.0)' in raw
+
+    setup_clean(X)
 
 
 def test_reload():
