@@ -67,9 +67,11 @@ echo "[who]"
 who
 fi
 
+ISLINUX=0
 SIMPLE_DF=1
 case $(uname) in
 Linux)
+	ISLINUX=1
 	# detect busybox df
 	df --help 2>&1| grep -qi busybox
 	if [ $? -ne 0 ];then
@@ -298,6 +300,18 @@ vmstat
 fi
 
 # TODO docker ps
+
+if [ $ISLINUX -eq 1 ];then
+	is_busybox dmesg
+	if [ $? -ne 0 ];then
+		echo '[dmesg]'
+		for lvl in emerg alert crit err warn notice
+		do
+			echo "##$lvl"
+			dmesg --level=$lvl 2>/dev/null |sed 's,^,#,'
+		done
+	fi
+fi
 
 echo '[clientversion]'
 # to be changed by package manager
