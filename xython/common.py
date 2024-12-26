@@ -158,6 +158,8 @@ def gcolor(color):
 def setcolor(colortry, oldcolor):
     if colortry == 'red':
         return 'red'
+    if colortry == 'clear':
+        return oldcolor
     if oldcolor in ['green', 'clear']:
         return colortry
     return oldcolor

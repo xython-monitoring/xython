@@ -569,6 +569,9 @@ def test_setcolor():
     assert setcolor('green', 'clear') == 'green'
     assert setcolor('yellow', 'clear') == 'yellow'
     assert setcolor('red', 'clear') == 'red'
+    assert setcolor('clear', 'green') == 'green'
+    assert setcolor('clear', 'yellow') == 'yellow'
+    assert setcolor('clear', 'red') == 'red'
 
 
 def test_xydhm():
