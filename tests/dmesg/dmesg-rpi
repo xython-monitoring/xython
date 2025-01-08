@@ -1,0 +1,50 @@
+##emerg
+##alert
+##crit
+##err
+##warn
+#[    0.216561] usb_phy_generic phy: supply vcc not found, using dummy regulator
+#[    0.271747] armv6-pmu arm-pmu: hw perfevents: no irqs for PMU, sampling events not supported
+#[    4.316992] Core Release: 2.80a
+#[    4.320185] Setting default values for core params
+#[    4.323206] Finished setting default values for core params
+#[    4.526393] Using Buffer DMA mode
+#[    4.529469] Periodic Transfer Interrupt Enhancement - disabled
+#[    4.532556] Multiprocessor Interrupt Enhancement - disabled
+#[    4.535558] OTG VER PARAM: 0, OTG VER FLAG: 0
+#[    4.538570] Dedicated Tx FIFOs mode
+#
+#[    4.542659] WARN::dwc_otg_hcd_init:1072: FIQ DMA bounce buffers: virt = d5914000 dma = 0x95914000 len=9024
+#[    4.551427] FIQ FSM acceleration enabled for :
+#               Non-periodic Split Transactions
+#               Periodic Split Transactions
+#               High-Speed Isochronous Endpoints
+#               Interrupt/Control Split Transaction hack enabled
+#
+#[    4.566001] WARN::hcd_init_fiq:457: FIQ on core 0
+#
+#[    4.571389] WARN::hcd_init_fiq:458: FIQ ASM at c068321c length 36
+#
+#[    4.576801] WARN::hcd_init_fiq:496: MPHI regs_base at da010000
+#[    4.591397] Init: Port Power? op_state=1
+#[    4.594220] Init: Power Port (0)
+#[    4.755301] Indeed it is in host mode hprt0 = 00021501
+#[    5.051685] Indeed it is in host mode hprt0 = 00001101
+#[    6.330491] Kernel memory protection not selected by kernel config.
+#[    6.376270] mmc0: host does not support reading read-only switch, assuming write-enable
+##notice
+#[    0.000000] Linux version 6.1.61 (clabbe@arnold) (arm-buildroot-linux-gnueabihf-gcc.br_real (Buildroot 2024.11-dirty) 12.4.0, GNU ld (GNU Binutils) 2.43.1) #3 Mon Dec 30 20:22:23 UTC 2024
+#[    0.000000] random: crng init done
+#[    0.000000] Kernel command line: coherent_pool=1M snd_bcm2835.enable_headphones=0 bcm2708_fb.fbwidth=720 bcm2708_fb.fbheight=480 bcm2708_fb.fbswap=1 vc_mem.mem_base=0x1ec00000 vc_mem.mem_size=0x20000000  root=/dev/mmcblk0p2 rootwait console=tty1 console=ttyAMA0,115200
+#[    0.110602] audit: type=2000 audit(0.100:1): state=initialized audit_enabled=0 res=1
+#[    0.215324] SCSI subsystem initialized
+#[    0.221430] VFS: Disk quotas dquot_6.6.0
+#[    0.221950] FS-Cache: Loaded
+#[    3.461530] Initialise system trusted keyrings
+#[    3.479990] NFS: Registering the id_resolver key type
+#[    3.480138] Key type id_resolver registered
+#[    3.480183] Key type id_legacy registered
+#[    3.482729] Key type asymmetric registered
+#[    3.482823] Asymmetric key parser 'x509' registered
+#[    4.672715] Key type dns_resolver registered
+#[    4.679570] Loading compiled-in X.509 certificates

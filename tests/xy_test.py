@@ -1922,3 +1922,23 @@ def test_purple():
     assert X.get_column_color('testpurple', 'colred') == 'red'
 
     setup_clean(X)
+
+def test_dmesg():
+    X = xythonsrv()
+    # test a directory without dmesg.regex
+    X.etcdir = './tests/etc/xython-sensors/'
+    setup_testdir(X, 'dmesg')
+    X.lldebug = True
+    X.init()
+
+    f = open("./tests/dmesg/dmesg-rpi")
+    dmesgrpi = f.read()
+    f.close()
+    X.parse_dmesg("test01", dmesgrpi, "fake")
+
+    f = open("./tests/dmesg/dmesg-red")
+    dmesgred = f.read()
+    f.close()
+    X.parse_dmesg("test01", dmesgred, "fake")
+
+    setup_clean(X)

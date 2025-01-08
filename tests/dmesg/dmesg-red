@@ -1,0 +1,423 @@
+##emerg
+##alert
+##crit
+##err
+#[    0.129899] [    T0] Spectre V2 : Kernel not compiled with retpoline; no mitigation available!
+#
+#[3702329.364897] [T11802] Out of memory: Killed process 12364 (Privileged Cont) total-vm:2471924kB, anon-rss:23692kB, file-rss:384kB, shmem-rss:1188kB, UID:1039 pgtables:664kB oom_score_adj:167
+#[3702408.637051] [T11802] Out of memory: Killed process 12468 (Isolated Web Co) total-vm:2547620kB, anon-rss:62960kB, file-rss:2048kB, shmem-rss:1716kB, UID:1039 pgtables:880kB oom_score_adj:100
+#[3875295.790072] [ T7650] Out of memory: Killed process 15936 (Web Content) total-vm:2439816kB, anon-rss:15380kB, file-rss:9216kB, shmem-rss:1152kB, UID:1039 pgtables:500kB oom_score_adj:233
+#[3875295.792952] [ T7635] Out of memory: Killed process 16088 (Web Content) total-vm:2439816kB, anon-rss:15240kB, file-rss:8700kB, shmem-rss:1152kB, UID:1039 pgtables:496kB oom_score_adj:233
+#[3875297.102279] [ T7668] Out of memory: Killed process 15899 (Web Content) total-vm:2439816kB, anon-rss:13172kB, file-rss:4352kB, shmem-rss:1152kB, UID:1039 pgtables:504kB oom_score_adj:233
+#[3875297.104279] [ T7634] Out of memory: Killed process 21950 (Isolated Web Co) total-vm:2743528kB, anon-rss:103756kB, file-rss:6400kB, shmem-rss:1908kB, UID:1039 pgtables:1508kB oom_score_adj:167
+##warn
+#[    0.249967] [    T1] ----------------
+#[    0.250038] [    T1] | NMI testsuite:
+#[    0.250110] [    T1] --------------------
+#[    0.250184] [    T1]   remote IPI:  ok  |
+#[    0.250273] [    T1]    local IPI:  ok  |
+#[    0.250352] [    T1] --------------------
+#[    0.250425] [    T1] Good, all   2 testcases passed! |
+#[    0.250502] [    T1] ---------------------------------
+#[    0.254301] [    T1] mtrr: your CPUs had inconsistent variable MTRR settings
+#[    1.248294] [    T1] md: invalid raid superblock magic on sdb1
+#[    1.248376] [    T1] md: sdb1 does not have a valid v0.90 superblock, not importing!
+#[    1.261397] [    T1] md: invalid raid superblock magic on sdb2
+#[    1.261478] [    T1] md: sdb2 does not have a valid v0.90 superblock, not importing!
+#[    1.273659] [    T1] md: invalid raid superblock magic on sdb3
+#[    1.273740] [    T1] md: sdb3 does not have a valid v0.90 superblock, not importing!
+#[    1.290115] [    T1] md: invalid raid superblock magic on sdc1
+#[    1.290196] [    T1] md: sdc1 does not have a valid v0.90 superblock, not importing!
+#[    1.304020] [    T1] md: invalid raid superblock magic on sdc2
+#[    1.304103] [    T1] md: sdc2 does not have a valid v0.90 superblock, not importing!
+#[    1.315182] [    T1] md: invalid raid superblock magic on sdc3
+#[    1.315276] [    T1] md: sdc3 does not have a valid v0.90 superblock, not importing!
+#[    3.432559] [ T2253] vboxdrv: loading out-of-tree module taints kernel.
+#[    3.484867] [ T2267] VBoxNetFlt: Successfully started.
+#[    3.508434] [ T2278] VBoxNetAdp: Successfully started.
+#[    3.572264] [ T2300] block device autoloading is deprecated and will be removed.
+#[    3.574886] [ T2279] block device autoloading is deprecated and will be removed.
+#[    3.575947] [ T2280] block device autoloading is deprecated and will be removed.
+#[    3.685335] [ T2181] nvidia: module license 'NVIDIA' taints kernel.
+#[    3.685339] [ T2181] Disabling lock debugging due to kernel taint
+#[    3.685344] [ T2181] nvidia: module license taints kernel.
+#[    3.924242] [ T2181] NVRM: loading NVIDIA UNIX x86_64 Kernel Module  550.120  Fri Sep 13 10:10:01 UTC 2024
+#[  202.807659] [ T3242] ext4 filesystem being mounted at /usr/local/portage supports timestamps until 2038-01-19 (0x7fffffff)
+#[  247.173770] [T10671] nvidia_uvm: module uses symbols nvUvmInterfaceDisableAccessCntr from proprietary module nvidia, inheriting taint.
+#[  263.850478] [T11448] firefox[11448]: memfd_create() called without MFD_EXEC or MFD_NOEXEC_SEAL set
+#[53920.472217] [T29501] process 'eu4' started with executable stack
+#[1305823.808406] [ T6037] NVRM: GPU at PCI:0000:08:00: GPU-b9e88d57-e331-c450-a1ee-6ccdea77d250
+#[1305823.808412] [ T6037] NVRM: Xid (PCI:0000:08:00): 32, pid='<unknown>', name=<unknown>, Channel ID 00000020 intr 00800000
+#[1444769.578718] [    C7] hrtimer: interrupt took 5611 ns
+#[3702329.364114] [T11802] kworker/5:1 invoked oom-killer: gfp_mask=0xcc0(GFP_KERNEL), order=-1, oom_score_adj=0
+#[3702329.364119] [T11802] CPU: 5 PID: 11802 Comm: kworker/5:1 Tainted: P           O       6.6.52-gentoo #2
+#[3702329.364122] [T11802] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS, BIOS 4021 08/09/2021
+#[3702329.364123] [T11802] Workqueue: events moom_callback
+#[3702329.364130] [T11802] Call Trace:
+#[3702329.364132] [T11802]  <TASK>
+#[3702329.364134] [T11802]  dump_stack_lvl+0x32/0x50
+#[3702329.364138] [T11802]  dump_header+0x63/0x3d0
+#[3702329.364143] [T11802]  ? ___ratelimit+0xb0/0x110
+#[3702329.364147] [T11802]  oom_kill_process+0x2d5/0x430
+#[3702329.364150] [T11802]  out_of_memory+0xe6/0x490
+#[3702329.364154] [T11802]  moom_callback+0x4c/0x90
+#[3702329.364157] [T11802]  process_one_work+0x161/0x280
+#[3702329.364160] [T11802]  worker_thread+0x2de/0x410
+#[3702329.364162] [T11802]  ? flush_delayed_work+0x30/0x30
+#[3702329.364164] [T11802]  kthread+0xc4/0xf0
+#[3702329.364167] [T11802]  ? kthread_complete_and_exit+0x20/0x20
+#[3702329.364168] [T11802]  ret_from_fork+0x44/0x50
+#[3702329.364171] [T11802]  ? kthread_complete_and_exit+0x20/0x20
+#[3702329.364173] [T11802]  ret_from_fork_asm+0x11/0x20
+#[3702329.364176] [T11802]  </TASK>
+#[3702329.364177] [T11802] Mem-Info:
+#[3702329.364178] [T11802] active_anon:866500 inactive_anon:6677788 isolated_anon:0
+#                           active_file:1107 inactive_file:3951 isolated_file:0
+#                           unevictable:2546 dirty:0 writeback:0
+#                           slab_reclaimable:364708 slab_unreclaimable:116807
+#                           mapped:25855 shmem:3957614 pagetables:12977
+#                           sec_pagetables:10 bounce:0
+#                           kernel_misc_reclaimable:0
+#                           free:77630 free_pcp:897 free_cma:0
+#[3702329.364184] [T11802] Node 0 active_anon:3466000kB inactive_anon:26711152kB active_file:4428kB inactive_file:15804kB unevictable:10184kB isolated(anon):0kB isolated(file):0kB mapped:103420kB dirty:0kB writeback:0kB shmem:15830456kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:6995968kB writeback_tmp:0kB kernel_stack:16176kB pagetables:51908kB sec_pagetables:40kB all_unreclaimable? yes
+#[3702329.364189] [T11802] DMA free:15360kB boost:0kB min:60kB low:72kB high:84kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3702329.364194] [T11802] lowmem_reserve[]: 0 3150 32011 32011
+#[3702329.364198] [T11802] DMA32 free:131688kB boost:0kB min:13296kB low:16620kB high:19944kB reserved_highatomic:0KB active_anon:227384kB inactive_anon:2704576kB active_file:28kB inactive_file:636kB unevictable:0kB writepending:0kB present:3314220kB managed:3228644kB mlocked:0kB bounce:0kB free_pcp:1180kB local_pcp:244kB free_cma:0kB
+#[3702329.364203] [T11802] lowmem_reserve[]: 0 0 28861 28861
+#[3702329.364206] [T11802] Normal free:163472kB boost:0kB min:121808kB low:152260kB high:182712kB reserved_highatomic:0KB active_anon:3238616kB inactive_anon:24006576kB active_file:3788kB inactive_file:14580kB unevictable:10184kB writepending:0kB present:30133760kB managed:29553820kB mlocked:10104kB bounce:0kB free_pcp:2408kB local_pcp:236kB free_cma:0kB
+#[3702329.364210] [T11802] lowmem_reserve[]: 0 0 0 0
+#[3702329.364213] [T11802] DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15360kB
+#[3702329.364223] [T11802] DMA32: 353*4kB (UME) 241*8kB (UME) 450*16kB (UME) 542*32kB (UME) 304*64kB (UME) 205*128kB (UME) 68*256kB (ME) 47*512kB (UME) 16*1024kB (UM) 0*2048kB 0*4096kB = 131436kB
+#[3702329.364235] [T11802] Normal: 4546*4kB (UME) 4448*8kB (UME) 529*16kB (UME) 1926*32kB (UME) 611*64kB (UME) 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 162968kB
+#[3702329.364244] [T11802] 3965030 total pagecache pages
+#[3702329.364245] [T11802] 0 pages in swap cache
+#[3702329.364246] [T11802] Free swap  = 0kB
+#[3702329.364247] [T11802] Total swap = 0kB
+#[3702329.364247] [T11802] 8365991 pages RAM
+#[3702329.364248] [T11802] 0 pages HighMem/MovableOnly
+#[3702329.364249] [T11802] 166535 pages reserved
+#[3702408.636195] [T11802] kworker/5:1 invoked oom-killer: gfp_mask=0xcc0(GFP_KERNEL), order=-1, oom_score_adj=0
+#[3702408.636200] [T11802] CPU: 5 PID: 11802 Comm: kworker/5:1 Tainted: P           O       6.6.52-gentoo #2
+#[3702408.636204] [T11802] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS, BIOS 4021 08/09/2021
+#[3702408.636206] [T11802] Workqueue: events moom_callback
+#[3702408.636212] [T11802] Call Trace:
+#[3702408.636214] [T11802]  <TASK>
+#[3702408.636216] [T11802]  dump_stack_lvl+0x32/0x50
+#[3702408.636221] [T11802]  dump_header+0x63/0x3d0
+#[3702408.636225] [T11802]  ? ___ratelimit+0xb0/0x110
+#[3702408.636229] [T11802]  oom_kill_process+0x2d5/0x430
+#[3702408.636232] [T11802]  ? sched_clock_cpu+0xb/0x170
+#[3702408.636235] [T11802]  out_of_memory+0xe6/0x490
+#[3702408.636239] [T11802]  moom_callback+0x4c/0x90
+#[3702408.636242] [T11802]  process_one_work+0x161/0x280
+#[3702408.636245] [T11802]  worker_thread+0x2de/0x410
+#[3702408.636248] [T11802]  ? flush_delayed_work+0x30/0x30
+#[3702408.636250] [T11802]  kthread+0xc4/0xf0
+#[3702408.636253] [T11802]  ? kthread_complete_and_exit+0x20/0x20
+#[3702408.636255] [T11802]  ret_from_fork+0x44/0x50
+#[3702408.636258] [T11802]  ? kthread_complete_and_exit+0x20/0x20
+#[3702408.636260] [T11802]  ret_from_fork_asm+0x11/0x20
+#[3702408.636263] [T11802]  </TASK>
+#[3702408.636264] [T11802] Mem-Info:
+#[3702408.636266] [T11802] active_anon:866586 inactive_anon:6672666 isolated_anon:0
+#                           active_file:1802 inactive_file:4270 isolated_file:0
+#                           unevictable:2546 dirty:0 writeback:0
+#                           slab_reclaimable:364636 slab_unreclaimable:116816
+#                           mapped:27526 shmem:3957613 pagetables:12843
+#                           sec_pagetables:10 bounce:0
+#                           kernel_misc_reclaimable:0
+#                           free:80312 free_pcp:2357 free_cma:0
+#[3702408.636272] [T11802] Node 0 active_anon:3466344kB inactive_anon:26690664kB active_file:7208kB inactive_file:17080kB unevictable:10184kB isolated(anon):0kB isolated(file):0kB mapped:110104kB dirty:0kB writeback:0kB shmem:15830452kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:6995968kB writeback_tmp:0kB kernel_stack:15744kB pagetables:51372kB sec_pagetables:40kB all_unreclaimable? no
+#[3702408.636279] [T11802] DMA free:15360kB boost:0kB min:60kB low:72kB high:84kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3702408.636284] [T11802] lowmem_reserve[]: 0 3150 32011 32011
+#[3702408.636288] [T11802] DMA32 free:130468kB boost:0kB min:13296kB low:16620kB high:19944kB reserved_highatomic:0KB active_anon:227384kB inactive_anon:2704488kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:3314220kB managed:3228644kB mlocked:0kB bounce:0kB free_pcp:3948kB local_pcp:244kB free_cma:0kB
+#[3702408.636293] [T11802] lowmem_reserve[]: 0 0 28861 28861
+#[3702408.636296] [T11802] Normal free:175420kB boost:0kB min:121808kB low:152260kB high:182712kB reserved_highatomic:0KB active_anon:3238960kB inactive_anon:23986176kB active_file:6836kB inactive_file:16864kB unevictable:10184kB writepending:0kB present:30133760kB managed:29553820kB mlocked:10104kB bounce:0kB free_pcp:5480kB local_pcp:136kB free_cma:0kB
+#[3702408.636300] [T11802] lowmem_reserve[]: 0 0 0 0
+#[3702408.636303] [T11802] DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15360kB
+#[3702408.636312] [T11802] DMA32: 245*4kB (UME) 212*8kB (UME) 497*16kB (UME) 589*32kB (UME) 322*64kB (UME) 196*128kB (UME) 68*256kB (ME) 44*512kB (UME) 15*1024kB (UM) 0*2048kB 0*4096kB = 130468kB
+#[3702408.636325] [T11802] Normal: 5616*4kB (UME) 5014*8kB (UME) 651*16kB (UME) 1935*32kB (UME) 621*64kB (UME) 2*128kB (M) 1*256kB (M) 0*512kB 0*1024kB 0*2048kB 0*4096kB = 175168kB
+#[3702408.636335] [T11802] 3965993 total pagecache pages
+#[3702408.636337] [T11802] 0 pages in swap cache
+#[3702408.636337] [T11802] Free swap  = 0kB
+#[3702408.636338] [T11802] Total swap = 0kB
+#[3702408.636339] [T11802] 8365991 pages RAM
+#[3702408.636340] [T11802] 0 pages HighMem/MovableOnly
+#[3702408.636340] [T11802] 166535 pages reserved
+#[3875295.789478] [ T7650] cc1plus invoked oom-killer: gfp_mask=0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), order=0, oom_score_adj=0
+#[3875295.789485] [ T7650] CPU: 10 PID: 7650 Comm: cc1plus Tainted: P           O       6.6.52-gentoo #2
+#[3875295.789488] [ T7650] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS, BIOS 4021 08/09/2021
+#[3875295.789490] [ T7650] Call Trace:
+#[3875295.789492] [ T7650]  <TASK>
+#[3875295.789493] [ T7650]  dump_stack_lvl+0x32/0x50
+#[3875295.789498] [ T7650]  dump_header+0x63/0x3d0
+#[3875295.789502] [ T7650]  ? sysvec_call_function+0x15/0x90
+#[3875295.789505] [ T7650]  ? asm_sysvec_call_function+0x16/0x20
+#[3875295.789507] [ T7650]  ? ___ratelimit+0xb0/0x110
+#[3875295.789510] [ T7650]  oom_kill_process+0x2d5/0x430
+#[3875295.789512] [ T7650]  out_of_memory+0xe6/0x490
+#[3875295.789515] [ T7650]  __alloc_pages_slowpath.constprop.0+0x9f3/0xc30
+#[3875295.789518] [ T7650]  __alloc_pages+0x259/0x270
+#[3875295.789521] [ T7650]  __folio_alloc+0x16/0x50
+#[3875295.789523] [ T7650]  __handle_mm_fault+0x881/0xee0
+#[3875295.789528] [ T7650]  handle_mm_fault+0xa7/0x170
+#[3875295.789530] [ T7650]  exc_page_fault+0x237/0x600
+#[3875295.789532] [ T7650]  asm_exc_page_fault+0x22/0x30
+#[3875295.789534] [ T7650] RIP: 0033:0x7fb3d27bc9f0
+#[3875295.789536] [ T7650] Code: c9 fb ff 0f 1f 80 00 00 00 00 c5 f9 6e c6 48 89 f8 48 83 fa 20 0f 82 3f 01 00 00 c4 e2 7d 78 c0 48 83 fa 40 0f 87 99 00 00 00 <c5> fe 7f 44 17 e0 c5 fe 7f 07 c5 f8 77 c3 66 90 48 39 d1 0f 82 d7
+#[3875295.789538] [ T7650] RSP: 002b:00007ffc137389c8 EFLAGS: 00010287
+#[3875295.789540] [ T7650] RAX: 00007fb38aa5c000 RBX: 00007fb38aa5c000 RCX: 0000000000000001
+#[3875295.789541] [ T7650] RDX: 0000000000000028 RSI: 0000000000000000 RDI: 00007fb38aa5c000
+#[3875295.789543] [ T7650] RBP: 00007ffc13738a70 R08: 0000000000000041 R09: 0000000000000001
+#[3875295.789544] [ T7650] R10: 0000000000000004 R11: 00000000277a05d0 R12: 0000000000000002
+#[3875295.789545] [ T7650] R13: 0000000000000028 R14: 00007fb3b6469d98 R15: 00007ffc137389e0
+#[3875295.789546] [ T7650]  </TASK>
+#[3875295.789553] [ T7650] Mem-Info:
+#[3875295.789554] [ T7650] active_anon:1162175 inactive_anon:6100596 isolated_anon:0
+#                           active_file:10543 inactive_file:10567 isolated_file:0
+#                           unevictable:2546 dirty:2 writeback:0
+#                           slab_reclaimable:588231 slab_unreclaimable:119748
+#                           mapped:49202 shmem:2086391 pagetables:16999
+#                           sec_pagetables:10 bounce:0
+#                           kernel_misc_reclaimable:0
+#                           free:111484 free_pcp:258 free_cma:0
+#[3875295.789560] [ T7650] Node 0 active_anon:4648700kB inactive_anon:24402384kB active_file:42172kB inactive_file:42268kB unevictable:10184kB isolated(anon):0kB isolated(file):0kB mapped:196808kB dirty:8kB writeback:0kB shmem:8345564kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:8054784kB writeback_tmp:0kB kernel_stack:18464kB pagetables:67996kB sec_pagetables:40kB all_unreclaimable? no
+#[3875295.789564] [ T7650] DMA free:15360kB boost:0kB min:60kB low:72kB high:84kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875295.789568] [ T7650] lowmem_reserve[]: 0 3150 32011 32011
+#[3875295.789571] [ T7650] DMA32 free:137624kB boost:8192kB min:21488kB low:24812kB high:28136kB reserved_highatomic:0KB active_anon:382340kB inactive_anon:2507164kB active_file:64kB inactive_file:32kB unevictable:0kB writepending:0kB present:3314220kB managed:3228644kB mlocked:0kB bounce:0kB free_pcp:952kB local_pcp:0kB free_cma:0kB
+#[3875295.789575] [ T7650] lowmem_reserve[]: 0 0 28861 28861
+#[3875295.789577] [ T7650] Normal free:292952kB boost:274068kB min:395876kB low:426328kB high:456780kB reserved_highatomic:0KB active_anon:4266360kB inactive_anon:21893544kB active_file:43336kB inactive_file:42712kB unevictable:10184kB writepending:8kB present:30133760kB managed:29553820kB mlocked:10104kB bounce:0kB free_pcp:76kB local_pcp:0kB free_cma:0kB
+#[3875295.789581] [ T7650] lowmem_reserve[]: 0 0 0 0
+#[3875295.789583] [ T7650] DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15360kB
+#[3875295.789591] [ T7650] DMA32: 736*4kB (UME) 523*8kB (UE) 344*16kB (UE) 520*32kB (UME) 356*64kB (UE) 218*128kB (UME) 108*256kB (UME) 56*512kB (UME) 0*1024kB 0*2048kB 0*4096kB = 136280kB
+#[3875295.789600] [ T7650] Normal: 13010*4kB (UME) 7250*8kB (UME) 3305*16kB (UME) 2730*32kB (UME) 648*64kB (UME) 5*128kB (M) 1*256kB (M) 0*512kB 0*1024kB 0*2048kB 0*4096kB = 292648kB
+#[3875295.789609] [ T7650] 2109494 total pagecache pages
+#[3875295.789610] [ T7650] 0 pages in swap cache
+#[3875295.789611] [ T7650] Free swap  = 0kB
+#[3875295.789611] [ T7650] Total swap = 0kB
+#[3875295.789612] [ T7650] 8365991 pages RAM
+#[3875295.789612] [ T7650] 0 pages HighMem/MovableOnly
+#[3875295.789613] [ T7650] 166535 pages reserved
+#[3875295.792401] [ T7635] as invoked oom-killer: gfp_mask=0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), order=0, oom_score_adj=0
+#[3875295.792408] [ T7635] CPU: 2 PID: 7635 Comm: as Tainted: P           O       6.6.52-gentoo #2
+#[3875295.792411] [ T7635] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS, BIOS 4021 08/09/2021
+#[3875295.792413] [ T7635] Call Trace:
+#[3875295.792415] [ T7635]  <TASK>
+#[3875295.792417] [ T7635]  dump_stack_lvl+0x32/0x50
+#[3875295.792422] [ T7635]  dump_header+0x63/0x3d0
+#[3875295.792426] [ T7635]  ? ___ratelimit+0xb0/0x110
+#[3875295.792429] [ T7635]  oom_kill_process+0x2d5/0x430
+#[3875295.792431] [ T7635]  out_of_memory+0xe6/0x490
+#[3875295.792433] [ T7635]  __alloc_pages_slowpath.constprop.0+0x9f3/0xc30
+#[3875295.792436] [ T7635]  ? __switch_to_asm+0x3a/0x60
+#[3875295.792438] [ T7635]  __alloc_pages+0x259/0x270
+#[3875295.792440] [ T7635]  __folio_alloc+0x16/0x50
+#[3875295.792442] [ T7635]  __handle_mm_fault+0x881/0xee0
+#[3875295.792444] [ T7635]  handle_mm_fault+0xa7/0x170
+#[3875295.792446] [ T7635]  exc_page_fault+0x237/0x600
+#[3875295.792449] [ T7635]  asm_exc_page_fault+0x22/0x30
+#[3875295.792452] [ T7635] RIP: 0033:0x7f0f87f800d2
+#[3875295.792453] [ T7635] Code: 8d 34 19 48 39 d5 48 89 75 60 0f 95 c2 48 29 d8 48 83 c1 10 0f b6 d2 48 83 c8 01 48 c1 e2 02 48 09 da 48 83 ca 01 48 89 51 f8 <48> 89 46 08 e9 3d ff ff ff 48 89 df e8 8d e8 ff ff 48 89 c1 48 85
+#[3875295.792455] [ T7635] RSP: 002b:00007ffdb2259850 EFLAGS: 00010202
+#[3875295.792457] [ T7635] RAX: 0000000000017851 RBX: 0000000000000ff0 RCX: 0000563ea93927d0
+#[3875295.792458] [ T7635] RDX: 0000000000000ff1 RSI: 0000563ea93937b0 RDI: 0000000000000000
+#[3875295.792459] [ T7635] RBP: 00007f0f880bbac0 R08: 0000000000000000 R09: 0000000000000001
+#[3875295.792460] [ T7635] R10: 0000000000000004 R11: 0000000000000000 R12: 0000000000000fe0
+#[3875295.792461] [ T7635] R13: 0000000000000000 R14: 00000000000000fd R15: 00007f0f880bbb20
+#[3875295.792463] [ T7635]  </TASK>
+#[3875295.792463] [ T7635] Mem-Info:
+#[3875295.792465] [ T7635] active_anon:1162175 inactive_anon:6096803 isolated_anon:0
+#                           active_file:10210 inactive_file:10093 isolated_file:0
+#                           unevictable:2546 dirty:2 writeback:0
+#                           slab_reclaimable:588231 slab_unreclaimable:119748
+#                           mapped:48107 shmem:2086391 pagetables:16926
+#                           sec_pagetables:10 bounce:0
+#                           kernel_misc_reclaimable:0
+#                           free:116287 free_pcp:82 free_cma:0
+#[3875295.792469] [ T7635] Node 0 active_anon:4648700kB inactive_anon:24387212kB active_file:40840kB inactive_file:40372kB unevictable:10184kB isolated(anon):0kB isolated(file):0kB mapped:192428kB dirty:8kB writeback:0kB shmem:8345564kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:8052736kB writeback_tmp:0kB kernel_stack:18388kB pagetables:67704kB sec_pagetables:40kB all_unreclaimable? no
+#[3875295.792473] [ T7635] DMA free:15360kB boost:0kB min:60kB low:72kB high:84kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875295.792476] [ T7635] lowmem_reserve[]: 0 3150 32011 32011
+#[3875295.792479] [ T7635] DMA32 free:137904kB boost:12288kB min:25584kB low:28908kB high:32232kB reserved_highatomic:0KB active_anon:382340kB inactive_anon:2507444kB active_file:64kB inactive_file:32kB unevictable:0kB writepending:0kB present:3314220kB managed:3228644kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875295.792482] [ T7635] lowmem_reserve[]: 0 0 28861 28861
+#[3875295.792484] [ T7635] Normal free:311884kB boost:274068kB min:395876kB low:426328kB high:456780kB reserved_highatomic:0KB active_anon:4266360kB inactive_anon:21878516kB active_file:42176kB inactive_file:41148kB unevictable:10184kB writepending:8kB present:30133760kB managed:29553820kB mlocked:10104kB bounce:0kB free_pcp:352kB local_pcp:0kB free_cma:0kB
+#[3875295.792488] [ T7635] lowmem_reserve[]: 0 0 0 0
+#[3875295.792489] [ T7635] DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15360kB
+#[3875295.792496] [ T7635] DMA32: 749*4kB (UME) 550*8kB (UME) 363*16kB (UME) 525*32kB (UME) 360*64kB (UME) 218*128kB (UME) 107*256kB (UME) 55*512kB (UME) 0*1024kB 0*2048kB 0*4096kB = 136500kB
+#[3875295.792505] [ T7635] Normal: 16509*4kB (UME) 7717*8kB (UME) 3331*16kB (UME) 2731*32kB (UME) 647*64kB (UME) 6*128kB (UM) 1*256kB (M) 0*512kB 0*1024kB 1*2048kB (M) 0*4096kB = 312940kB
+#[3875295.792513] [ T7635] 2108399 total pagecache pages
+#[3875295.792513] [ T7635] 0 pages in swap cache
+#[3875295.792514] [ T7635] Free swap  = 0kB
+#[3875295.792515] [ T7635] Total swap = 0kB
+#[3875295.792515] [ T7635] 8365991 pages RAM
+#[3875295.792516] [ T7635] 0 pages HighMem/MovableOnly
+#[3875295.792516] [ T7635] 166535 pages reserved
+#[3875297.101753] [ T7668] cc1plus invoked oom-killer: gfp_mask=0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), order=0, oom_score_adj=0
+#[3875297.101760] [ T7668] CPU: 3 PID: 7668 Comm: cc1plus Tainted: P           O       6.6.52-gentoo #2
+#[3875297.101762] [ T7668] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS, BIOS 4021 08/09/2021
+#[3875297.101764] [ T7668] Call Trace:
+#[3875297.101766] [ T7668]  <TASK>
+#[3875297.101768] [ T7668]  dump_stack_lvl+0x32/0x50
+#[3875297.101773] [ T7668]  dump_header+0x63/0x3d0
+#[3875297.101778] [ T7668]  ? __free_one_page+0x4e/0x2d0
+#[3875297.101781] [ T7668]  ? ___ratelimit+0xb0/0x110
+#[3875297.101783] [ T7668]  oom_kill_process+0x2d5/0x430
+#[3875297.101785] [ T7668]  out_of_memory+0xe6/0x490
+#[3875297.101787] [ T7668]  __alloc_pages_slowpath.constprop.0+0x9f3/0xc30
+#[3875297.101790] [ T7668]  __alloc_pages+0x259/0x270
+#[3875297.101792] [ T7668]  __folio_alloc+0x16/0x50
+#[3875297.101794] [ T7668]  __handle_mm_fault+0x881/0xee0
+#[3875297.101796] [ T7668]  handle_mm_fault+0xa7/0x170
+#[3875297.101798] [ T7668]  exc_page_fault+0x237/0x600
+#[3875297.101801] [ T7668]  asm_exc_page_fault+0x22/0x30
+#[3875297.101803] [ T7668] RIP: 0033:0x135e649
+#[3875297.101805] [ T7668] Code: 41 54 55 53 0f 85 fc 1f 35 ff 49 89 f5 48 89 d5 b9 01 00 00 00 31 d2 31 f6 bf 20 00 00 00 4d 89 f4 e8 0b 6e f8 ff 66 0f ef c0 <0f> 11 40 02 48 89 c3 48 c7 40 10 00 00 00 00 66 44 89 30 4c 89 68
+#[3875297.101806] [ T7668] RSP: 002b:00007ffdef441300 EFLAGS: 00010202
+#[3875297.101809] [ T7668] RAX: 00007fb4f8127000 RBX: 0000000000000000 RCX: 0000000000000001
+#[3875297.101810] [ T7668] RDX: 000000000000007f RSI: 0000000000000080 RDI: 0000000000000000
+#[3875297.101811] [ T7668] RBP: 00007fb52641ba80 R08: 0000000000000005 R09: 0000000000000001
+#[3875297.101812] [ T7668] R10: 0000000000000000 R11: 00000000150e3a10 R12: 000000000000007f
+#[3875297.101813] [ T7668] R13: 00007fb527697b28 R14: 000000000000007f R15: 00007fb522b21760
+#[3875297.101814] [ T7668]  </TASK>
+#[3875297.101815] [ T7668] Mem-Info:
+#[3875297.101817] [ T7668] active_anon:1162175 inactive_anon:6213279 isolated_anon:0
+#                           active_file:9807 inactive_file:6292 isolated_file:0
+#                           unevictable:2546 dirty:41 writeback:0
+#                           slab_reclaimable:477832 slab_unreclaimable:119733
+#                           mapped:42943 shmem:2086394 pagetables:17051
+#                           sec_pagetables:10 bounce:0
+#                           kernel_misc_reclaimable:0
+#                           free:113444 free_pcp:38 free_cma:0
+#[3875297.101821] [ T7668] Node 0 active_anon:4648700kB inactive_anon:24853116kB active_file:39228kB inactive_file:25168kB unevictable:10184kB isolated(anon):0kB isolated(file):0kB mapped:171772kB dirty:164kB writeback:0kB shmem:8345576kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:8050688kB writeback_tmp:0kB kernel_stack:17872kB pagetables:68204kB sec_pagetables:40kB all_unreclaimable? no
+#[3875297.101824] [ T7668] DMA free:15360kB boost:0kB min:60kB low:72kB high:84kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875297.101827] [ T7668] lowmem_reserve[]: 0 3150 32011 32011
+#[3875297.101830] [ T7668] DMA32 free:140876kB boost:12288kB min:25584kB low:28908kB high:32232kB reserved_highatomic:0KB active_anon:382340kB inactive_anon:2531028kB active_file:112kB inactive_file:452kB unevictable:0kB writepending:0kB present:3314220kB managed:3228644kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875297.101833] [ T7668] lowmem_reserve[]: 0 0 28861 28861
+#[3875297.101835] [ T7668] Normal free:297540kB boost:274068kB min:395876kB low:426328kB high:456780kB reserved_highatomic:0KB active_anon:4266360kB inactive_anon:22320992kB active_file:38720kB inactive_file:25272kB unevictable:10184kB writepending:164kB present:30133760kB managed:29553820kB mlocked:10104kB bounce:0kB free_pcp:152kB local_pcp:0kB free_cma:0kB
+#[3875297.101838] [ T7668] lowmem_reserve[]: 0 0 0 0
+#[3875297.101840] [ T7668] DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15360kB
+#[3875297.101847] [ T7668] DMA32: 675*4kB (UME) 492*8kB (UME) 339*16kB (UME) 691*32kB (UME) 340*64kB (UME) 205*128kB (UME) 107*256kB (UE) 60*512kB (UME) 0*1024kB 0*2048kB 0*4096kB = 140284kB
+#[3875297.101854] [ T7668] Normal: 10254*4kB (UME) 6686*8kB (UME) 3423*16kB (UME) 3063*32kB (UME) 807*64kB (UME) 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 298936kB
+#[3875297.101861] [ T7668] 2104863 total pagecache pages
+#[3875297.101862] [ T7668] 0 pages in swap cache
+#[3875297.101863] [ T7668] Free swap  = 0kB
+#[3875297.101863] [ T7668] Total swap = 0kB
+#[3875297.101864] [ T7668] 8365991 pages RAM
+#[3875297.101864] [ T7668] 0 pages HighMem/MovableOnly
+#[3875297.101864] [ T7668] 166535 pages reserved
+#[3875297.103750] [ T7634] cc1plus invoked oom-killer: gfp_mask=0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), order=0, oom_score_adj=0
+#[3875297.103757] [ T7634] CPU: 8 PID: 7634 Comm: cc1plus Tainted: P           O       6.6.52-gentoo #2
+#[3875297.103760] [ T7634] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS, BIOS 4021 08/09/2021
+#[3875297.103761] [ T7634] Call Trace:
+#[3875297.103764] [ T7634]  <TASK>
+#[3875297.103765] [ T7634]  dump_stack_lvl+0x32/0x50
+#[3875297.103770] [ T7634]  dump_header+0x63/0x3d0
+#[3875297.103775] [ T7634]  ? __free_one_page+0x4e/0x2d0
+#[3875297.103778] [ T7634]  ? ___ratelimit+0xb0/0x110
+#[3875297.103780] [ T7634]  oom_kill_process+0x2d5/0x430
+#[3875297.103783] [ T7634]  out_of_memory+0xe6/0x490
+#[3875297.103785] [ T7634]  __alloc_pages_slowpath.constprop.0+0x9f3/0xc30
+#[3875297.103788] [ T7634]  ? __wake_up_common+0x6c/0x130
+#[3875297.103791] [ T7634]  __alloc_pages+0x259/0x270
+#[3875297.103793] [ T7634]  __folio_alloc+0x16/0x50
+#[3875297.103795] [ T7634]  __handle_mm_fault+0x881/0xee0
+#[3875297.103798] [ T7634]  handle_mm_fault+0xa7/0x170
+#[3875297.103800] [ T7634]  exc_page_fault+0x237/0x600
+#[3875297.103802] [ T7634]  asm_exc_page_fault+0x22/0x30
+#[3875297.103805] [ T7634] RIP: 0033:0x164c8eb
+#[3875297.103807] [ T7634] Code: 89 fd 53 48 85 d2 0f 85 e8 6e 2a ff 31 d2 31 f6 b9 01 00 00 00 bf 60 00 00 00 e8 70 8b c9 ff 31 d2 31 f6 48 8d 78 08 48 89 c1 <48> c7 00 00 00 00 00 48 89 c3 48 83 e7 f8 4c 89 f0 48 29 f9 83 c1
+#[3875297.103809] [ T7634] RSP: 002b:00007ffd997c3f30 EFLAGS: 00010246
+#[3875297.103811] [ T7634] RAX: 00007f38f90c6000 RBX: 00007f38f90908f8 RCX: 00007f38f90c6000
+#[3875297.103812] [ T7634] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 00007f38f90c6008
+#[3875297.103813] [ T7634] RBP: 00007f38f90908f8 R08: 0000000000000051 R09: 0000000000000002
+#[3875297.103814] [ T7634] R10: 0000000040ef6010 R11: 000000004479b8c0 R12: 00007f39042fb060
+#[3875297.103815] [ T7634] R13: 0000000000000000 R14: 0000000000000000 R15: 00007f39042fb060
+#[3875297.103816] [ T7634]  </TASK>
+#[3875297.103817] [ T7634] Mem-Info:
+#[3875297.103818] [ T7634] active_anon:1162175 inactive_anon:6210067 isolated_anon:0
+#                           active_file:9953 inactive_file:5898 isolated_file:0
+#                           unevictable:2546 dirty:41 writeback:0
+#                           slab_reclaimable:477672 slab_unreclaimable:119733
+#                           mapped:42943 shmem:2086394 pagetables:17051
+#                           sec_pagetables:10 bounce:0
+#                           kernel_misc_reclaimable:0
+#                           free:117306 free_pcp:19 free_cma:0
+#[3875297.103822] [ T7634] Node 0 active_anon:4648700kB inactive_anon:24840268kB active_file:39812kB inactive_file:23592kB unevictable:10184kB isolated(anon):0kB isolated(file):0kB mapped:171772kB dirty:164kB writeback:0kB shmem:8345576kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:8050688kB writeback_tmp:0kB kernel_stack:17720kB pagetables:68204kB sec_pagetables:40kB all_unreclaimable? no
+#[3875297.103826] [ T7634] DMA free:15360kB boost:0kB min:60kB low:72kB high:84kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875297.103829] [ T7634] lowmem_reserve[]: 0 3150 32011 32011
+#[3875297.103832] [ T7634] DMA32 free:140876kB boost:12288kB min:25584kB low:28908kB high:32232kB reserved_highatomic:0KB active_anon:382340kB inactive_anon:2531028kB active_file:112kB inactive_file:452kB unevictable:0kB writepending:0kB present:3314220kB managed:3228644kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+#[3875297.103835] [ T7634] lowmem_reserve[]: 0 0 28861 28861
+#[3875297.103837] [ T7634] Normal free:312988kB boost:274068kB min:395876kB low:426328kB high:456780kB reserved_highatomic:0KB active_anon:4266360kB inactive_anon:22307888kB active_file:38720kB inactive_file:23640kB unevictable:10184kB writepending:164kB present:30133760kB managed:29553820kB mlocked:10104kB bounce:0kB free_pcp:76kB local_pcp:0kB free_cma:0kB
+#[3875297.103841] [ T7634] lowmem_reserve[]: 0 0 0 0
+#[3875297.103843] [ T7634] DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15360kB
+#[3875297.103849] [ T7634] DMA32: 675*4kB (UME) 492*8kB (UME) 339*16kB (UME) 691*32kB (UME) 340*64kB (UME) 205*128kB (UME) 107*256kB (UE) 60*512kB (UME) 0*1024kB 0*2048kB 0*4096kB = 140284kB
+#[3875297.103858] [ T7634] Normal: 13666*4kB (UME) 6735*8kB (UME) 3455*16kB (UME) 3091*32kB (UME) 810*64kB (UME) 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 314576kB
+#[3875297.103865] [ T7634] 2104571 total pagecache pages
+#[3875297.103866] [ T7634] 0 pages in swap cache
+#[3875297.103866] [ T7634] Free swap  = 0kB
+#[3875297.103867] [ T7634] Total swap = 0kB
+#[3875297.103867] [ T7634] 8365991 pages RAM
+#[3875297.103868] [ T7634] 0 pages HighMem/MovableOnly
+#[3875297.103868] [ T7634] 166535 pages reserved
+#[4300702.207695] [T25372]  in libcrypto.so.3[7fccf984b000+325000] likely on CPU 1 (core 1, socket 0)
+#[4300702.207698] [T25367]  in libcrypto.so.3[7fccf984b000+325000]
+#[4300702.207700] [T25367]  likely on CPU 2 (core 2, socket 0)
+##notice
+#[    0.050806] [    T0] Kernel command line: BOOT_IMAGE=/boot/vmlinuz-6.6.52 root=PARTUUID=94d0bfcb-01 ro
+#[    0.050830] [    T0] Unknown kernel command line parameters "BOOT_IMAGE=/boot/vmlinuz-6.6.52", will be passed to user space.
+#[    0.050846] [    T0] random: crng init done
+#[    0.128912] [    T0] Zenbleed: please update your microcode for the most optimal fix
+#[    0.253162] [   T76] audit: type=2000 audit(1729618556.129:1): state=initialized audit_enabled=0 res=1
+#[    0.258869] [    T1] ACPI: [Firmware Bug]: BIOS _OSI(Linux) query ignored
+#[    0.295000] [    T1] SCSI subsystem initialized
+#[    0.646966] [    T1] Key type cifs.idmap registered
+#[    0.672518] [    T1] Key type dns_resolver registered
+#[    1.142941] [  T867] scsi 4:0:0:0: Direct-Access     ATA      TS64GMTS800      5CE  PQ: 0 ANSI: 5
+#[    1.143233] [  T867] sd 4:0:0:0: Attached scsi generic sg0 type 0
+#[    1.143265] [   T73] sd 4:0:0:0: [sda] 125045424 512-byte logical blocks: (64.0 GB/59.6 GiB)
+#[    1.143427] [   T73] sd 4:0:0:0: [sda] Write Protect is off
+#[    1.143534] [   T73] sd 4:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+#[    1.146843] [   T73] sd 4:0:0:0: [sda] Attached SCSI disk
+#[    1.150779] [   T72] scsi 9:0:0:0: Direct-Access     ATA      HUS726060ALE610  T7MH PQ: 0 ANSI: 5
+#[    1.151078] [   T72] sd 9:0:0:0: Attached scsi generic sg1 type 0
+#[    1.151134] [  T135] sd 9:0:0:0: [sdb] 11721045168 512-byte logical blocks: (6.00 TB/5.46 TiB)
+#[    1.151273] [  T135] sd 9:0:0:0: [sdb] 4096-byte physical blocks
+#[    1.151369] [  T135] sd 9:0:0:0: [sdb] Write Protect is off
+#[    1.151470] [  T135] sd 9:0:0:0: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+#[    1.170473] [  T959] scsi 10:0:0:0: Direct-Access     ATA      HUS726060ALE610  T7MH PQ: 0 ANSI: 5
+#[    1.170768] [  T959] sd 10:0:0:0: Attached scsi generic sg2 type 0
+#[    1.170801] [   T72] sd 10:0:0:0: [sdc] 11721045168 512-byte logical blocks: (6.00 TB/5.46 TiB)
+#[    1.170952] [   T72] sd 10:0:0:0: [sdc] 4096-byte physical blocks
+#[    1.171042] [   T72] sd 10:0:0:0: [sdc] Write Protect is off
+#[    1.171146] [   T72] sd 10:0:0:0: [sdc] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+#[    1.187882] [ T1014] scsi 16:0:0:0: Direct-Access     ATA      WDC WDS240G2G0B- 0400 PQ: 0 ANSI: 5
+#[    1.188120] [ T1014] sd 16:0:0:0: Attached scsi generic sg3 type 0
+#[    1.188157] [ T1012] sd 16:0:0:0: [sdd] 468862128 512-byte logical blocks: (240 GB/224 GiB)
+#[    1.188318] [ T1012] sd 16:0:0:0: [sdd] Write Protect is off
+#[    1.188414] [ T1012] sd 16:0:0:0: [sdd] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+#[    1.197064] [ T1012] sd 16:0:0:0: [sdd] Attached SCSI disk
+#[    1.216520] [  T135] sd 9:0:0:0: [sdb] Attached SCSI disk
+#[    1.231494] [   T72] sd 10:0:0:0: [sdc] Attached SCSI disk
+#[    3.368148] [ T2192] ccp 0000:0a:00.1: ccp: unable to access the device: you might be running a broken BIOS.
+#[    3.368160] [ T2192] ccp 0000:0a:00.1: psp enabled
+#[    3.820027] [   T55] usb 3-6: config 1 has an invalid interface number: 2 but max is 1
+#[    3.820032] [   T55] usb 3-6: config 1 has no interface number 1
+#[    5.340431] [   T72] scsi 17:0:0:0: Direct-Access     Generic  STORAGE DEVICE   0830 PQ: 0 ANSI: 6
+#[    5.340605] [   T72] sd 17:0:0:0: Attached scsi generic sg4 type 0
+#[    5.341199] [  T135] sd 17:0:0:0: [sde] Media removed, stopped polling
+#[    5.341459] [  T135] sd 17:0:0:0: [sde] Attached SCSI removable disk
+#[  208.138573] [    C1] via-velocity 0000:03:00.0 eth0: Link auto-negotiation speed 1000M bps full duplex
+#[  240.513820] [ T5988] Key type encrypted registered
+#[692566.862352] [T28702] nvidia 0000:08:00.0: Using 47-bit DMA addresses
+#[3275715.512300] [   T76] audit: type=1327 audit(1732887075.175:9978299): proctitle=7073002D4177770066002D6F007069642C707069642C757365722C73746172742C73746174652C7072692C706370752C74696D653A31322C706D656D2C72737A3A31302C76737A3A31302C636D64
+#[3758959.110519] [   T76] audit: type=1327 audit(1733370319.489:11540251): proctitle=7073002D4177770066002D6F007069642C707069642C757365722C73746172742C73746174652C7072692C706370752C74696D653A31322C706D656D2C72737A3A31302C76737A3A31302C636D64
+#[5581711.750304] [   T76] audit: type=1327 audit(1735193074.258:17399066): proctitle=7073002D4177770066002D6F007069642C707069642C757365722C73746172742C73746174652C7072692C706370752C74696D653A31322C706D656D2C72737A3A31302C76737A3A31302C636D64
+#[6370626.424700] [   T76] audit: type=1307 audit(1735981989.322:19901216): cwd="/"
+#[6370626.424704] [   T76] audit: type=1302 audit(1735981989.322:19901216): item=0 name="/proc/30778/environ" inode=452086269 dev=00:10 mode=0100400 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0
+#[6370626.424706] [   T76] audit: type=1327 audit(1735981989.322:19901216): proctitle=7073002D4177770066002D6F007069642C707069642C757365722C73746172742C73746174652C7072692C706370752C74696D653A31322C706D656D2C72737A3A31302C76737A3A31302C636D64
+#[6370626.424707] [   T76] audit: type=1300 audit(1735981989.322:19901217): arch=c000003e syscall=257 success=no exit=-13 a0=ffffff9c a1=7ffcf827e480 a2=0 a3=0 items=1 ppid=24136 pid=24175 auid=113 uid=113 gid=997 euid=113 suid=113 fsuid=113 egid=997 sgid=997 fsgid=997 tty=(none) ses=5 comm="ps" exe="/bin/ps" key="access"
+#[6370626.424708] [   T76] audit: type=1307 audit(1735981989.322:19901217): cwd="/"
+#[6370626.424709] [   T76] audit: type=1302 audit(1735981989.322:19901217): item=0 name="/proc/30779/environ" inode=452086272 dev=00:10 mode=0100400 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0
+#[6370626.424710] [   T76] audit: type=1327 audit(1735981989.322:19901217): proctitle=7073002D4177770066002D6F007069642C707069642C757365722C73746172742C73746174652C7072692C706370752C74696D653A31322C706D656D2C72737A3A31302C76737A3A31302C636D64
+#[6370626.424711] [   T76] audit: type=1300 audit(1735981989.322:19901218): arch=c000003e syscall=257 success=no exit=-13 a0=ffffff9c a1=7ffcf827e480 a2=0 a3=0 items=1 ppid=24136 pid=24175 auid=113 uid=113 gid=997 euid=113 suid=113 fsuid=113 egid=997 sgid=997 fsgid=997 tty=(none) ses=5 comm="ps" exe="/bin/ps" key="access"
+#[6370626.424712] [   T76] audit: type=1307 audit(1735981989.322:19901218): cwd="/"
+#[6370626.424713] [   T76] audit: type=1302 audit(1735981989.322:19901218): item=0 name="/proc/30804/environ" inode=452086275 dev=00:10 mode=0100400 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0

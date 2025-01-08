@@ -128,6 +128,8 @@ class xy_host:
         self.dialup = False
         self.ping_success = False
         self.pages = ['all', 'nongreen']
+        self.dmesg_last_ts = -1
+        self.dmesg = {}
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -3519,6 +3521,76 @@ class xythonsrv:
             self.column_update(hostname, cname, "blue", dstart, blue_status, howlongs, "bluter")
         return True
 
+    def parse_dmesg(self, hostname, hdata, sender):
+        now = time.time()
+        color = 'green'
+        state  = f"{xytime(now, self.tz)} - dmesg Ok\n<p>"
+        try:
+            f = open(self.etcdir + '/dmesg.regex')
+            patterns = f.read().splitlines()
+            f.close()
+        except FileNotFoundError:
+            patterns = []
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for dmesg")
+            return False
+        curr_level = None
+        lastts = 0
+        for line in hdata.split("\n"):
+            if len(line) <= 1:
+                continue
+            if line[0] != '#':
+                self.error(f"ERROR: invalid dmesg line {line}")
+                continue
+            if line[1] == '#':
+                if curr_level is not None:
+                    state += "</fieldset>"
+                curr_level = line[2:]
+                if curr_level not in ['emerg', 'alert', 'crit', 'err', 'warn', 'notice']:
+                    self.error(f"ERROR: unknow dmesg level {curr_level}")
+                state += f"<fieldset><legend>{curr_level}</legend>\n<br>"
+                continue
+            if curr_level is None:
+                state += "&red BUG no level\n"
+            oline = line
+            ts = re.search(r'(^#\[\s*)([0-9]+\.[0-9]+)(\]\s)', line)
+            if ts is None:
+                its = 0
+            else:
+                its = float(ts.group(2))
+                tsa = ts.group(1) + ts.group(2) + ts.group(3)
+                line = line.replace(tsa, '')
+            # TODO filter also the [Txxx] [Cxxx]
+            if line[1] == ' ':
+                # TODO multi line, found only on rpi kernel or crashes
+                # ignore it for now
+                self.debug(f"DEBUG: dmesg: ignore multi part {line}")
+                continue
+            ignore = False
+            for p in patterns:
+                if ignore:
+                    continue
+                if re.search(p, line):
+                    ignore = True
+            if ignore:
+                state += f"&clear {line}<br>\n"
+            else:
+                state += f"&red {line}\n"
+                if curr_level in ['emerg', 'alert', 'crit', 'err']:
+                    color = setcolor("red", color)
+                else:
+                    color = setcolor("yellow", color)
+            if lastts < its:
+                lastts = its
+                # TODO unack if new message appears ?
+        H.dmesg_last_ts = lastts
+        state += "</fieldset>"
+        tend = time.time()
+        state += f"</p>Seconds: {tend - now}"
+        self.column_update(hostname, "dmesg", color, int(tend), state, 60 * 60, sender)
+        return True
+
     def parse_hostdata(self, hdata, addr):
         hostname = None
         section = None
@@ -3584,6 +3656,11 @@ class xythonsrv:
                         ret = self.parse_mdstat(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
+                    if section == '[dmesg]':
+                        handled = True
+                        ret = self.parse_dmesg(hostname, buf, addr)
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[clientversion]':
                         handled = True
                         H = self.find_host(hostname)
@@ -3607,7 +3684,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
