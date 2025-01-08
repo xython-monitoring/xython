@@ -1,0 +1,143 @@
+ibmpowernv-isa-0000
+Adapter: ISA adapter
+Chip 0 Vdd Remote Sense: 833.00 mV (lowest =  +0.67 V, highest =  +1.03 V)
+Chip 0 Vdn Remote Sense: 901.00 mV (lowest =  +0.90 V, highest =  +0.90 V)
+Chip 8 Vdd Remote Sense: 660.00 mV (lowest =  +0.63 V, highest =  +0.98 V)
+Chip 8 Vdn Remote Sense: 901.00 mV (lowest =  +0.90 V, highest =  +0.90 V)
+Chip 0 Vdd:              841.00 mV (lowest =  +0.71 V, highest =  +1.03 V)
+Chip 0 Vdn:              903.00 mV (lowest =  +0.90 V, highest =  +0.90 V)
+Chip 8 Vdd:              664.00 mV (lowest =  +0.65 V, highest =  +0.99 V)
+Chip 8 Vdn:              903.00 mV (lowest =  +0.90 V, highest =  +0.90 V)
+Chip 0 Core 0:            +38.0 C  (lowest = +32.0 C, highest = +58.0 C)
+Chip 0 Core 4:            +38.0 C  (lowest =  +6.0 C, highest = +54.0 C)
+Chip 0 Core 8:            +38.0 C  (lowest =  +6.0 C, highest = +55.0 C)
+Chip 0 Core 12:           +38.0 C  (lowest = +31.0 C, highest = +54.0 C)
+Chip 0 Core 16:           +38.0 C  (lowest = +30.0 C, highest = +54.0 C)
+Chip 0 Core 20:           +38.0 C  (lowest = +32.0 C, highest = +54.0 C)
+Chip 0 Core 24:           +38.0 C  (lowest = +32.0 C, highest = +56.0 C)
+Chip 0 Core 28:           +38.0 C  (lowest =  +6.0 C, highest = +56.0 C)
+Chip 0 Core 32:           +38.0 C  (lowest = +31.0 C, highest = +56.0 C)
+Chip 0 Core 36:           +38.0 C  (lowest =  +6.0 C, highest = +54.0 C)
+Chip 0 Core 40:           +38.0 C  (lowest = +32.0 C, highest = +56.0 C)
+Chip 0 Core 44:           +38.0 C  (lowest = +31.0 C, highest = +55.0 C)
+Chip 0 Core 48:           +38.0 C  (lowest = +31.0 C, highest = +56.0 C)
+Chip 0 Core 52:           +38.0 C  (lowest =  +6.0 C, highest = +55.0 C)
+Chip 0 Core 56:           +38.0 C  (lowest =  +6.0 C, highest = +54.0 C)
+Chip 0 Core 60:           +38.0 C  (lowest =  +6.0 C, highest = +55.0 C)
+Chip 8 Core 64:           +34.0 C  (lowest = +29.0 C, highest = +48.0 C)
+Chip 8 Core 68:           +35.0 C  (lowest =  +6.0 C, highest = +47.0 C)
+Chip 8 Core 72:           +35.0 C  (lowest =  +5.0 C, highest = +46.0 C)
+Chip 8 Core 76:           +35.0 C  (lowest = +27.0 C, highest = +44.0 C)
+Chip 8 Core 80:           +35.0 C  (lowest = +29.0 C, highest = +47.0 C)
+Chip 8 Core 84:           +34.0 C  (lowest =  +6.0 C, highest = +47.0 C)
+Chip 8 Core 88:           +34.0 C  (lowest =  +6.0 C, highest = +46.0 C)
+Chip 8 Core 92:           +34.0 C  (lowest =  +6.0 C, highest = +45.0 C)
+Chip 8 Core 96:           +34.0 C  (lowest = +28.0 C, highest = +45.0 C)
+Chip 8 Core 100:          +34.0 C  (lowest =  +5.0 C, highest = +47.0 C)
+Chip 8 Core 104:          +34.0 C  (lowest =  +6.0 C, highest = +45.0 C)
+Chip 8 Core 108:          +34.0 C  (lowest = +29.0 C, highest = +46.0 C)
+Chip 8 Core 112:          +35.0 C  (lowest = +29.0 C, highest = +47.0 C)
+Chip 8 Core 116:          +35.0 C  (lowest =  +4.0 C, highest = +47.0 C)
+Chip 8 Core 120:          +35.0 C  (lowest =  +6.0 C, highest = +47.0 C)
+Chip 8 Core 124:          +35.0 C  (lowest =  +6.0 C, highest = +46.0 C)
+Chip 0 GPU 0 :             +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 GPU 1 :             +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 GPU 2 :             +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 GPU 0 MEM:          +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 GPU 1 MEM:          +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 GPU 2 MEM:          +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 GPU 0 :             +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 GPU 1 :             +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 GPU 2 :             +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 GPU 0 MEM:          +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 GPU 1 MEM:          +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 GPU 2 MEM:          +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 0 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 1 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 2 :           +30.0 C  (lowest = +26.0 C, highest = +32.0 C)
+Chip 0 DIMM 3 :           +31.0 C  (lowest = +26.0 C, highest = +32.0 C)
+Chip 0 DIMM 4 :           +31.0 C  (lowest = +26.0 C, highest = +32.0 C)
+Chip 0 DIMM 5 :           +30.0 C  (lowest = +26.0 C, highest = +32.0 C)
+Chip 0 DIMM 6 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 7 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 8 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 9 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 10 :          +30.0 C  (lowest = +26.0 C, highest = +32.0 C)
+Chip 0 DIMM 11 :          +29.0 C  (lowest = +25.0 C, highest = +30.0 C)
+Chip 0 DIMM 12 :          +29.0 C  (lowest = +26.0 C, highest = +31.0 C)
+Chip 0 DIMM 13 :          +30.0 C  (lowest = +26.0 C, highest = +31.0 C)
+Chip 0 DIMM 14 :           +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 DIMM 15 :           +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 0 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 1 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 2 :           +30.0 C  (lowest = +26.0 C, highest = +31.0 C)
+Chip 8 DIMM 3 :           +31.0 C  (lowest = +27.0 C, highest = +32.0 C)
+Chip 8 DIMM 4 :           +31.0 C  (lowest = +27.0 C, highest = +32.0 C)
+Chip 8 DIMM 5 :           +30.0 C  (lowest = +27.0 C, highest = +32.0 C)
+Chip 8 DIMM 6 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 7 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 8 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 9 :            +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 10 :          +31.0 C  (lowest = +27.0 C, highest = +32.0 C)
+Chip 8 DIMM 11 :          +31.0 C  (lowest = +28.0 C, highest = +33.0 C)
+Chip 8 DIMM 12 :          +30.0 C  (lowest = +26.0 C, highest = +31.0 C)
+Chip 8 DIMM 13 :          +32.0 C  (lowest = +28.0 C, highest = +33.0 C)
+Chip 8 DIMM 14 :           +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 8 DIMM 15 :           +0.0 C  (lowest =  +0.0 C, highest =  +0.0 C)
+Chip 0 Nest:              +38.0 C  (lowest = +32.0 C, highest = +47.0 C)
+Chip 8 Nest:              +35.0 C  (lowest = +29.0 C, highest = +38.0 C)
+Chip 0 VRM VDD:           +30.0 C  (lowest = +28.0 C, highest = +36.0 C)
+Chip 8 VRM VDD:           +29.0 C  (lowest = +26.0 C, highest = +31.0 C)
+Chip 0 GPU:               36.00 W  (lowest =   0.00 W, highest = 176.00 W)
+Chip 8 GPU:                5.00 W  (lowest =   0.00 W, highest =   5.00 W)
+Chip 0 Memory:            25.00 W  (lowest =   0.00 W, highest =  59.00 W)
+Chip 8 Memory:            24.00 W  (lowest =   0.00 W, highest =  41.00 W)
+Chip 0 :                  83.00 W  (lowest =   0.00 W, highest = 265.00 W)
+Chip 0 Vdd:               22.00 W  (lowest =  12.00 W, highest = 176.00 W)
+Chip 0 Vdn:               23.00 W  (lowest =  22.00 W, highest =  27.00 W)
+Chip 8 :                  55.00 W  (lowest =   0.00 W, highest = 214.00 W)
+Chip 8 Vdd:                9.00 W  (lowest =   7.00 W, highest = 142.00 W)
+Chip 8 Vdn:               20.00 W  (lowest =  19.00 W, highest =  22.00 W)
+System:                  226.00 W  (lowest =   0.00 W, highest = 502.00 W)
+APSS 0 :                 226.00 W  (lowest =   0.00 W, highest = 502.00 W)
+APSS 2 :                  28.00 W  (lowest =   0.00 W, highest = 206.00 W)
+APSS 3 :                   7.00 W  (lowest =   0.00 W, highest = 163.00 W)
+APSS 4 :                  55.00 W  (lowest =   0.00 W, highest =  63.00 W)
+APSS 5 :                  49.00 W  (lowest =   0.00 W, highest =  54.00 W)
+APSS 6 :                  25.00 W  (lowest =   0.00 W, highest =  59.00 W)
+APSS 7 :                  24.00 W  (lowest =   0.00 W, highest =  41.00 W)
+APSS 8 :                  34.00 W  (lowest =   0.00 W, highest = 174.00 W)
+APSS 9 :                   2.00 W  (lowest =   0.00 W, highest =   3.00 W)
+APSS 11 :                  2.00 W  (lowest =   0.00 W, highest =   3.00 W)
+APSS 12 :                  2.00 W  (lowest =   0.00 W, highest =   3.00 W)
+APSS 14 :                 27.00 W  (lowest =   0.00 W, highest = 278.00 W)
+APSS 15 :                 21.00 W  (lowest =   0.00 W, highest =  29.00 W)
+Chip 0 GPU:              146.41 MJ
+Chip 8 GPU:               16.85 MJ
+Chip 0 Memory:            97.62 MJ
+Chip 8 Memory:            97.54 MJ
+Chip 0 :                 283.43 MJ
+Chip 0 Vdd:               29.59 MJ
+Chip 0 Vdn:               45.34 MJ
+Chip 8 :                 225.59 MJ
+Chip 8 Vdd:               17.86 MJ
+Chip 8 Vdn:               40.14 MJ
+System:                  865.94 MJ
+APSS 0 :                 865.94 MJ
+APSS 2 :                  62.36 MJ
+APSS 3 :                  28.03 MJ
+APSS 4 :                 223.05 MJ
+APSS 5 :                 199.02 MJ
+APSS 6 :                  97.62 MJ
+APSS 7 :                  97.54 MJ
+APSS 8 :                 138.28 MJ
+APSS 9 :                   8.13 MJ
+APSS 11 :                  8.13 MJ
+APSS 12 :                  8.13 MJ
+APSS 14 :                104.14 MJ
+APSS 15 :                 86.58 MJ
+Chip 0 Vdd:               30.75 A  (lowest = +17.00 A, highest = +178.25 A)
+Chip 0 Vdn:               26.00 A  (lowest = +24.50 A, highest = +30.38 A)
+Chip 8 Vdd:               15.13 A  (lowest =  +9.50 A, highest = +153.00 A)
+Chip 8 Vdn:               22.50 A  (lowest = +21.50 A, highest = +25.25 A)
+
