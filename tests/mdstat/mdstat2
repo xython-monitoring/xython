@@ -1,0 +1,8 @@
+Personalities : [raid6] [raid5] [raid4] [linear] [multipath] [raid0] [raid1] [raid10] 
+md1 : active raid5 sdc1[1] sdh1[2] sdg1[0]
+      3907023872 blocks level 5, 64k chunk, algorithm 2 [3/3] [UUU]
+
+md0 : inactive sdd1[0](S) sdf1[3](S) sde1[2](S) sdb1[1](S)
+      3907039744 blocks
+
+unused devices: <none>
