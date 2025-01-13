@@ -1,0 +1,5 @@
+Personalities : [raid6] [raid5] [raid4] [linear] [multipath] [raid0] [raid1] [raid10]
+md2 : active raid5 sde1[1] sdd1[0] sdf1[3]
+      7813565440 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/2] [U_U]
+      [>....................]  recovery =  2.8% (110505584/3906782720) finish=445.1min speed=142132K/sec
+      bitmap: 21/30 pages [84KB], 65536KB chunk

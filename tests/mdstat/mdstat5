@@ -1,0 +1,16 @@
+Personalities : [raid1] [linear] [raid0] [raid10] [raid6] [raid5] [raid4]
+md1 : inactive sdb3[6](S) sdd3[5](S) sdc3[4](S)
+ 11716348668 blocks super 1.0
+
+md4 : active raid1 sdd2[4](S) sdc2[3](S) sdb2[2] sda2[0]
+ 530128 blocks super 1.0 [2/2] [UU]
+
+md13 : active raid1 sdd4[6] sdc4[5] sdb4[4] sda4[0]
+ 458880 blocks super 1.0 [4/4] [UUUU]
+ bitmap: 1/8 pages [4KB], 32KB chunk
+
+md9 : active raid1 sdd1[4] sdc1[5] sdb1[6] sda1[0]
+ 530112 blocks super 1.0 [4/4] [UUUU]
+ bitmap: 0/9 pages [0KB], 32KB chunk
+
+unused devices: 

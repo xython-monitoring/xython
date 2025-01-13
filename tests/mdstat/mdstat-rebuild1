@@ -1,0 +1,6 @@
+Personalities : [raid6] [raid5] [raid4] 
+md0 : active raid6 sde1[0] sdg1[9](F) sdh1[8](F) sdi1[6](F) sdj1[7](F) sdd1[4] sdc1[3] sdb1[5] sdf1[1]
+      2926751232 blocks super 1.2 level 6, 512k chunk, algorithm 2 [9/5] [UUUUU____]
+      [>....................]  reshape =  0.0% (112640/975583744) finish=142795.3min speed=113K/sec
+
+unused devices: <none>

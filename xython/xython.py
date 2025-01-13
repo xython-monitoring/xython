@@ -281,6 +281,8 @@ class xythonsrv:
         self.tz = 'Europe/Paris'
         self.tls_cert = None
         self.tls_key = None
+        self.colnames = {}
+        self.colnames['mdstat'] = 'raid'
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -3165,22 +3167,65 @@ class xythonsrv:
     # TODO
     def parse_mdstat(self, hostname, buf, sender):
         now = int(time.time())
-        devices = []
         color = 'green'
-        sbuf = f"{xytime(now, self.tz)} - RAID Ok\n"
+        sbuf = f"{xytime(now, self.tz)} - mdstat Ok\n"
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: parse_mdstat: host is None for {hostname}")
             return 2
         sline = buf.split("\n")
+        mdname = None
+        mdcolor = 'clear'
+        nummd = 0
         for line in sline:
-            mdname = re.search(r"^[a-zA-Z0-9]\s:", line)
-            if mdname is None:
+            if len(line) < 1:
+                if mdname is not None:
+                    color = setcolor(mdcolor, color)
+                    sbuf += "</fieldset>\n"
+                mdname = None
                 continue
-        if len(devices) == 0:
+            if line[0] == ' ':
+                if "recovery =" in line or "reshape =" in line:
+                    mdcolor = 'yellow'
+                    sbuf += f"{line}\n&yellow {mdname} is rebuilding\n"
+                    continue
+                md = re.search(r"\s+[0-9]+ blocks.*\[([0-9]+/[0-9]+)\] \[([U_]+)\]", line)
+                if md is not None:
+                    nums = md.group(1)
+                    numss = nums.split('/')
+                    if len(numss) != 2:
+                        sbuf += f"{line}\n"
+                        self.error(f'ERROR: invalid mdstat line {line}')
+                        continue
+                    need = int(numss[0])
+                    have = int(numss[1])
+                    if have == need:
+                        sbuf += f'{line}\n&green {mdname} is ok\n'
+                    if have < need:
+                        sbuf += f'{line}\n&red {mdname} is missing devices\n'
+                        mdcolor = 'red'
+                    continue
+                sbuf += f"{line}\n"
+                continue
+            if mdname is not None:
+                color = setcolor(mdcolor, color)
+                sbuf += "</fieldset>\n"
+            mdname = None
+            mdcolor = 'green'
+            md = re.search(r"^([a-zA-Z0-9]+)\s:", line)
+            if md is None:
+                sbuf += f"{line}\n"
+                continue
+            mdname = md.group(1)
+            if mdname in ['Personalities', 'unused devices']:
+                sbuf += f"{line}\n"
+                mdname = None
+                continue
+            nummd += 1
+            sbuf += f"<fieldset><legend>{mdname}</legend>\n{line}\n"
+        if nummd == 0:
             return 0
-        sbuf += buf
-        ret = self.column_update(hostname, "raid", color, now, sbuf, self.ST_INTERVAL + 120, sender)
+        ret = self.column_update(hostname, self.colnames["mdstat"], color, now, sbuf, self.ST_INTERVAL + 120, sender)
         return ret
 
     # TODO
@@ -3929,6 +3974,15 @@ class xythonsrv:
         except sqlite3.OperationalError as e:
             self.error(f"ERROR: fail to commit sqlite {self.db} {str(e)}")
             sys.exit(1)
+        for column in ['mdstat']:
+            cname = self.xython_getvar(f'COLUMN_NAME_{column}')
+            if cname is None:
+                continue
+            if is_valid_column(cname):
+                self.debug(f"DEBUG: mdstat column renamed from {self.colnames[column]} to {cname}")
+                self.colnames[column] = cname
+            else:
+                self.error(f"ERROR: COLUMN_NAME_{column} give a bad name {cname}")
         ts_end = time.time()
         self.debug("STAT: init loaded hist in %f" % (ts_end - ts_start))
 

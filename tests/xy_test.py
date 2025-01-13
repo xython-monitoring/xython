@@ -1019,7 +1019,7 @@ def test_full():
     X.sqc.execute('SELECT * FROM columns where hostname == "test1"')
     results = X.sqc.fetchall()
     # TODO check each column (disk, cpu, etc..) exists
-    expected_cols = ['disk', 'cpu', 'coltest', 'info', 'inode', 'memory', 'ports', 'procs', 'sensor']
+    expected_cols = ['disk', 'cpu', 'coltest', 'info', 'inode', 'memory', 'ports', 'procs', 'sensor', 'mdstat']
     if has_rrdtool:
         expected_cols.append('xrrd')
     assert len(results) == len(expected_cols)
@@ -1051,6 +1051,9 @@ def test_full():
     lstat = os.stat(X.xt_logdir + '/logging.log')
     final_size = lstat.st_size
     assert final_size > size_orig
+
+    # CHECK handling of COLUMN_NAME_xxxx
+    assert X.colnames["mdstat"] == "mdraid"
 
     setup_clean(X)
 
@@ -1940,5 +1943,74 @@ def test_dmesg():
     dmesgred = f.read()
     f.close()
     X.parse_dmesg("test01", dmesgred, "fake")
+
+    setup_clean(X)
+
+def test_mdstat():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-sensors/'
+    setup_testdir(X, 'mdstat')
+    X.lldebug = True
+    X.init()
+
+    f = open("./tests/mdstat/mdstat1")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat1")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat2")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat3")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat4")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat5")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat6")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat-rebuild1")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat-rebuild2")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat-rebuild3")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat-rebuild4")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
+
+    f = open("./tests/mdstat/mdstat-corrupt")
+    md1 = f.read()
+    f.close()
+    X.parse_mdstat("test01", md1, "fake")
 
     setup_clean(X)
