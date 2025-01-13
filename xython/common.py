@@ -220,6 +220,8 @@ def xydelay(s):
 
 
 def is_valid_hostname(hostname):
+    if hostname is None:
+        return False
     # should not start or end with .
     if hostname[0] == '.' or hostname[-1] == '.':
         return False
@@ -227,6 +229,8 @@ def is_valid_hostname(hostname):
 
 
 def is_valid_column(column):
+    if column is None:
+        return False
     return re.match("^[a-zA-Z0-9_-]*$", column)
 
 
