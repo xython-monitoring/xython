@@ -182,6 +182,7 @@ def test_validator():
     assert not is_valid_hostname("test/test")
     assert not is_valid_hostname("test*")
     assert not is_valid_hostname("teséàçö")
+    assert not is_valid_hostname(None)
     assert is_valid_column("test")
     assert is_valid_column("test46")
     assert is_valid_column("test_46")
@@ -193,8 +194,10 @@ def test_validator():
     assert not is_valid_column("test/")
     assert not is_valid_column("test*")
     assert not is_valid_column("teséàçö")
+    assert not is_valid_column(None)
     assert not is_valid_color("teséàçö")
     assert is_valid_color("green")
+    assert not is_valid_color(None)
 
 
 def test_read_xymonserver():
