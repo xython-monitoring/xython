@@ -262,6 +262,7 @@ class xssh:
         self.port = 22
         self.timeout = 60
         self.key = None
+        self.one_by_one = False
         tokens = url.split(';')
         if len(tokens) <= 1:
             self.dret['color'] = 'red'
@@ -393,24 +394,27 @@ class xssh:
             action['type'] = 'client'
             self.actions.append(action)
             return True
+        if token == 'hack1by1':
+            self.one_by_one = True
+            return True
         print(f"DEBUG: RSSH unknow keyword {token}")
         self.dret["txt"] = f"status+11m {self.hostname}.tssh red\n&red unknown parameter {token}\n"
         return False
 
-    def run(self):
-        print('DEBUG: RSSH run')
+    def run(self, state = None):
+        print(f'DEBUG: RSSH run state={state}')
         if len(self.actions) == 0:
-            print('DEBUG: RSSH no action setup')
+            # print('DEBUG: RSSH no action setup')
             self.dret['color'] = 'red'
             self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red no actions"
             return self.dret
         if self.dret['color'] == 'red':
-            print('DEBUG: RSSH already red')
-            print(self.dret)
+            # print('DEBUG: RSSH already red')
+            # print(self.dret)
             return self.dret
         client = SSHClient()
         client.load_system_host_keys()
-        print('DEBUG: RSSH run2')
+        # print('DEBUG: RSSH run2')
         # TODO permit to choose the policy
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
         # logger remove the paramiko.ssh_exception.IncompatiblePeer log
@@ -446,6 +450,22 @@ class xssh:
             self.dret["txt"] = f"status+10m {self.hostname}.tssh red\n&red Failed to connect(TimeoutError) on {self.chostname}: {str(e)}\n"
             self.dret["color"] = 'red'
             return self.dret
+
+        if state == 'client-upload':
+            ret = self.upload(client)
+            client.close()
+            return ret
+
+        if state == 'client-chmod':
+            ret = self.chmod(client)
+            client.close()
+            return ret
+
+        if state == 'client-run':
+            ret = self.doclient(client)
+            client.close()
+            return ret
+
 
         for action in self.actions:
             acolor = 'green'
@@ -483,6 +503,45 @@ class xssh:
         self.dret["txt"] += f"\nSeconds: {test_duration}\n"
         return self.dret
 
+    def upload(self, client):
+        transport = client.get_transport()
+        try:
+            with transport.open_channel(kind='session') as channel:
+                file_data = open('/usr/bin/xython-client', 'rb').read()
+                channel.exec_command('cat > /tmp/xython-client')
+                channel.sendall(file_data)
+                self.dret["txt"] += 'Upload OK\n<br>'
+        except paramiko.ssh_exception.SSHException as e:
+            self.dret["color"] = 'red'
+            self.dret["txt"] = f'ERROR: Failed to upload xython-client {str(e)}'
+            return False
+        return True
+
+    def chmod(self, client):
+        transport = client.get_transport()
+        try:
+            with transport.open_channel(kind='session') as channel:
+                channel.exec_command('chmod 770 /tmp/xython-client')
+                self.dret["txt"] += 'Chmod OK\n<br>'
+        except paramiko.ssh_exception.SSHException as e:
+            self.dret["color"] = 'red'
+            self.dret["txt"] += f'ERROR: Failed to chmod xython-client {str(e)}'
+            return False
+        return True
+
+    def doclient(self, client):
+        try:
+            stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
+        except paramiko.ssh_exception.SSHException as e:
+            self.dret["color"] = 'red'
+            self.dret["txt"] += f'ERROR: Failed to run xython-client {str(e)}'
+            return False
+        errorlog = '"'.join(stderr.readlines())
+        if errorlog:
+            self.dret["color"] = setcolor('yellow', self.dret["color"])
+        self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
+        self.dret["data"] = ''.join(stdout.readlines())
+        return True
 
 @app.task
 def do_cssh(hostname, urls):
@@ -591,6 +650,11 @@ def do_cssh(hostname, urls):
 @app.task
 def do_tssh(hostname, urls):
     tssh = xssh(hostname, urls[0])
+    if tssh.one_by_one:
+        tssh.run(state = 'client-upload')
+        tssh.run(state = 'client-chmod')
+        tssh.run(state = 'client-run')
+        return tssh.dret
     return tssh.run()
 
 
@@ -666,7 +730,7 @@ def dohttp(hostname, urls, column):
         headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
         need_httpcode = 200
         hdata += f'<fieldset><legend>{url}</legend>'
-        print(f'DEBUG: dohttp: check {url}')
+        # print(f'DEBUG: dohttp: check {url}')
         tokens = url.split(';')
         url = tokens.pop(0)
         for token in tokens:
@@ -901,7 +965,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
     verify = ssl.CERT_REQUIRED
     while i < len(tokens):
         option = tokens[i]
-        print(f"DEBUG: generic proto ssl: check {option}")
+        # print(f"DEBUG: generic proto ssl: check {option}")
         if tokens[i].isdigit():
             port = int(tokens[i])
         elif tokens[i][0:7] == 'column=':
@@ -916,7 +980,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
                 return dret
         elif tokens[i][0:7] == 'verify=':
             verify = ssl.CERT_NONE
-            print(f"DEBUG: no certificate check for {thostname}")
+            # print(f"DEBUG: no certificate check for {thostname}")
         elif tokens[i][0:9] == 'hostname=':
             hs = tokens[i].split('=')
             thostname = hs[1]
@@ -932,7 +996,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
         dret['txt'] = '&red ERROR: port is out of range'
         return dret
 
-    print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} timeout={timeout}")
+    # print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} timeout={timeout}")
 
     try:
         context = ssl.create_default_context()
@@ -983,7 +1047,7 @@ def do_generic_proto_ssl(hostname, address, protoname, port, url, p_send, p_expe
         # errno 113 No route to host
         dret["txt"] = str(e) + "\n\n"
     dret["txt"] += f"\nSeconds: {time.time() - ts_start}\n"
-    print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} ret={dret}")
+    # print(f"GENERIC TLS PROTOCOLS addr={address} port={port} proto={protoname} url={url} thostname={thostname} ret={dret}")
     return dret
 
 
@@ -1027,7 +1091,7 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
     timeout = 60
 
     tokens = url.split(':')
-    print(f"DEBUG: {url} {tokens} {len(tokens)} p_send={p_send} p_expect={p_expect}")
+    # print(f"DEBUG: {url} {tokens} {len(tokens)} p_send={p_send} p_expect={p_expect}")
     i = 1
     while i < len(tokens):
         option = tokens[i]
