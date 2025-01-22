@@ -678,6 +678,7 @@ def ping(hostname, t, doipv4, doipv6):
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
+        dret["txt"] += "\nTested via ping\n"
         re_rtts = re.search(r"[0-9]+.[0-9]*/[0-9]+.[0-9]*/[0-9]+.[0-9]*/", hdata)
         if re_rtts is not None:
             rtts = re_rtts.group(0)
@@ -692,6 +693,7 @@ def ping(hostname, t, doipv4, doipv6):
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
+        dret["txt"] += "\nTested via ping -4\n"
         re_rtts = re.search(r"[0-9]+.[0-9]*/[0-9]+.[0-9]*/[0-9]+.[0-9]*/", hdata)
         if re_rtts is not None:
             rtts = re_rtts.group(0)
@@ -706,6 +708,7 @@ def ping(hostname, t, doipv4, doipv6):
             dret["color"] = 'red'
         hdata = ret.stdout.decode("UTF8") + ret.stderr.decode("UTF8")
         dret["txt"] += hdata
+        dret["txt"] += "\nTested via ping -6\n"
     test_duration = time.time() - ts_start
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     dret["timing"] = test_duration
