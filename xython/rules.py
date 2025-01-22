@@ -80,6 +80,24 @@ class xy_rule_disks():
             self.rules[fs] = xrd
         return True
 
+    def add2(self, fs, ignore, warn, panic):
+        regex = False
+        if fs[0] == '%':
+            fs = fs[1:]
+            regex = True
+        if ignore:
+            if regex:
+                self.rignore.append(fs)
+            else:
+                self.ignore[fs] = True
+            return True
+        xrd = xy_rule_disk(fs, warn, panic)
+        if regex:
+            self.rrules.append(xrd)
+        else:
+            self.rules[fs] = xrd
+        return True
+
     def check(self, line):
         ret = {}
         line = re.sub(r"\s+", ' ', line)
@@ -158,6 +176,30 @@ class xy_rule_sensors():
 
     def dump(self):
         print(f"SENSORS RULE {self.name} warn={self.warn} panic={self.panic}")
+
+    def add2(self, adapter, sname, ignore, warn, panic, mwarn=SENSOR_DISABLE, mpanic=SENSOR_DISABLE):
+        regex = False
+        if adapter[0] == '%':
+            adapter = adapter[1:]
+            regex = True
+        if adapter not in self.rules:
+            self.rules[adapter] = {}
+            self.rules[adapter]["rules"] = {}
+            self.rules[adapter]["regex"] = regex
+        if ignore:
+            self.rules[adapter]["rules"][sname] = {}
+            self.rules[adapter]["rules"][sname]["ignore"] = True
+            return True
+        xrd = xy_rule_sensor(warn, panic, mwarn, mpanic)
+        regex = False
+        if sname[0] == '%':
+            sname = sname.lstrip('%')
+            regex = True
+        # print(f"DEBUG: sname is {sname}")
+        self.rules[adapter]["rules"][sname] = {}
+        self.rules[adapter]["rules"][sname]["rule"] = xrd
+        self.rules[adapter]["rules"][sname]["regex"] = regex
+        return True
 
     def add(self, sensorruleline):
         # print("===========================================================")
@@ -573,34 +615,10 @@ class xy_rule_port():
         self.min = 1
         self.max = -1
         self._count = 0
+        self.color = 'red'
 
     def dump(self):
         print(f"PORT RULE {self.local} {self.state} {self.rstate} TEXT={self.text} min={self.min} max={self.max}")
-
-    def init_from(self, portruleline):
-        self.otext = portruleline
-        tokens = tokenize(portruleline)
-        for token in tokens:
-            toks = token.split("=")
-            if len(toks) != 2:
-                xlog_error(f"ERROR: rule_port: init toklen={len(toks)} token={token}")
-                return None
-            left = toks[0]
-            right = toks[1]
-            if toks[0] == 'LOCAL':
-                if right[0] == '%':
-                    self.local = right[1:]
-                else:
-                    self.local = right
-            elif left == 'STATE' or left == 'state':
-                if right[0] == '%':
-                    self.rstate = right[1:]
-                else:
-                    self.state = right
-            elif toks[0] == 'TEXT':
-                self.text = right
-            else:
-                xlog_error("ERROR: UNHANDLED %s" % left)
 
     def check(self, data):
         if self.text is None:

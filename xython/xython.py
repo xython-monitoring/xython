@@ -55,6 +55,7 @@ from .common import xyevent_to_ts
 from .common import gcolor
 from .common import gif
 from .common import setcolor
+from .common import tokenize
 from .common import xydhm
 from .common import xydelay
 from .common import COLORS
@@ -68,6 +69,7 @@ from .rules import xy_rule_proc
 from .rules import xy_rule_mem
 from .rules import xy_rule_cpu
 from .rules import xy_rule_sensors
+from .rules import SENSOR_DISABLE
 
 RRD_COLOR = ["0000FF", "FF0000", "00CC00", "FF00FF", "555555", "880000", "000088", "008800",
              "008888", "888888", "880088", "FFFF00", "888800", "00FFFF", "00FF00", "AA8800",
@@ -85,7 +87,7 @@ class xy_protocol:
 
 
 class xy_host:
-    def __init__(self, name):
+    def __init__(self, name, xclass='unset'):
         self.last_ping = 0
         self.name = name
         self.aliases = []
@@ -112,7 +114,6 @@ class xy_host:
         self.snmp_columns = []
         self.snmp_community = 'public'
         # last time we read analysis
-        self.time_read_analysis = 0
         self.rules["DISK"] = None
         self.rules["INODE"] = None
         self.rules["PORT"] = []
@@ -130,6 +131,7 @@ class xy_host:
         self.pages = ['all', 'nongreen']
         self.dmesg_last_ts = -1
         self.dmesg = {}
+        self.xclass = xclass
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -159,6 +161,68 @@ class xy_host:
         for test in self.tests:
             test.dump()
 
+    def add_rule_proc(self, setting):
+        # first verify there is no rule with same pattern
+        name = setting.name
+        for rule in list(self.rules["PROC"]):
+            if rule.name == name:
+                self.rules["PROC"].remove(rule)
+        self.rules["PROC"].append(setting)
+
+    def add_rule_port(self, setting):
+        # first verify there is no rule with same pattern
+        for rule in list(self.rules["PORT"]):
+            if rule.local == setting.local \
+                and rule.state == setting.state \
+                and rule.rstate == setting.rstate:
+                self.rules["PORT"].remove(rule)
+        self.rules["PORT"].append(setting)
+
+class host_selector:
+    def __init__(self):
+        self.hosts = []
+        self.exhosts = []
+        self.xclass = []
+        self.exclass = []
+        self.regex = None
+        self.exregex = None
+        self.all = False
+
+    def setregex(self, r, exclude=False):
+        if r[0] != '%':
+            return False
+        if exclude:
+            self.exregex = r[1:]
+        else:
+            self.regex = r[1:]
+        # TODO compile regex for validating it
+
+    def match(self, H):
+        hostname = H.name
+        xclass = H.xclass
+        if hostname in self.exhosts:
+            return False
+        if xclass in self.exclass:
+            return False
+        if self.exregex:
+            ret = re.search(self.exregex, hostname)
+            # print(f"DEBUG: SELECTOR check {hostname} against {self.exregex} ret={ret}")
+            if ret:
+                return False
+        if self.all:
+            return True
+        if hostname in self.hosts:
+            return True
+        if xclass in self.xclass:
+            return True
+        if self.regex:
+            ret = re.search(self.regex, hostname)
+            if ret:
+                return True
+        return False
+
+    def dump(self):
+        print(f"DEBUG: H={self.hosts} EX={self.exhosts} ALL={self.all} R={self.regex} EXR={self.exregex}")
 
 class xytest:
     def __init__(self, hostname, ttype, url, port, column):
@@ -219,6 +283,7 @@ class xythonsrv:
         self.ts_read_configs = time.time()
         self.ts_genrrd = time.time()
         self.ts_xythond = time.time()
+        self.time_read_analysis = 0
         self.expires = []
         self.stats = {}
         self.uptime_start = time.time()
@@ -2445,20 +2510,444 @@ class xythonsrv:
                 self.error("PIKA TODO")
         self.stat("SCHEDULER", time.time() - now)
 
-    # read analysis.cfg
-    def read_analysis(self, hostname):
-        H = self.find_host(hostname)
+    def analysis_disk(self, ltoks, name):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        rd = {}
+        rd["ignore"] = False
+        rd["warn"] = 90
+        rd["panic"] = 95
+        # we need at least 2 tokens
+        if len(ltoks) < 2:
+            self.error(f'ERROR: missing {name} parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        pattern = ltoks.pop(0)
+        # spetial * case
+        if pattern == '*':
+            pattern = '%.*'
+        # self.debug(f"DEBUG: {name} pattern {pattern}")
+        rd["fs"] = pattern
+        # either numeric, IGNORE, or numericU
+        arg = ltoks.pop(0)
+        if arg.isnumeric():
+            # self.debug(f"DEBUG: {name} warn {arg}")
+            rd["warn"] = int(arg)
+        elif arg == 'IGNORE':
+            # self.debug(f"DEBUG: {name} IGNORE")
+            ret['ltoks'] = ltoks
+            rd["ignore"] = True
+            ret['setting'] = rd
+            return ret
+        elif arg[-1] == 'U':
+            # self.debug(f"DEBUG: {name} warnU {arg}")
+            arg = arg[:-1]
+            rd["warn"] = int(arg)
+        else:
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            ret['setting'] = rd
+            return ret
+        if len(ltoks) == 0:
+            self.error(f'ERROR: missing {name} panic parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        arg = ltoks.pop(0)
+        if arg.isnumeric():
+            # self.debug(f"DEBUG: {name} panic {arg}")
+            rd["panic"] = int(arg)
+        elif arg[-1] == 'U':
+            # self.debug(f"DEBUG: {name} panicU {arg}")
+            arg = arg[:-1]
+            rd["panic"] = int(arg)
+        else:
+            self.error(f'ERROR: bad {name} panic parameter in {ltoks}')
+            ret['err'] = True
+            ret['ltoks'] = ltoks
+            return ret
+        ret['ltoks'] = ltoks
+        ret['setting'] = rd
+        return ret
+
+    def analysis_load(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        rl = {}
+        # we need at least 2 tokens
+        if len(ltoks) < 2:
+            self.error(f'ERROR: missing 2 LOAD parameters in {ltoks}')
+            ret['err'] = True
+            return ret
+        arg = ltoks.pop(0)
+        try:
+            warn = float(arg)
+        except ValueError:
+            self.error(f'ERROR: LOAD bad warn in {ltoks}')
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            ret['err'] = True
+            return ret
+        rl["loadwarn"] = warn
+        # self.debug(f"DEBUG: LOAD warn {warn}")
+        arg = ltoks.pop(0)
+        try:
+            panic = float(arg)
+        except ValueError:
+            self.error(f'ERROR: LOAD bad panic in {arg}')
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            ret['err'] = True
+            return ret
+        # self.debug(f"DEBUG: LOAD panic {panic}")
+        rl["loadpanic"] = panic
+        ret['ltoks'] = ltoks
+        ret['setting'] = rl
+        return ret
+
+    def analysis_memory(self, ltoks, name):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        rm = {}
+        # we need at least 2 tokens
+        if len(ltoks) < 2:
+            self.error(f'ERROR: missing {name} parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        arg = ltoks.pop(0)
+        if len(arg) == 0:
+            self.error(f'ERROR: {name} bad warn in {ltoks}')
+            ret['err'] = True
+            return ret
+        try:
+            warn = int(arg)
+        except ValueError:
+            self.error(f'ERROR: {name} bad warn in {ltoks}')
+            ret['err'] = True
+            return ret
+        # self.debug(f"DEBUG: {name} warn {warn}")
+        rm["warn"] = warn
+        arg = ltoks.pop(0)
+        if len(arg) == 0:
+            self.error(f'ERROR: {name} bad panic in {ltoks}')
+            ret['err'] = True
+            return ret
+        try:
+            panic = int(arg)
+        except ValueError:
+            self.error(f'ERROR: {name} bad panic in {ltoks}')
+            ret['err'] = True
+            return ret
+        rm["panic"] = panic
+        # self.debug(f"DEBUG: {name} panic {panic}")
+        ret['ltoks'] = ltoks
+        ret["setting"] = rm
+        return ret
+
+    def analysis_up(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        ru = {}
+        # we need at least 2 tokens
+        if len(ltoks) == 0:
+            self.error(f'ERROR: missing UP parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        arg = ltoks.pop(0)
+        bootlimit = xydelay(arg)
+        if bootlimit is None:
+            self.error(f'ERROR: UP bad bootlimit in {ltoks}')
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            ret['err'] = True
+            return ret
+        # self.debug(f"DEBUG: UP bootlimit {bootlimit}")
+        ru["bootlimit"] = bootlimit
+        if len(ltoks) == 0:
+            ret['ltoks'] = ltoks
+            ret["setting"] = ru
+            return ret
+        arg = ltoks.pop(0)
+        toolonglimit = xydelay(arg)
+        if toolonglimit is None:
+            self.error(f'ERROR: UP bad toolonglimit in {ltoks}')
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            ret['err'] = True
+            return ret
+        # self.debug(f"DEBUG: UP toolonglimit {toolonglimit}")
+        ru["toolonglimit"] = toolonglimit
+        if len(ltoks) == 0:
+            ret['ltoks'] = ltoks
+            ret["setting"] = ru
+            return ret
+        color = ltoks.pop(0)
+        if not is_valid_color(color):
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            return ret
+        self.debug(f"DEBUG: UP color {color}")
+        ru["upcolor"] = color
+        ret['ltoks'] = ltoks
+        ret["setting"] = ru
+        return ret
+
+    def analysis_log(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        if len(ltoks) < 2:
+            self.error(f'ERROR: missing LOG parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        logfilename = ltoks.pop(0)
+        pattern = ltoks.pop(0)
+        while len(ltoks) > 0:
+            arg = ltoks.pop(0)
+            if arg == "OPTIONAL":
+                TODO = 1
+            elif "COLOR=" in arg:
+                TODO = 1
+            elif "IGNORE=" in arg:
+                TODO = 1
+            else:
+                ltoks.insert(0, arg)
+                ret['ltoks'] = ltoks
+                return ret
+        ret['ltoks'] = ltoks
+        return ret
+
+    def analysis_port(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        if len(ltoks) == 0:
+            self.error(f'ERROR: missing PORT parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        rp = xy_rule_port()
+        while len(ltoks):
+            arg = ltoks.pop(0)
+            args = arg.split('=')
+            if len(args) != 2:
+                ret['err'] = True
+                return ret
+            left = args[0].upper()
+            value = args[1]
+            if len(left) == 0 or len(value) == 0:
+                ret['err'] = True
+                return ret
+            if left == 'LOCAL':
+                if value[0] == '%':
+                    rp.local = value[1:]
+                else:
+                    rp.local = value
+            elif left == 'EXLOCAL':
+                self.debug("DEBUG: PORT: {left} is not handled yet")
+            elif left == 'REMOTE':
+                self.debug("DEBUG: PORT: {left} is not handled yet")
+            elif left == 'EXREMOTE':
+                self.debug("DEBUG: PORT: {left} is not handled yet")
+            elif left == 'STATE':
+                if value[0] == '%':
+                    rp.rstate = value[1:]
+                else:
+                    rp.state = value
+            elif left == 'EXSTATE':
+                self.debug("DEBUG: PORT: {left} is not handled yet")
+            elif left == 'MIN':
+                try:
+                    rp.min = int(value)
+                except ValueError:
+                    ret['err'] = True
+                    return ret
+            elif left == 'MAX':
+                try:
+                    rp.max = int(value)
+                except ValueError:
+                    ret['err'] = True
+                    return ret
+            elif left == 'COLOR':
+                rp.color = value
+            elif left == 'TRACK':
+                self.debug("DEBUG: PORT: {left} is not handled yet")
+            elif left == 'TEXT':
+                rp.text = value
+            else:
+                self.error(f"ERROR: PORT: unknow keyword {left}")
+                ret['err'] = True
+                return ret
+        ret['ltoks'] = ltoks
+        ret['setting'] = rp
+        return ret
+
+    def analysis_proc(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        if len(ltoks) == 0:
+            self.error(f'ERROR: missing PROC parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        rp = xy_rule_proc()
+        pattern = ltoks.pop(0)
+        # self.debug(f"DEBUG: PROC pattern {pattern}")
+        rp.name = pattern
+        if len(ltoks) == 0:
+            ret['ltoks'] = ltoks
+            ret['setting'] = rp
+            return ret
+        tmin = ltoks.pop(0)
+        if not tmin.isnumeric():
+            self.error(f'ERROR: PROC invalid min value in {ltoks}')
+            ltoks.insert(0, tmin)
+            ret['ltoks'] = ltoks
+            ret['err'] = True
+            return ret
+        # self.debug(f"DEBUG: PROC min {tmin}")
+        rp.min = int(tmin)
+        if len(ltoks) == 0:
+            ret['ltoks'] = ltoks
+            ret['setting'] = rp
+            return ret
+        tmax = ltoks.pop(0)
+        if not tmax.isnumeric():
+            self.error(f'ERROR: PROC invalid max value in {ltoks}')
+            ltoks.insert(0, tmax)
+            ret['ltoks'] = ltoks
+            ret['err'] = True
+            return ret
+        # self.debug(f"DEBUG: PROC max {tmax}")
+        rp.max = int(tmax)
+        while len(ltoks) > 0:
+            # now we can have color/TEXT/TRACK
+            n = ltoks.pop(0)
+            if "TEXT=" in n:
+                self.debug(f"DEBUG: PROC TEXT")
+                args = n.split('=')
+                arg = args[1]
+                if len(arg) == 0:
+                    self.error(f'ERROR: PROC: nothing after TEXT=')
+                    ret['ltoks'] = ltoks
+                    ret['err'] = True
+                    return ret
+                rp.text = arg
+            elif "TRACK=" in n:
+                self.debug(f"DEBUG: PROC TRACK")
+            elif is_valid_color(n):
+                # self.debug(f"DEBUG: PROC color {n}")
+                rp.color = n
+            else:
+                ltoks.insert(0, n)
+                ret['ltoks'] = ltoks
+                ret['setting'] = rp
+                return ret
+        ret['ltoks'] = ltoks
+        ret['setting'] = rp
+        return ret
+
+    def analysis_sensor(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        rs = {}
+        rs["ignore"] = False
+        if len(ltoks) < 3:
+            self.error(f'ERROR: missing SENSOR parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        rs["adapter"] = ltoks.pop(0)
+        rs["sname"] = ltoks.pop(0)
+        rs["warn"] = SENSOR_DISABLE
+        rs["panic"] = SENSOR_DISABLE
+        rs["mwarn"] = SENSOR_DISABLE
+        rs["mpanic"] = SENSOR_DISABLE
+        arg = ltoks.pop(0)
+        if arg == 'IGNORE':
+            rs["ignore"] = True
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        if len(ltoks) == 0:
+            self.error(f'ERROR: missing SENSOR parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        try:
+            rs["warn"] = float(arg)
+        except ValueError:
+            self.error(f'ERROR: SENSOR: invalid warn value {arg}')
+            ret['err'] = True
+            return ret
+        arg = ltoks.pop(0)
+        try:
+            rs["panic"] = float(arg)
+        except ValueError:
+            self.error(f'ERROR: SENSOR: invalid warn value {arg}')
+            ret['err'] = True
+            return ret
+        if len(ltoks) < 2:
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        arg = ltoks.pop(0)
+        try:
+            rs["mwarn"] = float(arg)
+        except ValueError:
+            # we cannot know if it is bad or a selector
+            ltoks.insert(0, arg)
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        arg = ltoks.pop(0)
+        try:
+            rs["mpanic"] = float(arg)
+        except ValueError:
+            self.error(f'ERROR: SENSOR: invalid min panic value {arg}')
+            ret['err'] = True
+            return ret
+        ret['ltoks'] = ltoks
+        ret['setting'] = rs
+        return ret
+
+    def analysis_svc(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        if len(ltoks) < 1:
+            self.error(f'ERROR: missing SVC parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        servicename = ltoks.pop(0)
+        self.debug(f"DEBUG: SVC: found servicename {servicename}")
+        while len(ltoks) > 0:
+            arg = ltoks.pop(0)
+            if "startup=" in arg:
+                self.debug(f"DEBUG: SVC: found startup {arg}")
+                TODO = 1
+            elif "status=" in arg:
+                self.debug(f"DEBUG: SVC: found status {arg}")
+                TODO = 1
+            else:
+                self.debug("DEBUG: SVC: {arg} not part of us")
+                ltoks.insert(0, arg)
+                ret['ltoks'] = ltoks
+                return ret
+        ret['ltoks'] = ltoks
+        return ret
+
+
+    # grammar [setting][rule][rule]*
+    def read_analysis2(self):
         mtime = os.path.getmtime(f"{self.etcdir}/analysis.cfg")
         # self.debug(f"DEBUG: read_analysis: compare mtime={mtime} and {H.time_read_analysis}")
-        if H.time_read_analysis < mtime:
-            H.time_read_analysis = mtime
+        if self.time_read_analysis < mtime:
+            self.time_read_analysis = mtime
         else:
             return self.RET_OK
-        H.rules["PROC"] = []
-        H.rules["PORT"] = []
-        f = open(f"{self.etcdir}/analysis.cfg", 'r')
-        currhost = None
-        self.rules = {}
+        # TODO reset all rules
         self.rules["DISK"] = xy_rule_disks()
         self.rules["INODE"] = xy_rule_disks()
         self.rules["PORT"] = []
@@ -2468,140 +2957,6 @@ class xythonsrv:
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
-        for line in f:
-            line = line.rstrip()
-            line = re.sub(r"\s+", " ", line)
-            line = re.sub(r"^\s+", "", line)
-            if len(line) == 0:
-                continue
-            if line[0] == '#':
-                continue
-            if line[0:4] == 'HOST':
-                currhost = line[5:]
-                continue
-            if line[0:7] == 'DEFAULT':
-                currhost = "DEFAULT"
-                continue
-            memoryrule = None
-            if line[0:7] == 'MEMSWAP':
-                memoryrule = 'MEMSWAP'
-                remain = line[8:]
-            if line[0:6] == 'MEMACT':
-                memoryrule = 'MEMACT'
-                remain = line[7:]
-            if line[0:7] == 'MEMPHYS':
-                memoryrule = 'MEMPHYS'
-                remain = line[8:]
-            if memoryrule is not None:
-                rm = xy_rule_mem()
-                rm.init_from(remain)
-                if currhost == 'DEFAULT':
-                    self.rules[memoryrule] = rm
-                else:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    H.rules[memoryrule] = rm
-            elif line[0:4] == 'LOAD' or line[0:2] == 'UP':
-                if self.rules["CPU"] is None:
-                    rc = xy_rule_cpu()
-                else:
-                    rc = self.rules["CPU"]
-                if currhost == 'DEFAULT':
-                    rc.init_from(line)
-                    self.rules["CPU"] = rc
-                if currhost == hostname:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    if H.rules["CPU"] is None:
-                        rc = xy_rule_cpu()
-                    else:
-                        rc = H.rules["CPU"]
-                    rc.init_from(line)
-                    H.rules["CPU"] = rc
-            elif line[0:4] == 'PORT':
-                rp = xy_rule_port()
-                rp.init_from(line[5:])
-                if currhost == 'DEFAULT':
-                    self.rules["PORT"].append(rp)
-                if currhost == hostname:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    H.rules["PORT"].append(rp)
-            elif line[0:4] == 'PROC':
-                rp = xy_rule_proc()
-                rr = rp.init_from(line[5:])
-                if not rr:
-                    self.error(f"ERROR: invalid line {line}")
-                    continue
-                if currhost == 'DEFAULT':
-                    self.rules["PROC"].append(rp)
-                if currhost == hostname:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    H.rules["PROC"].append(rp)
-            elif line[0:4] == 'DISK':
-                if currhost == 'DEFAULT':
-                    rxd = self.rules["DISK"]
-                    rxd.add(line[5:])
-                if currhost == hostname:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    if H.rules["DISK"] is None:
-                        H.rules["DISK"] = xy_rule_disks()
-                    rxd = H.rules["DISK"]
-                    rxd.add(line[5:])
-            elif line[0:5] == 'INODE':
-                if currhost == 'DEFAULT':
-                    rxd = self.rules["INODE"]
-                    rxd.add(line[6:])
-                if currhost == hostname:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    if H.rules["INODE"] is None:
-                        H.rules["INODE"] = xy_rule_disks()
-                    rxd = H.rules["INODE"]
-                    rxd.add(line[6:])
-            elif line[0:6] == 'SENSOR':
-                # self.debug(f"DEBUG: {line}")
-                if currhost == 'DEFAULT':
-                    # TODO
-                    self.rules["SENSOR"].add(line[7:])
-                if currhost == hostname:
-                    H = self.find_host(hostname)
-                    if H is None:
-                        self.error(f"ERROR: host is None for {hostname}")
-                        return self.RET_ERR
-                    if H.rules["SENSOR"] is None:
-                        H.rules["SENSOR"] = xy_rule_sensors()
-                    H.rules["SENSOR"].add(line[7:])
-            else:
-                self.log("todo", line)
-        # add default rules for DISK/INODE
-        self.rules["DISK"].add('%.* 90 95')
-        self.rules["INODE"].add('%.* 70 90')
-        if self.rules["CPU"] is None:
-            self.rules["CPU"] = xy_rule_cpu()
-        if self.rules["MEMPHYS"] is None:
-            self.rules["MEMPHYS"] = xy_rule_mem()
-            self.rules["MEMPHYS"].init_from("100 101")
-        if self.rules["MEMACT"] is None:
-            self.rules["MEMACT"] = xy_rule_mem()
-            self.rules["MEMACT"].init_from("90 97")
-        if self.rules["MEMSWAP"] is None:
-            self.rules["MEMSWAP"] = xy_rule_mem()
-            self.rules["MEMSWAP"].init_from("50 80")
         if self.rules["SENSOR"] is None:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
@@ -2611,7 +2966,227 @@ class xythonsrv:
         self.rules["SENSOR"].add("DEFAULT % 100 200 10 0")
         self.rules["SENSOR"].add("DEFAULT V 1000 2000 -1 -2")
         self.rules["SENSOR"].add("DEFAULT RPM 4000 5000 100 0")
-        return self.RET_NEW
+        for hostname in self.xy_hosts:
+            H = self.xy_hosts[hostname]
+            H.rules["CPU"] = None
+            H.rules["DISK"] = xy_rule_disks()
+            H.rules["INODE"] = xy_rule_disks()
+            H.rules["MEMPHYS"] = None
+            H.rules["MEMACT"] = None
+            H.rules["MEMSWAP"] = None
+            H.rules["PROC"] = []
+            H.rules["PORT"] = []
+            H.rules["SENSOR"] = None
+        f = open(f"{self.etcdir}/analysis.cfg", 'r')
+        selector = None
+        for line in f:
+            line = line.rstrip()
+            line = re.sub(r"#.*", "", line)
+            line = re.sub(r"\s+", " ", line)
+            line = re.sub(r"^\s+", "", line)
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            setting = None
+            settingname = None
+            ltoks = tokenize(line)
+            # self.debug(f"===============START with {ltoks}")
+            keyword = ltoks.pop(0)
+            if keyword == 'DEFAULT':
+                # self.debug("DEBUG: SPETIAL DEFAULT selector")
+                selector = 'DEFAULT'
+                continue
+            if '=' not in keyword:
+                # read a setting
+                # print(f"{keyword} is a setting")
+                if keyword == 'PORT':
+                    ret = self.analysis_port(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = 'PORT'
+                elif keyword == 'PROC':
+                    ret = self.analysis_proc(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = 'PROC'
+                elif keyword == 'DISK' or keyword == 'INODE':
+                    ret = self.analysis_disk(ltoks, keyword)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = keyword
+                elif keyword == 'LOAD':
+                    ret = self.analysis_load(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = 'LOAD'
+                elif keyword in ['MEMSWAP', 'MEMACT', 'MEMPHYS']:
+                    ret = self.analysis_memory(ltoks, keyword)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = keyword
+                elif keyword == 'UP':
+                    ret = self.analysis_up(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = "UP"
+                elif keyword == 'SENSOR':
+                    ret = self.analysis_sensor(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = "SENSOR"
+                elif keyword == 'LOG':
+                    ret = self.analysis_log(ltoks)
+                    if ret["err"]:
+                        continue
+                    self.log("todo", f"TODO: LOG")
+                    ltoks = ret["ltoks"]
+                elif keyword == 'SVC':
+                    ret = self.analysis_svc(ltoks)
+                    if ret["err"]:
+                        continue
+                    self.log("todo", f"TODO: SVC")
+                    ltoks = ret["ltoks"]
+                else:
+                    self.error(f"ERROR: unknow keyword {keyword}")
+            else:
+                ltoks.insert(0, keyword)
+            # now only selector rule
+            selector_new = None
+            while len(ltoks) > 0:
+                keyword = ltoks.pop(0)
+                ks = keyword.split("=")
+                keyword = ks[0]
+                if len(ks) != 2:
+                    self.error(f"ERROR: no data after {keyword}= ltoks={ltoks}")
+                    continue
+                data = ks[1]
+                if len(data) == 0:
+                    self.error(f"ERROR: no data after {keyword}= ltoks={ltoks}")
+                    continue
+                if keyword == "HOST":
+                    if selector_new is None:
+                        selector_new = host_selector()
+                    if data[0] == '*':
+                        selector_new.all = True
+                    elif data[0] == '%':
+                        selector_new.setregex(data)
+                    elif "," in data:
+                        for hostname in data.split(","):
+                            selector_new.hosts.append(hostname)
+                    else:
+                        selector_new.hosts.append(data)
+                elif keyword == "EXHOST":
+                    if selector_new is None:
+                        selector_new = host_selector()
+                    if data[0] == '%':
+                        selector_new.setregex(data, exclude=True)
+                    elif "," in data:
+                        for hostname in data.split(","):
+                            selector_new.exhosts.append(hostname)
+                    else:
+                        selector_new.exhosts.append(data)
+                elif keyword == "CLASS":
+                    if selector_new is None:
+                        selector_new = host_selector()
+                    selector_new.xclass.append(data)
+                elif keyword == "EXCLASS":
+                    if selector_new is None:
+                        selector_new = host_selector()
+                    selector_new.exclass.append(data)
+                else:
+                    self.error(f"ERROR: unknow selector {keyword}")
+                    continue
+            if selector_new is not None:
+                selector = selector_new
+            if setting:
+                if selector is None:
+                    self.error(f"ERROR: no selector")
+                    continue
+                # self.debug(f"DEBUG: apply setting {settingname} via selector {selector}")
+                if selector == 'DEFAULT':
+                    if settingname in ['DISK', 'INODE']:
+                        self.rules[settingname].add2(setting["fs"], setting["ignore"], setting["warn"], setting["panic"])
+                    elif settingname == 'UP':
+                        if self.rules["CPU"] is None:
+                            self.rules["CPU"] = xy_rule_cpu()
+                        self.rules["CPU"].upset = True
+                        self.rules["CPU"].bootlimit = setting["bootlimit"]
+                        if "toolonglimit" in setting:
+                            self.rules["CPU"].toolonglimit = setting["toolonglimit"]
+                        if "upcolor" in setting:
+                            self.rules["CPU"].upcolor = setting["upcolor"]
+                    elif settingname == 'LOAD':
+                        if self.rules["CPU"] is None:
+                            self.rules["CPU"] = xy_rule_cpu()
+                        self.rules["CPU"].loadset = True
+                        self.rules["CPU"].loadwarn = setting["loadwarn"]
+                        self.rules["CPU"].loadwarn = setting["loadpanic"]
+                    elif settingname in ['MEMSWAP', 'MEMACT', 'MEMPHYS']:
+                        self.rules[settingname] = xy_rule_mem()
+                        self.rules[settingname].warn = setting["warn"]
+                        self.rules[settingname].panic = setting["panic"]
+                    else:
+                        self.error(f"ERROR: unsupported {settingname} in DEFAULT")
+                    continue
+                # print(setting)
+                # selector.dump()
+                for hostname in self.xy_hosts:
+                    H = self.xy_hosts[hostname]
+                    ret = selector.match(H)
+                    # print(f"MATCHING {H.name} {ret}")
+                    if ret and settingname:
+                        if settingname == 'PORT':
+                            #H.rules["PORT"].append(setting)
+                            H.add_rule_port(setting)
+                        elif settingname == 'PROC':
+                            H.add_rule_proc(setting)
+                        elif settingname in ["DISK", "INODE"]:
+                            H.rules[settingname].add2(setting["fs"], setting["ignore"], setting["warn"], setting["panic"])
+                        elif settingname == 'LOAD':
+                            if H.rules["CPU"] is None:
+                                H.rules["CPU"] = xy_rule_cpu()
+                            H.rules["CPU"].loadset = True
+                            H.rules["CPU"].loadwarn = setting["loadwarn"]
+                            H.rules["CPU"].loadwarn = setting["loadpanic"]
+                        elif settingname == 'UP':
+                            if H.rules["CPU"] is None:
+                                H.rules["CPU"] = xy_rule_cpu()
+                            H.rules["CPU"].upset = True
+                            H.rules["CPU"].bootlimit = setting["bootlimit"]
+                            if "toolonglimit" in setting:
+                                H.rules["CPU"].toolonglimit = setting["toolonglimit"]
+                            if "upcolor" in setting:
+                                H.rules["CPU"].upcolor = setting["upcolor"]
+                        elif settingname in ['MEMSWAP', 'MEMACT', 'MEMPHYS']:
+                            H.rules[settingname] = xy_rule_mem()
+                            H.rules[settingname].warn = setting["warn"]
+                            H.rules[settingname].panic = setting["panic"]
+                        elif settingname == 'SENSOR':
+                            if H.rules["SENSOR"] is None:
+                                H.rules["SENSOR"] = xy_rule_sensors()
+                            H.rules["SENSOR"].add2(setting["adapter"], setting["sname"],
+                                setting["ignore"],
+                                setting["warn"],
+                                setting["panic"],
+                                setting["mwarn"],
+                                setting["mpanic"])
+                        else:
+                            self.error(f"ERROR: unknow settingname {settingname}")
 
     def rrd_pathname(self, cname, ds):
         if ds == 'la':
@@ -4002,12 +4577,13 @@ class xythonsrv:
             return False
         if ret == self.RET_NEW:
             self.hosts_check_tags()
+            # if hosts has changed we need to reread analysis
+            self.time_read_analysis = 0
+        self.read_analysis2()
         for hostname in self.xy_hosts:
             H = self.xy_hosts[hostname]
-            # self.debug(f"DEBUG: init FOUND: {H.name}")
             if not self.read_hist(H.name):
                 self.error(f"ERROR: failed to read hist for {H.name}")
-            self.read_analysis(H.name)
         if ret == self.RET_NEW:
             self.gen_tests()
         return True

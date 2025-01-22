@@ -38,6 +38,7 @@ from xython.rules import xy_rule_cpu
 from xython.rules import xy_rule_sensors
 from xython.xython import xythonsrv
 from xython.xython import xy_host
+from xython.xython import host_selector
 from xython.xython_tests import hex_to_binary
 from xython.xython_tests import hex_compare
 from xython.xython_tests import ping
@@ -246,49 +247,62 @@ def test_xymon_getvar():
 
 
 def test_port_rule():
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=:22 state=LISTEN TEXT=SSH')
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'port')
+
+    ret = X.analysis_port(['LOCAL=:22', 'state=LISTEN', 'TEXT=SSH'])
+    rp = ret['setting']
     assert rp.local == ':22'
     assert rp.state == 'LISTEN'
     assert rp.rstate is None
     assert rp.text == 'SSH'
 
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=%:22 state=LISTEN TEXT=SSH')
+    ret = X.analysis_port(['LOCAL=%:22', 'state=LISTEN', 'TEXT=SSH'])
+    rp = ret['setting']
     assert rp.local == ':22'
     assert rp.state == 'LISTEN'
     assert rp.rstate is None
     assert rp.text == 'SSH'
 
-    rp = xy_rule_port()
-    rp.init_from('"LOCAL=:22" state=%LISTEN TEXT=SSH')
+    tok = tokenize('"LOCAL=:22" state=%LISTEN TEXT=SSH')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     assert rp.local == ':22'
     assert rp.state is None
     assert rp.rstate == 'LISTEN'
     assert rp.text == 'SSH'
 
-    rp = xy_rule_port()
-    rp.init_from('"LOCAL=:22" state=%LISTEN "TEXT=SSH listener"')
+    tok = tokenize('"LOCAL=:22" state=%LISTEN "TEXT=SSH listener"')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     assert rp.local == ':22'
     assert rp.state is None
     assert rp.rstate == 'LISTEN'
     assert rp.text == 'SSH listener'
 
-
-def test_port_rule_smtps():
-    rp = xy_rule_port()
-    rp.init_from('"LOCAL=%([.:]465)$" state=LISTEN TEXT=smtps')
+    tok = tokenize('"LOCAL=%([.:]465)$" state=LISTEN TEXT=smtps')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     assert rp.local == '([.:]465)$'
     assert rp.state == 'LISTEN'
     assert rp.rstate is None
     assert rp.text == 'smtps'
 
+    tok = tokenize('LOCAL=%:2049 state=LISTEN TEXT=NFS')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
+    assert rp.state == 'LISTEN'
+    assert rp.rstate is None
+    assert rp.text == 'NFS'
 
-def test_ss_netstat():
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=%:2049 state=LISTEN TEXT=NFS')
-    rp631 = xy_rule_port()
-    rp631.init_from('LOCAL=%:631 state=LISTEN TEXT=CUPS')
+
+    tok = tokenize('LOCAL=%:631 state=LISTEN TEXT=CUPS')
+    ret = X.analysis_port(tok)
+    rp631 = ret['setting']
+    assert rp631.state == 'LISTEN'
+    assert rp631.rstate is None
+    assert rp631.text == 'CUPS'
 
     f = open("./tests/ports/ss")
     data = f.readlines()
@@ -306,40 +320,46 @@ def test_ss_netstat():
     rp631.check(data)
     assert rp631._count == 2
 
-
-def test_port_check():
     f = open("./tests/ports/1678699830")
     data = f.readlines()
     f.close()
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=%:22 state=LISTEN TEXT=SSH')
+    tok = tokenize('LOCAL=%:22 state=LISTEN TEXT=SSH')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     rp.check(data)
     assert rp._count == 2
 
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=:69 TEXT=TFTP')
+    tok = tokenize('LOCAL=:69 TEXT=TFTP')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     rp.check(data)
     assert rp._count == 2
 
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=0.0.0.0:69 TEXT=TFTP')
+    tok = tokenize('LOCAL=0.0.0.0:69 TEXT=TFTP')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     rp.check(data)
     assert rp._count == 1
 
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=0.0.0.0:69 state=LISTEN TEXT=TFTP')
+    tok = tokenize('LOCAL=0.0.0.0:69 state=LISTEN TEXT=TFTP')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     rp.check(data)
     assert rp._count == 0
 
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=:111 state=LISTEN TEXT=NFS')
+    tok = tokenize('LOCAL=:111 state=LISTEN TEXT=NFS')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     rp.check(data)
     assert rp._count == 2
 
-    rp = xy_rule_port()
-    rp.init_from('LOCAL=:111 TEXT=NFS2')
+    tok = tokenize('LOCAL=:111 TEXT=NFS2')
+    ret = X.analysis_port(tok)
+    rp = ret['setting']
     rp.check(data)
     assert rp._count == 4
+
+    setup_clean(X)
 
 
 def test_proc_rule1():
@@ -2015,5 +2035,188 @@ def test_mdstat():
     md1 = f.read()
     f.close()
     X.parse_mdstat("test01", md1, "fake")
+
+    setup_clean(X)
+
+def test_analysis():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-analysis/'
+    setup_testdir(X, 'mdstat')
+    X.lldebug = True
+    X.init()
+
+    h = host_selector()
+    H = xy_host('test', xclass='linux')
+    H2 = xy_host('test2')
+    h.hosts = ['test']
+    assert h.match(H)
+    assert not h.match(H2)
+    h.hosts.append('test2')
+    assert h.match(H2)
+
+    h.exclass = ['linux']
+    assert not h.match(H)
+    assert h.match(H2)
+
+    h = host_selector()
+    h.setregex('%test*')
+    assert h.match(H)
+    assert h.match(H2)
+
+    h.setregex('%test2.*', exclude = True)
+    h.dump()
+    assert h.match(H)
+    assert not h.match(H2)
+
+    # now test load functions
+    ret = X.analysis_load([''])
+    assert ret["err"]
+    ret = X.analysis_load(['4'])
+    assert ret["err"]
+    ret = X.analysis_load(['xx'])
+    assert ret["err"]
+    ret = X.analysis_load(['4', 'xx'])
+    assert ret["err"]
+    ret = X.analysis_load(['4', '7'])
+    assert not ret["err"]
+    assert "setting" in ret
+    assert ret["setting"]["loadwarn"] == 4
+    assert ret["setting"]["loadpanic"] == 7
+
+    ret = X.analysis_port([''])
+    assert ret["err"]
+    ret = X.analysis_port([':60000'])
+    assert ret["err"]
+    ret = X.analysis_port(['LOCAL=:1000', 'min=xx'])
+    assert ret["err"]
+    ret = X.analysis_port(['LOCAL=.10000', 'min='])
+    assert ret["err"]
+    ret = X.analysis_port(['LOCAL='])
+    assert ret["err"]
+    ret = X.analysis_port(['REMOTE='])
+    assert ret["err"]
+    ret = X.analysis_port(['LOCAL=:60000', 'min=1', 'max=4', 'TEXT=test', 'TRACK=4', 'color=red'])
+    assert not ret["err"]
+    ret = X.analysis_port(['LOCAL=:60000', 'state=LISTEN', 'min=1', 'max=4', 'TEXT=test', 'TRACK=4', 'color=red'])
+    assert not ret["err"]
+
+    ret = X.analysis_memory([], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory([''], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory(['', ''], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory(['qbc'], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory(['qbc', ''], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory(['qbc', 'qbc'], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory(['10', 'qbc'], 'MEMSWAP')
+    assert ret["err"]
+    ret = X.analysis_memory(['10', '45'], 'MEMSWAP')
+    assert not ret["err"]
+    assert 'setting' in ret
+    assert ret["setting"]["warn"] == 10
+    assert ret["setting"]["panic"] == 45
+
+    ret = X.analysis_sensor([])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter"])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor"])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "4"])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "dbg"])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "4.0", "dbg"])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "dbg", "4.0"])
+    assert ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "IGNORE"])
+    assert not ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "4.0", "10.0"])
+    assert not ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "4.0", "10.0", "50.4", "60.0"])
+    assert not ret["err"]
+    ret = X.analysis_sensor(["adapter", "sensor", "4.0", "10.0", "HOST=test"])
+    assert not ret["err"]
+
+    ret = X.analysis_svc(["MSSQLSERVER", "startup=automatic", "status=started"])
+    assert not ret["err"]
+    assert len(ret["ltoks"]) == 0
+
+    ret = X.analysis_svc(["MSSQLSERVER", "startup=automatic", "status=started", 'HOST="xx"'])
+    assert not ret["err"]
+    assert len(ret["ltoks"]) == 1
+
+    ret = X.analysis_svc(['sshd', 'startup=automatic', 'status=started'])
+    assert not ret["err"]
+    assert len(ret["ltoks"]) == 0
+
+    H = X.find_host("db1")
+    assert H
+    allrules = []
+    for rule in H.rules["PROC"]:
+        allrules.append(rule.name)
+    print(allrules)
+
+    assert 'alldba' in allrules
+    assert 'alldbb' in allrules
+    assert 'p_01_03' in allrules
+    assert 'onlydb1' in allrules
+    assert 'onlydb2' not in allrules
+    assert 'onlydb3' not in allrules
+
+    H = X.find_host("db2")
+    assert H
+    allrules = []
+    for rule in H.rules["PROC"]:
+        allrules.append(rule.name)
+    print(allrules)
+
+    assert 'alldba' in allrules
+    assert 'alldbb' in allrules
+    assert 'p_01_03' not in allrules
+    assert 'onlydb2' in allrules
+    assert 'onlydb1' not in allrules
+    assert 'onlydb3' not in allrules
+    print(H.rules["DISK"].rules)
+    assert '/tobeoverrided' in H.rules["DISK"].rules
+    assert H.rules["DISK"].rules["/tobeoverrided"].warn == 80
+
+    print(H.rules["CPU"])
+    assert H.rules["CPU"].bootlimit == xydelay('4d')
+    assert H.rules["CPU"].toolonglimit == xydelay('90d')
+
+    print(H.rules["SENSOR"])
+    assert H.rules["SENSOR"]
+
+    H = X.find_host("db3")
+    assert H
+    allrules = []
+    for rule in H.rules["PROC"]:
+        allrules.append(rule.name)
+    print(allrules)
+
+    assert 'alldba' in allrules
+    assert 'alldbb' in allrules
+    assert 'p_01_03' in allrules
+    assert 'onlydb2' not in allrules
+    assert 'onlydb1' not in allrules
+    assert 'onlydb3' in allrules
+    print(H.rules["CPU"])
+
+    assert H.rules["SENSOR"] is None
+
+    print("===== CHECK PORT ======")
+    H = X.find_host("airgapped")
+    print(H.rules["PORT"])
+    assert H.rules["MEMSWAP"].warn == 58
+    assert H.rules["MEMSWAP"].panic == 85
+    assert H.rules["SENSOR"] is not None
+
+
 
     setup_clean(X)
