@@ -473,13 +473,21 @@ class xssh:
             if action['type'] == 'client':
                 # handle case where sftp-server is not present
                 transport = client.get_transport()
-                with transport.open_channel(kind='session') as channel:
-                    file_data = open('/usr/bin/xython-client', 'rb').read()
-                    channel.exec_command('cat > /tmp/xython-client')
-                    channel.sendall(file_data)
-                with transport.open_channel(kind='session') as channel:
-                    channel.exec_command('chmod 770 /tmp/xython-client')
-                stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
+                try:
+                    with transport.open_channel(kind='session') as channel:
+                        file_data = open('/usr/bin/xython-client', 'rb').read()
+                        channel.exec_command('cat > /tmp/xython-client')
+                        channel.sendall(file_data)
+                    with transport.open_channel(kind='session') as channel:
+                        channel.exec_command('chmod 770 /tmp/xython-client')
+                    stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
+                except paramiko.ssh_exception.SSHException as e:
+                    test_duration = time.time() - self.ts_start
+                    self.dret["color"] = 'red'
+                    self.dret["txt"] = f'ERROR: Failed to setup xython-client {str(e)}'
+                    self.dret["txt"] += f"\nSeconds: {test_duration}\n"
+                    client.close()
+                    return self.dret
                 errorlog = '"'.join(stderr.readlines())
                 if errorlog:
                     acolor = 'yellow'
