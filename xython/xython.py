@@ -2960,7 +2960,7 @@ class xythonsrv:
         if self.rules["SENSOR"] is None:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
-        self.rules["SENSOR"].add("DEFAULT MJ 400 500 0 0")
+        # self.rules["SENSOR"].add("DEFAULT J 400 500 0 0")
         self.rules["SENSOR"].add("DEFAULT A 30 50 0 0")
         self.rules["SENSOR"].add("DEFAULT W 300 500 0 0")
         self.rules["SENSOR"].add("DEFAULT % 100 200 10 0")
