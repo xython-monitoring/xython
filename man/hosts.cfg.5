@@ -906,12 +906,18 @@ default via the \-\-trace option.
 .BR Xython: TODO
 
 .SH Running remote tests via SSH
-.IP rssh://username[:password]@fqdn;ping:target
+.IP tssh://username[:password]@fqdn;list-of-actions-separated-by-semicolon[ping:target|client|sudo]
+
+
+.IP ping:target
 Run a ping from remote destination at fqdn.
 Target is any FQDN/IP
 
-.SH Running a remote client via SSH
-.IP cssh://username[:password]@fqdn
+Example: ping a.b.c.d from your gateway:
+tssh://admin@192.168.1.1;ping:a.b.c.d
+
+.IP client
+Running a remote client via SSH
 For remote host which cannot have xython installed,
 (like embedded systems or systems without packaging),
 xython could get client data via ssh.
@@ -920,6 +926,9 @@ You should setup a key authentification for letting the user
 running the xython celery process accessing the remote system.
 
 This is only supported by xython
+
+.IP sudo
+xython will use sudo for doing its tests/running the client
 
 .SH SNMP TESTS
 .IP snmp[:disk][:memory][:community=name]
