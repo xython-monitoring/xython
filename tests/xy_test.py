@@ -1712,8 +1712,37 @@ def test_celery_tssh_client_success():
         assert r.dret['color'] == 'green'
         assert 'data' in r.dret
         assert re.search('client debian.linux linux', r.dret['data'])
+
+        # now test with sudo, it should fail
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;sudo;client')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        print(r.dret)
+        assert r.dret['color'] == 'yellow'
+
+        # now test without key, it should fail
+        r = xssh('valid', f'tssh://{x};client')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        print(r.dret)
+        assert r.dret['color'] == 'red'
+        assert 'Authentication failed' in r.dret['txt']
     else:
         pytest.skip('Need to set TESTS_XSSH_SUCCESS_CLIENT')
+    if 'TESTS_XSSH_SUCCESS_CLIENT_SUDO' in os.environ:
+        x = os.environ['TESTS_XSSH_SUCCESS_CLIENT_SUDO']
+        r = xssh('valid', f'tssh://{x};rsakey=./tests/ssh/rsa/valid;sudo;client')
+        assert r.dret['color'] == 'green'
+        assert len(r.actions) > 0
+        r.run()
+        print(r.dret)
+        assert r.dret['color'] == 'green'
+        assert 'data' in r.dret
+        assert re.search('client debian.linux linux', r.dret['data'])
+    else:
+        pytest.skip('Need to set TESTS_XSSH_SUCCESS_CLIENT_SUDO')
 
 
 def test_net():

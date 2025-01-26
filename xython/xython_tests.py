@@ -263,6 +263,7 @@ class xssh:
         self.timeout = 60
         self.key = None
         self.one_by_one = False
+        self.sudo = False
         tokens = url.split(';')
         if len(tokens) <= 1:
             self.dret['color'] = 'red'
@@ -397,6 +398,9 @@ class xssh:
         if token == 'hack1by1':
             self.one_by_one = True
             return True
+        if token == 'sudo':
+            self.sudo = True
+            return True
         print(f"DEBUG: RSSH unknow keyword {token}")
         self.dret["txt"] = f"status+11m {self.hostname}.tssh red\n&red unknown parameter {token}\n"
         return False
@@ -480,7 +484,10 @@ class xssh:
                         channel.sendall(file_data)
                     with transport.open_channel(kind='session') as channel:
                         channel.exec_command('chmod 770 /tmp/xython-client')
-                    stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
+                    rcmd = '/tmp/xython-client'
+                    if self.sudo:
+                        rcmd = 'sudo /tmp/xython-client'
+                    stdin, stdout, stderr = client.exec_command(rcmd)
                 except paramiko.ssh_exception.SSHException as e:
                     test_duration = time.time() - self.ts_start
                     self.dret["color"] = 'red'
