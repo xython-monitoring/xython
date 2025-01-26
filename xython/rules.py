@@ -291,8 +291,18 @@ class xy_rule_sensors():
             return [sname, sline[0], 'W']
         if sline[1] == '%':
             return [sname, sline[0], '%']
+        if sline[1] == 'J':
+            rawv = float(sline[0])
+            return [sname, rawv, 'J']
+        if sline[1] == 'kJ':
+            rawv = float(sline[0]) * 1000
+            return [sname, rawv, 'J']
         if sline[1] == 'MJ':
-            return [sname, sline[0], 'MJ']
+            rawv = float(sline[0]) * 1000 * 1000
+            return [sname, sline[0], 'J']
+        if sline[1] == 'GJ':
+            rawv = float(sline[0]) * 1000 * 1000 * 1000
+            return [sname, rawv, 'J']
         # °C and C related to locale
         if sline[1] == '°C' or sline[1] == 'C':
             return [sname, sline[0].lstrip("+"), 'C']
