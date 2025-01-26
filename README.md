@@ -95,7 +95,7 @@ I plan to support freeBSD, openBSD and netBSD
 
 ##### client install on currently non-packaged distro (BSD, OPNsense, openWRT)
 
-The easiest way to have client on such host is to use the cssh way, the server will execute client over SSH (See man page)
+The easiest way to have client on such host is to use the tssh way, the server will execute client over SSH (See man page)
 
 In case you do not want that:
 
@@ -259,12 +259,16 @@ In the same time, all BB and hobbit compatibility will be removed probably.
 * Custom SNMP graphing and reporting
 * deprecating httpstatus, xython way is to add httpcode=xxx to a http URL
 * deprecating cont, xython way is to add cont=xxx to a http URL
+* permit to ack/blue directly from status page
+* Adding "live view "of main/non-green page (live mean no-pre-generated)
 
 ### Changes in client
 
 * The xython client support now reporting lm-sensors
+* The xython client reports dmesg
 * ip route (to replace obsolete netstat), already reported by client, but xythond need to check them
 * ss (to replace obsolete netstat), already reported by client, but xythond need to check them
+* The xython client can report either via direct TLS or via HTTPS
 
 ### Planned changes in server
 
@@ -277,8 +281,8 @@ In the same time, all BB and hobbit compatibility will be removed probably.
 * smart
 * megacli
 * ntpd + rtc
-* kernel log / dmesg
 * docker ps
+* interface link report (ethtool)
 
 ## Migrating from xymon
 
@@ -290,7 +294,7 @@ TODO create a script from converting a xymon install to a xython install
 
 ## TODO
 
-This is a uncomplete list
+This is a raw uncomplete list
 
 * fuzz xython
 * re-bench xython
@@ -309,9 +313,6 @@ This is a uncomplete list
 * handle docker ps like proc column
 * handle WMI for fake windows client
 * OpenVAS integration
-* convert TLSd to asyncIO
-* interface link report (ethtool)
-* permit to run network active tests from a remote client/location (rconn,rssh,rhttp,etc...)
 * modelize depencies between hosts
 * do nslookup via ssh
 * disk: permit to set limit on Mb/Gb instead of percentage
