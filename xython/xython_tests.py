@@ -501,7 +501,15 @@ class xssh:
                 self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
                 self.dret["data"] = ''.join(stdout.readlines())
             if action['type'] == 'ping':
-                stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}')
+                try:
+                    stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}')
+                except paramiko.ssh_exception.SSHException as e:
+                    test_duration = time.time() - self.ts_start
+                    self.dret["color"] = 'red'
+                    self.dret["txt"] = f'ERROR: Failed to execute {action["type"]} {str(e)}'
+                    self.dret["txt"] += f"\nSeconds: {test_duration}\n"
+                    client.close()
+                    return self.dret
                 errorlog = '"'.join(stderr.readlines())
                 if errorlog:
                     acolor = 'yellow'
