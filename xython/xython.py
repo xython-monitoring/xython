@@ -33,7 +33,6 @@ except ImportError:
 import sqlite3
 from .xython_tests import ping
 from .xython_tests import dohttp
-from .xython_tests import do_cssh
 from .xython_tests import do_tssh
 from .xython_tests import do_snmp
 from .xython_tests import do_generic_proto
@@ -1305,10 +1304,6 @@ class xythonsrv:
                     H.add_test("snmp", None, None, "snmp", True, False)
                     H.tags_known.append(tag)
                     continue
-                if tag[0:7] == 'cssh://':
-                    H.tags_known.append(tag)
-                    H.add_test("cssh", tag, None, "cssh", True, False)
-                    continue
                 if tag[0:7] == 'tssh://':
                     H.tags_known.append(tag)
                     H.add_test("tssh", tag, None, "tssh", True, False)
@@ -1785,7 +1780,7 @@ class xythonsrv:
             # handle network test for dialup host
             # if host is pingable, network tests will go red
             # if host is not pingable (due to random IP), no network test should exists
-            if not H.ping_success and color == 'red' and (cname in self.protocols or cname in ["snmp", "cssh"]):
+            if not H.ping_success and color == 'red' and (cname in self.protocols or cname in ["snmp", "tssh"]):
                 color = 'clear'
         ackend = None
         acktime = None
@@ -2244,12 +2239,6 @@ class xythonsrv:
         for T in self.tests:
             print("%s %d" % (T.name, int(T.ts)))
 
-    def do_cssh(self, T):
-        name = f"{T.hostname}_cssh"
-        ctask = do_cssh.delay(T.hostname, T.urls)
-        self.celerytasks[name] = ctask
-        self.celtasks.append(ctask)
-
     def do_tssh(self, T):
         name = f"{T.hostname}_tssh"
         ctask = do_tssh.delay(T.hostname, T.urls)
@@ -2315,8 +2304,6 @@ class xythonsrv:
                     if T.type == 'conn':
                         if not self.doping(T):
                             lag += 1
-                    if T.type == 'cssh':
-                        self.do_cssh(T)
                     if T.type == 'tssh':
                         self.do_tssh(T)
                     if T.type == 'snmp':
@@ -2367,7 +2354,7 @@ class xythonsrv:
                 ret = ctask.get()
                 hostname = ret["hostname"]
                 testtype = ret["type"]
-                if testtype in ['cssh', 'snmp', 'tssh']:
+                if testtype in ['snmp', 'tssh']:
                     if ret["data"] is not None:
                         self.parse_hostdata(ret["data"], f"{testtype} for {hostname}")
                 if "rrds" in ret:
