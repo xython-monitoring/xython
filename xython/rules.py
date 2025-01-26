@@ -467,18 +467,18 @@ class xy_rule_cpu():
         if tmp and tmp.lastindex == 1:
             self.xuptime += int(tmp.group(1))
         # convert xxx.xx hours in minutes
-        if self.xuptime <= self.bootlimit:
+        if self.xuptime <= self.bootlimit / 60:
             ret["UP"] = {}
             ret["UP"]["color"] = self.upcolor
-            ret["UP"]["txt"] = f'&yellow uptime (in minutes) {self.xuptime} < {self.bootlimit}'
-        elif self.toolonglimit != -1 and self.xuptime >= self.toolonglimit:
+            ret["UP"]["txt"] = f'&yellow uptime (in minutes) {self.xuptime} < {self.bootlimit / 60}'
+        elif self.toolonglimit != -1 and self.xuptime >= self.toolonglimit / 60:
             ret["UP"] = {}
             ret["UP"]["color"] = self.upcolor
-            ret["UP"]["txt"] = f'&yellow uptime (in minutes) {self.xuptime} > {self.toolonglimit}'
+            ret["UP"]["txt"] = f'&yellow uptime (in minutes) {self.xuptime} > {self.toolonglimit / 60}'
         else:
             ret["UP"] = {}
             ret["UP"]["color"] = 'green'
-            ret["UP"]["txt"] = f'&green uptime (in minutes) {self.xuptime} < {self.toolonglimit}'
+            ret["UP"]["txt"] = f'&green uptime (in minutes) {self.xuptime} < {self.bootlimit / 60}'
         return ret
 
 
