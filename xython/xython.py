@@ -4176,11 +4176,14 @@ class xythonsrv:
                 its = float(ts.group(2))
                 tsa = ts.group(1) + ts.group(2) + ts.group(3)
                 line = line.replace(tsa, '')
-            # TODO filter also the [Txxx] [Cxxx]
+            # filter also the [Txxx] [Cxxx]
+            kid = re.search(r'^\[\s*[CT][0-9]+\]\s', line)
+            if kid is not None:
+                line = line.replace(kid.group(0), '')
             if line[1] == ' ':
                 # TODO multi line, found only on rpi kernel or crashes
                 # ignore it for now
-                self.debug(f"DEBUG: dmesg: ignore multi part {line}")
+                self.debugdev('dmesg', f"DEBUG: dmesg: ignore multi part {line}")
                 continue
             ignore = False
             for p in patterns:
