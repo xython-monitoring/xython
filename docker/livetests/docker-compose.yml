@@ -80,6 +80,8 @@ services:
       PING_TARGET: sshd-debian-ping
       TESTS_XSSH_OPENSSH_MACS_ONLY: userpass@sshd-openssh-macs-only:2222
       TESTS_XSSH_CONNECTION_REFUSED: userpass@sshd-openssh-macs-only:2223
+      TESTS_XSSH_SUCCESS_CLIENT: userkey@sshd-debian-ping:222
+      TESTS_XSSH_SUCCESS_CLIENT_SUDO: xadmin@sshd-debian-ping:222
       HAS_IPV6: 'True'
     depends_on:
       - snmpd
