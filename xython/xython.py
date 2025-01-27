@@ -2347,9 +2347,17 @@ class xythonsrv:
             if ctask.ready():
                 status = ctask.status
                 if status == 'FAILURE':
+                    failed = None
+                    for name in self.celerytasks:
+                        if self.celerytasks[name] == ctask:
+                            failed = name
                     self.celtasks.remove(ctask)
-                    self.error("ERROR: celery task error")
+                    self.error(f"ERROR: celery task error for {failed}")
                     # TODO better handle this problem, easy to generate by removing ping
+                    ret = ctask.get()
+                    print("==============================================")
+                    print(ret)
+                    print("==============================================")
                     continue
                 ret = ctask.get()
                 hostname = ret["hostname"]
