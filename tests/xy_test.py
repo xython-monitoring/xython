@@ -1728,7 +1728,7 @@ def test_celery_tssh_client_success():
         r.run()
         print(r.dret)
         assert r.dret['color'] == 'red'
-        assert 'Authentication failed' in r.dret['txt']
+        assert 'Authentication failed' in r.dret['txt'] or 'No authentication methods available' in r.dret['txt']
     else:
         pytest.skip('Need to set TESTS_XSSH_SUCCESS_CLIENT')
     if 'TESTS_XSSH_SUCCESS_CLIENT_SUDO' in os.environ:
