@@ -72,6 +72,12 @@ services:
     ports:
       - "2222:22"
       - "2223:23"
+  squid:
+    build:
+      context: squid
+    hostname: squid
+    ports:
+      - "3128:3128"
   pytests:
     build:
       context: ../..
@@ -82,9 +88,11 @@ services:
       TESTS_XSSH_CONNECTION_REFUSED: userpass@sshd-openssh-macs-only:2223
       TESTS_XSSH_SUCCESS_CLIENT: userkey@sshd-debian-ping:222
       TESTS_XSSH_SUCCESS_CLIENT_SUDO: xadmin@sshd-debian-ping:222
+      TESTS_SQUID: squid
       HAS_IPV6: 'True'
     depends_on:
       - snmpd
+      - squid
       - protocols
       - sshd-openssh-macs-only
       - sshd-debian-noping
