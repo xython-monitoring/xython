@@ -6,7 +6,7 @@ from codecs import open
 from setuptools import setup
 
 CURRENT_PYTHON = sys.version_info[:2]
-REQUIRED_PYTHON = (3, 8)
+REQUIRED_PYTHON = (3, 6)
 
 if CURRENT_PYTHON < REQUIRED_PYTHON:
     sys.stderr.write(
@@ -41,7 +41,7 @@ with open("README.md", "r", "utf-8") as f:
 
 setup(
     name="xython",
-    version="0.2.3",
+    version="0.2.4",
     description="xython is a rewrite in python of xymon",
     long_description=readme,
     long_description_content_type="text/markdown",
