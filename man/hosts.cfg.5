@@ -1238,12 +1238,7 @@ it should be done as
 .BR Xython: TODO, verify it can be done with python requests
 
 .IP "HTTP Testing via proxy"
-\fBNOTE:\fR This is not enabled by default. You must
-add the "\-\-bb\-proxy\-syntax" option when running
-.I xymonnet(1)
-if you want to use this.
-
-xymonnet supports the Big Brother syntax for
+xython supports the xymon syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL
 into one, e.g.
@@ -1264,10 +1259,6 @@ username and password inside the proxy-part of the URL, e.g.
 will authenticate to the proxy using a username of "fred" and
 a password of "Wilma1", before requesting the proxy to fetch
 the www.foo.com homepage.
-
-Note that it is not possible to test https-sites via a proxy,
-nor is it possible to use https for connecting to the proxy 
-itself.
 
 .IP cont[=COLUMN];URL;[expected_data_regexp|#digesttype:digest]
 This tag is used to specify a http/https check, where 

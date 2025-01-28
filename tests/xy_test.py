@@ -1409,6 +1409,16 @@ def test_celery_http():
     ret = dohttp("test", ['http://8.8.8.8:445/;timeout=1'], 'http')
     assert ret["color"] == 'red'
 
+    if 'TESTS_SQUID' in os.environ:
+        x = os.environ['TESTS_SQUID']
+        # test proxy
+        ret = dohttp("test", [f'http://{x}:3128/http://google.com/'], 'http')
+        print(ret)
+        assert ret["color"] == 'green'
+        ret = dohttp("test", [f'http://{x}:3128/https://google.com/'], 'http')
+        print(ret)
+        assert ret["color"] == 'green'
+
 
 def test_celery_protocols():
     # protocols test

@@ -656,6 +656,13 @@ def dohttp(hostname, urls, column):
         # print(f'DEBUG: dohttp: check {url}')
         tokens = url.split(';')
         url = tokens.pop(0)
+        # detect proxy
+        proxies = None
+        pret = re.search("(http://.*)/(https?://.*)", url)
+        if pret:
+            ps = pret.group(1)
+            url = pret.group(2)
+            proxies = { "http": ps, "https": ps }
         for token in tokens:
             cmds = token.split('=')
             cmd = cmds[0]
@@ -684,7 +691,7 @@ def dohttp(hostname, urls, column):
         cret = None
         # self.debug("\tDEBUG: http %s" % url)
         try:
-            r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True)
+            r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True, proxies=proxies)
             if verify and 'https' in url:
                 cret = show_cert(r.raw.connection.sock.getpeercert(), hostname)
             hdata += f"&green {url} - OK\n\n"
