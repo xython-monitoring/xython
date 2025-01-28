@@ -38,21 +38,19 @@ Depends: lsb-base (>= 3.0-6),
          ${shlibs:Depends}
 Recommends: apache2 | httpd-cgi, redis-server
 Description: monitoring system for systems, networks and applications
- Xymon (previously called Hobbit) is a network- and applications-
+ Xython is a network- and applications-
  monitoring system designed for use in large-scale networks. But it will
  also work just fine on a small network with just a few nodes. It is
  low-overhead and high-performance, with an easy to use web front-end.
+ It is a rewrite in python of Xymon
  .
  Network services are monitored remotely. Machine health and
  statistics are monitored through a locally installed client package
- (xymon-client). Additional (remote as well as local) checks are
- available in the package hobbit-plugins.
+ (xython-client).
  .
  Alerts can trigger when monitoring detects a problem, resulting in
  e-mails or calls to your pager or mobile phone.
  .
- Xymon has a great deal of inspiration from the non-free Big Brother
- package, but does not include any Big Brother code.
 
 Package: xython-client
 Architecture: any

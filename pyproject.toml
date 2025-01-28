@@ -1,12 +1,12 @@
 [project]
 name = "xython"
-version = "0.2.3"
+version = "0.2.4"
 description="xython is a rewrite in python of xymon"
 readme = "README.md"
 authors=[
 	{name = "Corentin LABBE", email = "clabbe.montjoie@gmail.com"}
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.6"
 classifiers=[
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",

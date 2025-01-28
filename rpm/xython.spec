@@ -14,17 +14,17 @@ Requires: python3 python3-setuptools python3-celery python3-paramiko python3-pyt
 %global debug_package %{nil}
 
 %description
-Xython (previously known as Hobbit) is a system for monitoring 
+Xython is a system for monitoring 
 your network servers and applications. This package contains 
-the server side of the Xymon package.
+the server side of the Xython package.
 
 %package client
 Summary: Xython client reporting data to the Xython server
 Group: Applications/System
 
 %description client
-This package contains a client for the Xymon (previously known
-as Hobbit) monitor. Clients report data about the local system to 
+This package contains a client for the Xython monitor.
+Clients report data about the local system to 
 the monitor, allowing it to check on the status of the system 
 load, filesystem utilisation, processes that must be running etc.
 
