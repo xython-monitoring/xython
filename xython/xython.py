@@ -1494,7 +1494,10 @@ class xythonsrv:
                 continue
             if keyword == 'directory':
                 dname = sline.pop(0)
-                dpath = self.etcdir + "/" + dname
+                if dname[0] == '/':
+                    dpath = dname
+                else:
+                    dpath = self.etcdir + "/" + dname
                 try:
                     flist = os.listdir(dpath)
                 except FileNotFoundError as e:
@@ -1503,6 +1506,9 @@ class xythonsrv:
                 self.mtimes_hosts[dpath] = {}
                 self.mtimes_hosts[dpath]["mtime"] = os.path.getmtime(dpath)
                 for fname in flist:
+                    # avoid vim swap files
+                    if re.search(".swp$", fname):
+                        continue
                     npath = f"{dpath}/{fname}"
                     self.debug(f"DEBUG: will load {npath}")
                     ret = self.read_hosts_file(npath)
