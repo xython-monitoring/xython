@@ -6,6 +6,7 @@ import random
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from xython.common import gcolor
 from xython.common import gif
@@ -862,6 +863,7 @@ def test_reload():
     ret = X.read_hosts()
     assert ret == X.RET_NEW
     assert X.find_host("itest3")
+    assert not X.find_host("swaphost")
 
     time.sleep(0.1)
     print("==========================")
@@ -870,6 +872,7 @@ def test_reload():
     ret = X.read_hosts()
     assert ret == X.RET_NEW
     assert not X.find_host("itest3")
+    assert not X.find_host("swaphost")
     print(X.mtimes_hosts)
     assert "./tests/etc/xython-load/hosts.d/new.conf" not in X.mtimes_hosts
 
@@ -900,6 +903,18 @@ def test_reload():
     assert X.find_host("itest2")
     print(X.mtimes_hosts)
     assert "./tests/etc/xython-load/hosts-include.cfg" in X.mtimes_hosts
+
+    # create a include outside with a full path
+    tmpdir = tempfile.TemporaryDirectory()
+    with open(f"{tmpdir.name}/test.conf", 'w') as f:
+        f.write("127.0.0.1 fullpathhost\n")
+    with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
+        f.write(f"directory {tmpdir.name}\n")
+    ret = X.read_hosts()
+    assert ret == X.RET_NEW
+    assert X.find_host("fullpathhost")
+
+    tmpdir.cleanup()
 
     print("==========================")
     print("test getting EDENY on mtime")
