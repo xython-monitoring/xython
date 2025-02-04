@@ -226,7 +226,40 @@ def test_xython_getvar():
     assert X.xython_getvar("") is None
     assert X.xython_getvar("XYTHON_TLS_KEY") == "./etc/xython/xymon.montjoie.local.key"
 
-    shutil.rmtree(X.xt_data)
+    setup_clean(X)
+
+def check_log_pattern(logfile, pattern):
+    try:
+        f = open(logfile)
+        d = f.read()
+        f.close()
+        if pattern in d:
+            return True
+    except FileNotFoundError:
+        return False
+    return False
+
+def test_debug():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-debug/'
+    setup_testdir(X, 'xython-debug')
+
+    X.load_xymonserver_cfg()
+    assert X.xython_getvar("DEBUG") == "1"
+    assert X.xython_getvar("DEBUGS") == "test,rrd"
+    X.init()
+    assert X.lldebug
+    X.debug('TESTMESSAGE1')
+    assert not check_log_pattern(f"{X.xt_logdir}/test", "TESTMESSAGE1")
+    assert check_log_pattern(f"{X.xt_logdir}/logging.log", "TESTMESSAGE1")
+    X.debugdev('toto', 'TESTMESSAGE2')
+    assert not check_log_pattern(f"{X.xt_logdir}/logging.log", "TESTMESSAGE2")
+    assert not check_log_pattern(f"{X.xt_logdir}/toto.log", "TESTMESSAGE2")
+    X.debugdev('rrd', 'TESTMESSAGE3')
+    assert check_log_pattern(f"{X.xt_logdir}/rrd.log", "TESTMESSAGE3")
+    assert check_log_pattern(f"{X.xt_logdir}/logging.log", "TESTMESSAGE3")
+
+    setup_clean(X)
 
 
 def test_xymon_getvar():
