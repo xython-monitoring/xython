@@ -4701,6 +4701,7 @@ class xythonsrv:
                 return
             except ConnectionResetError:
                 writer.close()
+                self.handle_net_message(message, peername)
                 return
             except asyncio.exceptions.CancelledError:
                 writer.close()
