@@ -342,6 +342,7 @@ class xythonsrv:
         self.pagelist['nongreen'] = {}
         self.logger = logging.getLogger('xython')
         self.logger.setLevel(logging.INFO)
+        self.loggers = {}
         self.tz = 'Europe/Paris'
         self.tls_cert = None
         self.tls_key = None
@@ -397,13 +398,22 @@ class xythonsrv:
 
     def debugdev(self, facility, buf):
         if self.lldebug and facility in self.debugs:
-            print(buf)
+            self.logger.debug(buf)
+            self.log_create(facility)
+            self.loggers[facility].debug(buf)
+
+    def log_create(self, facility):
+        if facility not in self.loggers:
+            self.loggers[facility] = logging.getLogger(f'xython-{facility}')
+            self.loggers[facility].setLevel(logging.DEBUG)
+            FileOutputHandler = logging.FileHandler(self.xt_logdir + f'{facility}.log')
+            FileOutputHandler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
+            self.loggers[facility].addHandler(FileOutputHandler)
 
     def log(self, facility, buf):
-        f = open("%s/%s.log" % (self.xt_logdir, facility), 'a')
-        f.write(f"{xytime(time.time())} {buf}\n")
-        f.close()
         self.logger.info(buf)
+        self.log_create(facility)
+        self.loggers[facility].info(buf)
 
     def error(self, buf):
         print(buf)
@@ -456,7 +466,6 @@ class xythonsrv:
         ret = ""
         # delete internal state
         req = f'DELETE FROM columns WHERE hostname = "{hostname}" AND column = "{column}"'
-        self.debug(f"REQ {req}")
         res = self.sqc.execute(req)
         # verify it is clean
         req = f'SELECT * FROM columns WHERE hostname = "{hostname}" AND column = "{column}"'
@@ -500,11 +509,12 @@ class xythonsrv:
             column = sbuf[2].rstrip()
         H = self.find_host(hostname)
         if H is None:
-            self.debug("DEBUG: drop unknow hostname")
+            self.log(self.daemon_name, f"WARNING: drop unknow hostname {hostname}")
+            return False
         self.debug(f"DEBUG: DROP {hostname} {column}")
         if column is not None:
             self.drop_column(hostname, column)
-            return
+            return True
         # drop all columns
         dropdir = f"{self.xt_histlogs}/{hostname}/"
         try:
@@ -903,7 +913,7 @@ class xythonsrv:
         return html
 
     def html_hostlist(self, pagename, group):
-        self.debug(f"DEBUG: html_hostlist for {pagename} group={group}")
+        self.debugdev("page", f"DEBUG: html_hostlist for {pagename} group={group}")
         now = time.time()
         hlist = []
         color = 'green'
@@ -1010,7 +1020,7 @@ class xythonsrv:
 
     def gen_htmls(self):
         for pagename in self.pagelist:
-            self.debug(f"DEBUG: will generate page {pagename}")
+            self.debugdev("page", f"DEBUG: will generate page {pagename}")
             #html = self.gen_html(pagename, None, None, None)
             html = self.html_page(pagename)
             if pagename == 'nongreen':
@@ -1024,12 +1034,10 @@ class xythonsrv:
             if pagename != 'svcstatus':
                 reldir = os.path.dirname(pagename)
                 fdir = f'{self.wwwdir}/{reldir}'
-                self.debug(f'TEST {fdir}')
                 if not os.path.exists(fdir):
-                    self.debug(f'CREATE {fdir}')
+                    self.debugdev("page", f'CREATE {fdir}')
                     os.mkdir(fdir)
                     os.chmod(fdir, 0o755)
-                print(reldir)
                 self.write_html(pagename, html)
 
     # TODO template jinja ?
@@ -1169,7 +1177,7 @@ class xythonsrv:
             self.debug(f"\tDEBUG: read {line}")
             t = line.split(";")
             if len(t) < 5:
-                self.error(f"ERROR: invalid SNMP custom graph line {line}")
+                self.error(f"ERROR: invalid SNMP custom graph line {line}, not enough tokens")
                 # TODO error
                 continue
             goid = {}
@@ -1268,7 +1276,7 @@ class xythonsrv:
                     self.debug("\tDEBUG: HTTP cont tests %s" % tag)
                     tokens = tag.split(';')
                     if len(tokens) != 3:
-                        self.error(f"INVALID {tag}")
+                        self.error(f"ERROR: cont: INVALID {tag}")
                         continue
                     url = f"{tokens[1]};cont={tokens[2]}"
                     H.add_test("http", url, None, "http", True, False)
@@ -1322,8 +1330,7 @@ class xythonsrv:
                     H.sslwarn = int(tokens[0])
                     H.sslalarm = int(tokens[1])
                     continue
-                self.log("todo", f"TODO hosts: tag={tag}")
-                self.debug(f"\tDEBUG: unknow tag={tag}xxx")
+                self.log(self.daemon_name, f"WARNING: unknow tag={tag} for {H.name}")
                 H.tags_unknown.append(tag)
             # end tag
             # self.host_page_clean(H.name)
@@ -1398,9 +1405,9 @@ class xythonsrv:
         H.rhcnt = self.read_hosts_cnt
         H.hostip = host_ip
         if host_tags != tags:
-            self.log(self.daemon_name, f"host {H.name} have some changes")
+            self.debugdev('loading', f"host {H.name} have some changes from {host_tags} to {tags}")
         else:
-            self.log(self.daemon_name, f"host {H.name} with no changes")
+            self.debugdev('loading', f"host {H.name} with no changes")
         H.tags = tags
         self.add_host(H)
         return self.RET_OK
@@ -1425,7 +1432,7 @@ class xythonsrv:
             self.error(f"ERROR: Cannot open {fpath} {str(e)}")
             return self.RET_ERR
         self.page_init()
-        self.debug(f"DEBUG: HOSTS: read {fpath}")
+        self.debugdev('loading', f"DEBUG: HOSTS: read {fpath}")
         dhosts = fhosts.read()
         dhosts = dhosts.replace('\\\n', '')
         current_parent = 'all'
@@ -2472,7 +2479,6 @@ class xythonsrv:
         self.column_update(socket.gethostname(), "xythond", ccolor, now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
     def scheduler(self):
-        # self.debug("====================")
         now = time.time()
         if now > self.ts_tests + 5:
             self.do_tests()
@@ -3054,13 +3060,13 @@ class xythonsrv:
                     ret = self.analysis_log(ltoks)
                     if ret["err"]:
                         continue
-                    self.log("todo", f"TODO: LOG")
+                    self.debugdev("todo", f"TODO: LOG")
                     ltoks = ret["ltoks"]
                 elif keyword == 'SVC':
                     ret = self.analysis_svc(ltoks)
                     if ret["err"]:
                         continue
-                    self.log("todo", f"TODO: SVC")
+                    self.debugdev("todo", f"TODO: SVC")
                     ltoks = ret["ltoks"]
                 else:
                     self.error(f"ERROR: unknow keyword {keyword}")
@@ -3639,7 +3645,7 @@ class xythonsrv:
             if dsname not in allds:
                 rrdtool.tune(rrdfpath, f"DS:{dsname}:GAUGE:600:-280:5000")
         try:
-            self.debug(f"DEBUG. update {hostname} {sname} {dsname} {value}")
+            self.debugdev('rrd', f"DEBUG: update {hostname} {sname} {dsname} {value}")
             rrdtool.update(rrdfpath, f'-t{dsname}', f"N:{value}")
         except rrdtool.OperationalError as e:
             self.error(f"ERROR: fail to update RRD for {hostname} {sname}: {str(e)}")
@@ -3884,7 +3890,7 @@ class xythonsrv:
                 if ret is not None and 'v' in ret:
                     self.do_sensor_rrd(hostname, adapter, ret['sname'], ret['v'])
                 continue
-            # self.debug(f"DEBUG: ignored {line}XX")
+            # self.debug(f"DEBUG: SENSOR ignored {line}XX")
         ts_end = time.time()
         self.stat("parsesensor", ts_end - ts_start)
         ret = self.column_update(hostname, "sensor", color, now, sbuf, self.ST_INTERVAL + 60, sender)
@@ -4515,6 +4521,15 @@ class xythonsrv:
         FileOutputHandler = logging.FileHandler(self.xt_logdir + 'logging.log')
         FileOutputHandler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         self.logger.addHandler(FileOutputHandler)
+        need_debug = self.xython_getvar('DEBUG')
+        if need_debug is not None and need_debug == "1":
+            self.enable_debug()
+            self.log(self.daemon_name, "ENABLE DEBUG MODE")
+        debugs = self.xython_getvar('DEBUGS')
+        if debugs:
+            self.debugs = debugs.split(',')
+            for debug in self.debugs:
+                self.log(self.daemon_name, f"Enabling debug for {debug}")
         # TODO get timezone from /etc/timezone ?
         tz = self.xython_getvar('TIMEZONE')
         if tz is not None:
@@ -4612,7 +4627,7 @@ class xythonsrv:
             return self.RET_ERR
 
     def host_add_to_page(self, pagename, hostname, group):
-        self.debug(f'DEBUG: add {hostname} to {pagename} (group={group})')
+        self.debugdev("page", f'DEBUG: add {hostname} to {pagename} (group={group})')
         if pagename not in self.pagelist:
             self.error(f"ERROR: {pagename} do not exists")
             return self.RET_ERR
@@ -4639,7 +4654,6 @@ class xythonsrv:
             if self.quit > 0:
                 if self.uptime_start + self.quit < time.time():
                     sys.exit(0)
-            self.debug("DEBUG: scheduling")
             self.scheduler()
             await asyncio.sleep(1)
 
@@ -4654,9 +4668,9 @@ class xythonsrv:
         try:
             await writer.drain()
         except BrokenPipeError as e:
-            self.error(f"ERROR: {str(e)}")
+            self.error(f"ERROR: handle_unix_client: {str(e)}")
         except ConnectionResetError as e:
-            self.error(f"ERROR: {str(e)}")
+            self.error(f"ERROR: handle_unix_client: {str(e)}")
         writer.close()
         return
 
@@ -4708,11 +4722,11 @@ class xythonsrv:
         if self.tls_cert and self.tls_key:
             ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             ssl_ctx.load_cert_chain(self.tls_cert, self.tls_key)
-            self.log("TLS", "START TLS");
+            self.log(self.daemon_name, "START TLS");
             coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.tlsport, backlog=1000, ssl=ssl_ctx)
             self.tasks.append(coro)
         else:
-            self.log("TLS", f"DO NOT START TLS")
+            self.log(self.daemon_name, f"DO NOT START TLS")
         if os.path.exists(self.unixsock):
             os.unlink(self.unixsock)
         self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
