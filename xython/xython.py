@@ -1285,11 +1285,12 @@ class xythonsrv:
                 if tag[0:4] == 'http':
                     url = tag
                     if tag[0:10] == 'httpstatus':
+                        # TODO column name
                         tokens = tag.split(';')
-                        if len(tokens) != 3:
-                            self.error(f"INVALID {tag}")
+                        if len(tokens) != 4:
+                            self.error(f"ERROR: httpstatus: INVALID {tag}")
                             continue
-                        url = f"{tokens[1]};httpcode={tokens[2]}"
+                        url = f"{tokens[1]};httpcode={tokens[2]};badhttpcode={tokens[3]};noredirect"
                     self.debug("\tDEBUG: HTTP tests %s" % tag)
                     H.add_test("http", url, None, "http", True, False)
                     H.tags_known.append(tag)
