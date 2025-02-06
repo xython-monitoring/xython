@@ -1064,7 +1064,21 @@ def do_generic_proto_notls(hostname, address, protoname, port, url, p_send, p_ex
                 s.send(p_send.encode("UTF8"))
         if p_expect or (p_options is not None and 'banner' in p_options):
             buf = s.recv(1024)
-            banner = buf.decode("UTF8")
+            banner_decode = False
+            try:
+                banner = buf.decode("UTF8")
+                banner_decode = True
+            except UnicodeDecodeError:
+                print(f"DEBUG: banner decode error for {hostname}:{protoname}")
+            if not banner_decode:
+                try:
+                    banner = buf.decode("UTF8", 'surrogateescape')
+                except UnicodeDecodeError:
+                    print(f"DEBUG: banner decode22 error for {hostname}:{protoname}")
+                    s.close()
+                    dret["color"] = 'red'
+                    dret["txt"] = f"Service {protoname} on {hostname} is ko\n\nFail to decode banner\n\n"
+                    return dret
         if p_expect:
             if '\\x' in p_send:
                 if hex_compare(buf, p_expect):
