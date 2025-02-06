@@ -652,6 +652,8 @@ def dohttp(hostname, urls, column):
         headers = {}
         headers["User-Agent"] = f'xython xythonnet/{version("xython")}'
         need_httpcode = 200
+        bad_httpcode = None
+        need_redirect = True
         hdata += f'<fieldset><legend>{url}</legend>'
         # print(f'DEBUG: dohttp: check {url}')
         tokens = url.split(';')
@@ -683,6 +685,11 @@ def dohttp(hostname, urls, column):
             elif cmd == 'httpcode':
                 # TODO check it is an integer or regex
                 need_httpcode = cmds[1]
+            elif cmd == 'badhttpcode':
+                # TODO check it is an integer or regex
+                bad_httpcode = cmds[1]
+            elif cmd == 'noredirect':
+                need_redirect = False
             else:
                 options += f"unknow={token}"
         if httpcount > 0:
@@ -691,14 +698,17 @@ def dohttp(hostname, urls, column):
         cret = None
         # self.debug("\tDEBUG: http %s" % url)
         try:
-            r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True, proxies=proxies)
-            if verify and 'https' in url:
+            r = requests.get(url, headers=headers, verify=verify, timeout=timeout, stream=True, proxies=proxies, allow_redirects=need_redirect)
+            if verify and 'https' in url and r.raw.connection is not None and r.raw.connection.sock is not None:
                 cret = show_cert(r.raw.connection.sock.getpeercert(), hostname)
             hdata += f"&green {url} - OK\n\n"
             scode = str(r.status_code)
             sneed = str(need_httpcode)
-            rr = re.match(sneed, scode)
-            if rr:
+            sbad = str(bad_httpcode)
+            if re.match(sbad, scode):
+                color = "red"
+                hdata += f"&red {r.status_code} {r.reason} (bad code={bad_httpcode})\n"
+            elif re.match(sneed, scode):
                 hdata += f"&green {r.status_code} {r.reason}\n"
             else:
                 color = "red"
