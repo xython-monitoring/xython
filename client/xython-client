@@ -219,8 +219,8 @@ fi
 
 if [ -x /sbin/iptables ];then
 	echo '[iptables]'
-	iptables -L -v -n
-	iptables -L -v -n -t nat
+	iptables -L -v -n 2>/dev/null
+	iptables -L -v -n -t nat 2>/dev/null
 fi
 
 # Report mdstat data if it exists
