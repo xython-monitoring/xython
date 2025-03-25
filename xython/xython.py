@@ -31,6 +31,7 @@ try:
 except ImportError:
     has_rrdtool = False
 import sqlite3
+from .xython_tests import task_fail
 from .xython_tests import ping
 from .xython_tests import dohttp
 from .xython_tests import do_tssh
@@ -1252,6 +1253,10 @@ class xythonsrv:
                         self.add_host_alias(H, alias)
                     H.tags_known.append(tag)
                     continue
+                if tag[0:4] == 'fail':
+                    H.add_test("fail", tag, None, "fail", True, False)
+                    H.tags_known.append(tag)
+                    continue
                 if tag[0:4] == 'conn':
                     # TODO name of column via =column
                     tokens = tag.split(':')
@@ -1970,7 +1975,11 @@ class xythonsrv:
         hfile = "%s/%d" % (hdir, ts)
         f = open(hfile, 'w')
         f.write("%s " % color)
-        f.write(buf)
+        try:
+            f.write(buf)
+        except UnicodeEncodeError:
+            self.error(f"Fail to write data for {hostname} {column}")
+            print(buf)
         # TODO calcul
         # add a \n since buf could not have one at end
         f.write("\nstatus unchanged in 0.00 minutes\n")
@@ -2272,6 +2281,13 @@ class xythonsrv:
         self.celerytasks[name] = ctask
         self.celtasks.append(ctask)
 
+    def dofail(self, T):
+        name = f"{T.hostname}_fail"
+        ctask = task_fail.delay()
+        self.celerytasks[name] = ctask
+        self.celtasks.append(ctask)
+        return True
+
     def doping(self, T):
         H = self.find_host(T.hostname)
         name = f"{T.hostname}_conn"
@@ -2315,6 +2331,8 @@ class xythonsrv:
             H = self.find_host(hostname)
             for T in H.tests:
                 if T.type == ttype:
+                    if T.type == 'fail':
+                        self.dofail(T)
                     if T.type == 'conn':
                         if not self.doping(T):
                             lag += 1
@@ -2362,16 +2380,18 @@ class xythonsrv:
                 status = ctask.status
                 if status == 'FAILURE':
                     failed = None
-                    for name in self.celerytasks:
+                    for name in list(self.celerytasks):
                         if self.celerytasks[name] == ctask:
                             failed = name
+                            del (self.celerytasks[name])
                     self.celtasks.remove(ctask)
                     self.error(f"ERROR: celery task error for {failed}")
                     # TODO better handle this problem, easy to generate by removing ping
-                    ret = ctask.get()
-                    print("==============================================")
-                    print(ret)
-                    print("==============================================")
+                    try:
+                        ret = ctask.get()
+                    except BaseException as e:
+                        self.error(f"ERROR: celery task {failed} except {e}")
+                    ctask.forget()
                     continue
                 ret = ctask.get()
                 hostname = ret["hostname"]
@@ -2397,6 +2417,7 @@ class xythonsrv:
                     self.error(f"ERROR: BUG {name} not found")
                 else:
                     del (self.celerytasks[name])
+                ctask.forget()
                 if testtype == 'conn' and "rtt_avg" in ret:
                     self.do_rrd(hostname, column, "rtt", 'sec', ret["rtt_avg"], ['DS:sec:GAUGE:600:0:U'])
         ts_end = time.time()
