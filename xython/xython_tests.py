@@ -579,6 +579,10 @@ def do_tssh(hostname, urls):
 
 
 @app.task
+def task_fail():
+    raise ValueError("FAIL")
+
+@app.task
 def ping(hostname, t, doipv4, doipv6):
     ts_start = time.time()
     dret = {}
