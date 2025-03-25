@@ -8,6 +8,7 @@
 
 import asyncio
 import bz2
+import hashlib
 import logging
 import os
 import pytz
@@ -349,6 +350,7 @@ class xythonsrv:
         self.tls_key = None
         self.colnames = {}
         self.colnames['mdstat'] = 'raid'
+        self.inventory_cache = {}
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -2109,6 +2111,68 @@ class xythonsrv:
         for column in hostcols:
             if not hostcols[column]:
                 self.error(f"ERROR: remains of {name} {column}")
+        return True
+
+    # simple is for one-line data
+    def do_inventory(self, hostname, section, data, simple):
+        # TODO compress ?
+        # self.debug(f"DEBUG: inventory for {hostname}:{section}")
+        if simple:
+            sha256 = data.rstrip()
+        else:
+            n = hashlib.sha256()
+            n.update(data.encode('utf8', 'surrogateescape'))
+            sha256 = n.hexdigest()
+        if hostname not in self.inventory_cache:
+            self.inventory_cache[hostname] = {}
+        if section not in self.inventory_cache[hostname]:
+            self.inventory_cache[hostname][section] = None
+        if sha256 == self.inventory_cache[hostname][section]:
+            # self.debug(f"INVENTORY: {section} is cached")
+            return True
+        idir = "%s/%s" % (self.xt_inventorydir, hostname)
+        if not os.path.exists(idir):
+            os.mkdir(idir)
+        idir = "%s/%s/%s" % (self.xt_inventorydir, hostname, section)
+        if not os.path.exists(idir):
+            os.mkdir(idir)
+        ifile = "%s/%s" % (idir, section)
+        try:
+            with open(ifile, 'r') as f:
+                ih = f.read()
+        except FileNotFoundError:
+            # self.debug(f"DEBUG: {ifile} do not exists")
+            ih = ""
+        last = False
+        found = False
+        ihl = ih.split("\n")
+        # format "TS hash"
+        for line in ihl:
+            if len(line) == 0:
+                continue
+            last = False
+            line = line.rstrip()
+            # self.debug(f"IVENTORY: check {line}")
+            tokens = line.split(" ")
+            if not simple and len(tokens) != 2:
+                self.error(f"Corrupt {ifile}")
+                return False
+            if simple:
+                v = tokens[1:]
+            else:
+                v = tokens[1]
+            if v == sha256:
+                last = True
+        if last:
+            return True
+        self.inventory_cache[hostname][section] = sha256
+        with open(ifile, 'a') as f:
+            f.write(f"{time.time()} {sha256}\n")
+        if simple:
+            return True
+        hfile = "%s/%s" % (idir, sha256)
+        with open(hfile, 'w') as f:
+            f.write(data)
         return True
 
     def gen_top_changes(self, dstart, dend):
@@ -4325,6 +4389,19 @@ class xythonsrv:
                         if H is not None:
                             H.uname = buf
                         self.gen_column_info(hostname)
+                        ret = self.do_inventory(hostname, "uname", buf, True)
+                    if section == '[lsmod]':
+                        handled = True
+                        ret = self.do_inventory(hostname, "lsmod", buf, False)
+                    if section == '[lspci]':
+                        handled = True
+                        ret = self.do_inventory(hostname, "lspci", buf, False)
+                    if section == '[dpkg]':
+                        handled = True
+                        ret = self.do_inventory(hostname, "dpkg", buf, False)
+                    if section == '[rpm]':
+                        handled = True
+                        ret = self.do_inventory(hostname, "rpm", buf, False)
                     if section == '[osversion]':
                         handled = True
                         H = self.find_host(hostname)
@@ -4336,7 +4413,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
@@ -4519,6 +4596,7 @@ class xythonsrv:
         self.xt_rrd = f"{self.xt_data}/rrd/"
         self.xt_acks = f"{self.xt_data}/acks/"
         self.xt_state = f"{self.xt_data}/state/"
+        self.xt_inventorydir = f"{self.xt_data}/inventory/"
         if self.xythonmode > 0:
             if not os.path.exists(self.xt_data):
                 try:
@@ -4540,6 +4618,8 @@ class xythonsrv:
                 os.mkdir(self.xt_acks)
             if not os.path.exists(self.xt_state):
                 os.mkdir(self.xt_state)
+            if not os.path.exists(self.xt_inventorydir):
+                os.mkdir(self.xt_inventorydir)
         FileOutputHandler = logging.FileHandler(self.xt_logdir + 'logging.log')
         FileOutputHandler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         self.logger.addHandler(FileOutputHandler)

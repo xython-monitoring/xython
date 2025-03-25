@@ -23,6 +23,8 @@ is_busybox() {
 
 SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
 MACHINEDOTS="$(uname -n)"
+DPKG=0
+RPM=0
 
 echo "client $MACHINEDOTS.$SERVEROSTYPE $SERVEROSTYPE"
 echo "[date]"
@@ -32,16 +34,29 @@ uname -rsmn
 echo "[osversion]"
 if [ -x /bin/lsb_release ]; then
 	/bin/lsb_release -r -i -s
-	/bin/lsb_release -a 2>/dev/null
+	TMPF=$(mktemp)
+	/bin/lsb_release -a 2>/dev/null > $TMPF
+	grep -qi 'ubuntu' $TMPF
+	if [ $? -eq 0 ];then
+		DPKG=1
+	fi
+	grep -qi 'debian' $TMPF
+	if [ $? -eq 0 ];then
+		DPKG=1
+	fi
+	cat $TMPF
+	rm $TMPF
 elif [ -x /usr/bin/lsb_release ]; then
 	/usr/bin/lsb_release -r -i -s
 	/usr/bin/lsb_release -a 2>/dev/null
 elif [ -f /etc/redhat-release ]; then
 	cat /etc/redhat-release
+	RPM=1
 elif [ -f /etc/gentoo-release ]; then
 	cat /etc/gentoo-release
 elif [ -f /etc/debian_version ]; then
 	echo "Debian $(cat /etc/debian_version)"
+	DPKG=1
 elif [ -f /etc/SuSE-release ]; then
 	# deprecated since 13.1 and removed since 15.0
 	# https://en.opensuse.org/Etc_SuSE-release
@@ -50,8 +65,13 @@ elif [ -f /etc/slackware-version ]; then
 	cat /etc/slackware-version
 elif [ -f /etc/mandrake-release ]; then
 	cat /etc/mandrake-release
+	RPM=1
+elif [ -f /etc/rocky-release ]; then
+	cat /etc/rocky-release
+	RPM=1
 elif [ -f /etc/fedora-release ]; then
 	cat /etc/fedora-release
+	RPM=1
 elif [ -f /etc/arch-release ]; then
 	cat /etc/arch-release
 fi
@@ -310,6 +330,21 @@ if [ $ISLINUX -eq 1 ];then
 			echo "##$lvl"
 			dmesg --level=$lvl 2>/dev/null |sed 's,^,#,'
 		done
+	fi
+	echo '[lsmod]'
+	lsmod 2>/dev/null
+
+	echo '[lspci]'
+	lspci -kv 2>/dev/null
+
+	if [ $DPKG -eq 1 ];then
+		# same as xymon-client patched by debian
+		echo '[dpkg]'
+		COLUMNS=200 dpkg -l | awk '/^..  / { print $1 " " $2 " " $3 }' | sort
+	fi
+	if [ $RPM -eq 1 ];then
+		echo '[rpm]'
+		rpm -qa | sort
 	fi
 fi
 
