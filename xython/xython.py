@@ -433,7 +433,7 @@ class xythonsrv:
         try:
             f = open(f"{self.etcdir}/xython.cfg", 'r')
         except FileNotFoundError:
-            self.error("ERROR: Fail to open xython.cfg")
+            self.error(f"ERROR: Fail to open {self.etcdir}/xython.cfg: FileNotFound")
             return None
         for line in f:
             line = line.rstrip()
