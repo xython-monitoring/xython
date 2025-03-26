@@ -21,10 +21,36 @@ is_busybox() {
 	return $?
 }
 
+# return 0 if time $1 is elapsed since last run for $2
+# if $1==ONCE run only once
+run_less() {
+	if [ ! -e $STATEDIR ];then
+		mkdir -p $STATEDIR
+	fi
+	STATEFILE="$STATEDIR/$2.lastrun"
+	if [ -e "$STATEFILE" ];then
+		if [ "$1" == "ONCE" ];then
+			return 1
+		fi
+		STAT="$(stat --format=%Y $STATEFILE)"
+		NOW=$"(date +%s)"
+		DIFF_STAT=$(($NOW-$STAT))
+		if [ $DIFF_STATE -le $1 ];then
+			return 1
+		fi
+	else
+		touch $STATEFILE
+		return 0
+	fi
+	touch $STATEFILE
+	return 0
+}
+
 SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
 MACHINEDOTS="$(uname -n)"
 DPKG=0
 RPM=0
+STATEDIR='/run/xython-client'
 
 echo "client $MACHINEDOTS.$SERVEROSTYPE $SERVEROSTYPE"
 echo "[date]"
@@ -338,13 +364,19 @@ if [ $ISLINUX -eq 1 ];then
 	lspci -kv 2>/dev/null
 
 	if [ $DPKG -eq 1 ];then
+		run_less 3600 dpkg
 		# same as xymon-client patched by debian
-		echo '[dpkg]'
-		COLUMNS=200 dpkg -l | awk '/^..  / { print $1 " " $2 " " $3 }' | sort
+		if [ $? -eq 0 ];then
+			echo '[dpkg]'
+			COLUMNS=200 dpkg -l | awk '/^..  / { print $1 " " $2 " " $3 }' | sort
+		fi
 	fi
 	if [ $RPM -eq 1 ];then
-		echo '[rpm]'
-		rpm -qa | sort
+		run_less 3600 rpm
+		if [ $? -eq 0 ];then
+			echo '[rpm]'
+			rpm -qa | sort
+		fi
 	fi
 fi
 
