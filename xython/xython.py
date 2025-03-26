@@ -1864,8 +1864,9 @@ class xythonsrv:
             # duplicate
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
-                self.error("ERROR: cannot purple without status")
-                return 2
+                self.error(f"ERROR: cannot purple {hostname}:{cname} without status, creating an empty one")
+                rdata = {}
+                rdata["raw"] = "statusempty"
             data = ''.join(rdata["raw"])
         # TODO not @@XYMONDCHK-V1
         # @@status#62503/karnov|1684156989.403184|172.16.1.22||karnov|lr|1684243389|red||red|1682515389|0||0||1684156916|linux||0|
