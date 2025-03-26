@@ -1976,13 +1976,14 @@ class xythonsrv:
         if not os.path.exists(hdir):
             os.mkdir(hdir)
         hfile = "%s/%d" % (hdir, ts)
-        f = open(hfile, 'w')
+        f = open(hfile, 'w', encoding='utf-8')
         f.write("%s " % color)
         try:
-            f.write(buf)
-        except UnicodeEncodeError:
-            self.error(f"Fail to write data for {hostname} {column}")
-            print(buf)
+            f.write(r"%s" % buf)
+        except UnicodeEncodeError as e:
+            self.error(f"Fail to write data for {hostname} {column} {ts} {e}")
+            tbuf = buf.encode("UTF8", "replace").decode("UTF8", 'surrogateescape')
+            f.write(tbuf)
         # TODO calcul
         # add a \n since buf could not have one at end
         f.write("\nstatus unchanged in 0.00 minutes\n")
