@@ -2154,15 +2154,16 @@ class xythonsrv:
                 continue
             last = False
             line = line.rstrip()
-            # self.debug(f"IVENTORY: check {line}")
+            # self.debug(f"INVENTORY: check {line}")
             tokens = line.split(" ")
             if not simple and len(tokens) != 2:
                 self.error(f"Corrupt {ifile}")
                 return False
             if simple:
-                v = tokens[1:]
+                v = " ".join(tokens[1:]).rstrip()
+                self.debug(f"INVENTORY: {v}")
             else:
-                v = tokens[1]
+                v = tokens[1].rstrip()
             if v == sha256:
                 last = True
         if last:
