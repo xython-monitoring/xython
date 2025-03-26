@@ -4390,6 +4390,9 @@ class xythonsrv:
                             H.uname = buf
                         self.gen_column_info(hostname)
                         ret = self.do_inventory(hostname, "uname", buf, True)
+                    if section == '[cpumicrocode]':
+                        handled = True
+                        ret = self.do_inventory(hostname, "cpumicrocode", buf, True)
                     if section == '[lsmod]':
                         handled = True
                         ret = self.do_inventory(hostname, "lsmod", buf, False)
@@ -4402,6 +4405,9 @@ class xythonsrv:
                     if section == '[rpm]':
                         handled = True
                         ret = self.do_inventory(hostname, "rpm", buf, False)
+                    if section == '[dmidecode]':
+                        handled = True
+                        ret = self.do_inventory(hostname, "dmidecode", buf, False)
                     if section == '[osversion]':
                         handled = True
                         H = self.find_host(hostname)
@@ -4413,7 +4419,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
