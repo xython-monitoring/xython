@@ -4792,7 +4792,7 @@ class xythonsrv:
         except TimeoutError:
             writer.close()
             return
-        message = data.decode("UTF8")
+        message = data.decode("UTF8", 'surrogateescape')
         lsbuf = self.send_client_local(message)
         if lsbuf:
             sbuf = "\n".join(lsbuf)
@@ -4801,7 +4801,7 @@ class xythonsrv:
         while True:
             try:
                 data = await asyncio.wait_for(reader.read(320000), timeout=10)
-                message += data.decode("UTF8")
+                message += data.decode("UTF8", 'surrogateescape')
                 if len(data) == 0:
                     self.handle_net_message(message, peername)
                     writer.close()
