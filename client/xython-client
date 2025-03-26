@@ -21,10 +21,61 @@ is_busybox() {
 	return $?
 }
 
+# return 0 if time $1 is elapsed since last run for $2
+# if $1==ONCE run only once
+run_less() {
+	if [ ! -e $STATEDIR ];then
+		mkdir -p $STATEDIR 2>/dev/null
+		if [ $? -ne 0 ];then
+			return 0
+		fi
+	fi
+	# verify write access
+	touch $STATEDIR/writetest 2>/dev/null
+	if [ $? -ne 0 ];then
+		return 0
+	fi
+	STATEFILE="$STATEDIR/$2.lastrun"
+	if [ -e "$STATEFILE" ];then
+		if [ "$1" = "ONCE" ];then
+			return 1
+		fi
+		MINUTES=$(($1/60))
+		find --help > $STATEDIR/find.test 2>&1
+		# Verify find support mmin, old busybox do not have it
+		grep -q mmin $STATEDIR/find.test
+		if [ $? -eq 0 ];then
+			find $STATEFILE -mmin +$MINUTES |grep -q "$STATEFILE"
+			FI=$?
+			if [ $FI -ne 0 ];then
+				return 1
+			fi
+		else
+			# stat is not availlable on some platform
+			# busybox stat do not support format=%Y
+			STAT="$(stat --format=%Y $STATEFILE 2>/dev/null)"
+			if [ $? -ne 0 ];then
+				STAT=0
+			fi
+			NOW="$(date +%s)"
+			DIFF_STAT=$((NOW-STAT))
+			if [ $DIFF_STAT -le $1 ];then
+				return 1
+			fi
+		fi
+	else
+		touch $STATEFILE
+		return 0
+	fi
+	touch $STATEFILE
+	return 0
+}
+
 SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
 MACHINEDOTS="$(uname -n)"
 DPKG=0
 RPM=0
+STATEDIR='/run/xython-client'
 
 echo "client $MACHINEDOTS.$SERVEROSTYPE $SERVEROSTYPE"
 echo "[date]"
@@ -338,13 +389,19 @@ if [ $ISLINUX -eq 1 ];then
 	lspci -kv 2>/dev/null
 
 	if [ $DPKG -eq 1 ];then
+		run_less 3600 dpkg
 		# same as xymon-client patched by debian
-		echo '[dpkg]'
-		COLUMNS=200 dpkg -l | awk '/^..  / { print $1 " " $2 " " $3 }' | sort
+		if [ $? -eq 0 ];then
+			echo '[dpkg]'
+			COLUMNS=200 dpkg -l | awk '/^..  / { print $1 " " $2 " " $3 }' | sort
+		fi
 	fi
 	if [ $RPM -eq 1 ];then
-		echo '[rpm]'
-		rpm -qa | sort
+		run_less 3600 rpm
+		if [ $? -eq 0 ];then
+			echo '[rpm]'
+			rpm -qa | sort
+		fi
 	fi
 fi
 
