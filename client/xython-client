@@ -304,12 +304,12 @@ fi
 if test -x /sbin/pvs
 then
 	echo "[lvm_pvs]"
-	pvs
+	pvs 2>/dev/null
 fi
 if test -x /sbin/vgs
 then
 	echo "[lvm_vgs]"
-	vgs
+	vgs 2>/dev/null
 fi
 
 echo "[ps]"
