@@ -389,6 +389,20 @@ if [ $ISLINUX -eq 1 ];then
 	echo '[lspci]'
 	lspci -kv 2>/dev/null
 
+	run_less ONCE dmidecode
+	if [ $? -eq 0 ];then
+		dmidecode --version 2>/dev/null >/dev/null
+		if [ $? -eq 0 ];then
+			echo "[dmidecode]"
+			dmidecode
+		fi
+	fi
+
+	if [ -e /sys/devices/system/cpu/cpu0/microcode/version ];then
+		echo '[cpumicrocode]'
+		cat /sys/devices/system/cpu/cpu0/microcode/version
+	fi
+
 	if [ $DPKG -eq 1 ];then
 		run_less 3600 dpkg
 		# same as xymon-client patched by debian
