@@ -383,7 +383,8 @@ if [ $ISLINUX -eq 1 ];then
 		done
 	fi
 	echo '[lsmod]'
-	lsmod 2>/dev/null
+	# on some system, the "usedby" counter changed too much
+	lsmod 2>/dev/null | awk -F' ' '{ print $1 " " $2 " " $4}'
 
 	echo '[lspci]'
 	lspci -kv 2>/dev/null
