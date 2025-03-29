@@ -71,6 +71,38 @@ run_less() {
 	return 0
 }
 
+do_smart() {
+	XYTHON_CLIENT_ETC="/run/xython-client"
+	if [ -e /etc/xython ];then
+		XYTHON_CLIENT_ETC="/etc/xython"
+	fi
+	echo "[smart]"
+	for i in a b c d e f g
+	do
+		if [ -e /dev/sd$i ];then
+			DEVTYPE=""
+			echo "SMARTHEADER:device=/dev/sd$i"
+			if [ -e "$XYTHON_CLIENT_ETC/smart.conf" ];then
+				grep "^/dev/sd$i:IGNORE" "$XYTHON_CLIENT_ETC/smart.conf"
+				if [ $? -eq 0 ];then
+					echo "IGNORED"
+					continue
+				fi
+			fi
+			smartctl $DEVTYPE -a /dev/sd$i
+			echo "SMART_RETURNCODE=$?"
+		fi
+	done
+	for i in $(seq 0 5)
+	do
+		if [ -e /dev/nvme$i ];then
+			echo "SMARTHEADER:device=/dev/nvme$i"
+			smartctl -a /dev/nvme$i
+			echo "SMART_RETURNCODE=$?"
+		fi
+	done
+}
+
 SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
 MACHINEDOTS="$(uname -n)"
 DPKG=0
@@ -416,6 +448,14 @@ if [ $ISLINUX -eq 1 ];then
 		if [ $? -eq 0 ];then
 			echo '[rpm]'
 			rpm -qa | sort
+		fi
+	fi
+
+	run_less 3600 smart
+	if [ $? -eq 0 ];then
+		smartctl --version 2>/dev/null >/dev/null
+		if [ $? -eq 0 ];then
+			do_smart
 		fi
 	fi
 fi
