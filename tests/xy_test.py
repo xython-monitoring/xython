@@ -817,6 +817,9 @@ def test_reload():
     assert len(X.xy_hosts) == 2
     X.sqc.execute('SELECT * FROM tests')
     results = X.sqc.fetchall()
+    if len(results) != 2:
+        print("=========================== test_reload")
+        print(results)
     assert len(results) == 2
 
     # we should have 3 hosts with conn on each except for ipv6
@@ -944,6 +947,8 @@ def test_reload():
     with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
         f.write(f"directory {tmpdir.name}\n")
     ret = X.read_hosts()
+    if ret != X.RET_NEW:
+        print(X.xy_hosts)
     assert ret == X.RET_NEW
     assert X.find_host("fullpathhost")
 
