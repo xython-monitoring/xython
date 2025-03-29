@@ -2304,6 +2304,31 @@ def test_analysis():
     assert H.rules["MEMSWAP"].panic == 85
     assert H.rules["SENSOR"] is not None
 
+    setup_clean(X)
 
+def test_smart():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-smart/'
+    setup_testdir(X, 'xython-smart')
+    X.lldebug = True
+    X.init()
+
+    with open("tests/smart/smart.raptor") as f:
+        data = f.read()
+
+    ret = X.parse_smartoutput(data.split("\n"))
+    print(ret)
+
+    with open("tests/smart/smart.ssdnvidia") as f:
+        data = f.read()
+
+    ret = X.parse_smartoutput(data.split("\n"))
+    print(ret)
+
+    with open("tests/smart/gs9") as f:
+        data = f.read()
+
+    ret = X.parse_smartoutput(data.split("\n"))
+    print(ret)
 
     setup_clean(X)

@@ -4310,6 +4310,184 @@ class xythonsrv:
         self.column_update(hostname, "dmesg", color, int(tend), state, 60 * 60, sender)
         return True
 
+    def parse_smartoutput(self, data):
+        ret = {}
+        ret["color"] = 'green'
+        ret["html"] = ""
+        for line in data:
+            ret["html"] += line + "\n"
+            line = line.lstrip(" ")
+            if "SMART overall-health self-assessment test result" in line:
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                v = tokens[1].lstrip(" ")
+                if v != 'PASSED':
+                    print(f"DEBUG: unknow value {v}")
+                    ret["html"] += "&red Unknow value {v}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                else:
+                    ret["html"] += "&green Health OK\n"
+            if "SMART Health Status:" in line:
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                v = tokens[1].lstrip(" ")
+                if v != 'OK':
+                    ret["html"] += "&red Unknow value {v}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                else:
+                    ret["html"] += "&green Health OK\n"
+            if "Current Drive Temperature:" in line:
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += f"&red invalid line {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                t = tokens[1].lstrip(" ")
+                if t[-1] != 'C':
+                    ret["html"] += f"&red TEMP not in C in {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                toks = t.split(" ")
+                print(f"DEBUG: toks={toks}")
+                if len(toks) != 2:
+                    ret["html"] += f"&red invalid temperature in {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                temp = toks[0]
+                try:
+                    tempi = int(temp)
+                except ValueError:
+                    ret["html"] += f"&red non integer temperature in {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                ret["html"] += "&clear Temperature {tempi}\n"
+                ret["current_temp"] = tempi
+            if "Reallocated_Sector_Ct" in line or "Reallocated_Event_Count" in line:
+                tokens = line.split()
+                v = tokens[9]
+                try:
+                    reallocated = int(v)
+                except ValueError:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                limit = 0
+                if reallocated <= limit:
+                    ret["html"] += f"&green {reallocated} <= {limit}\n"
+                else:
+                    ret["html"] += f"&red {reallocated} > {limit}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+            if "Temperature_Celsius" in line or "Airflow_Temperature_Cel" in line:
+                tokens = line.split()
+                v = tokens[9]
+                try:
+                    temp = int(v)
+                except ValueError:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                limit = 70
+                if temp <= limit:
+                    ret["html"] += f"&green {temp} <= {limit}\n"
+                else:
+                    ret["html"] += f"&red {temp} > {limit}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+            # NVME
+            if "Temperature:" in line or "Temperature Sensor 1:" in line :
+                tokens = line.split(':')
+                if len(tokens) != 2:
+                    ret["html"] += f"&red Temperature need 2 tokens in {tokens}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                temp = tokens[1].lstrip(" ").split(" ")
+                if len(temp) != 2:
+                    ret["html"] += f"&red Temperature need 2 tokens in {temp}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                if temp[1] != 'Celsius':
+                    ret["html"] += f"&red did not found Celsius in {temp}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                try:
+                    temp = int(temp[0])
+                except ValueError:
+                    ret["html"] += "&red Fail to convert {temp[0]} to integer\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                limit = 70
+                if temp <= limit:
+                    ret["html"] += f"&green {temp} <= {limit}\n"
+                else:
+                    ret["html"] += f"&red {temp} > {limit}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+            # TODO NVME Available Spare
+            # TODO NVME Percentage Used
+            if 'SMART_RETURNCODE=' in line:
+                tokens = line.split("=")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                try:
+                    returncode = int(tokens[1])
+                except ValueError:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                if returncode != 0 and returncode != 64:
+                    ret["html"] += "&red return code\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                else:
+                    ret["html"] += "&green return code\n"
+
+        return ret
+
+    def parse_smart(self, hostname, hdata, sender):
+        now = time.time()
+        color = 'green'
+        state  = f"{xytime(now, self.tz)} - smart Ok\n<p>"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for dmesg")
+            return False
+        device = None
+        smartdata = []
+        for line in hdata.split("\n"):
+            if line[:12] == 'SMARTHEADER:':
+                if device is not None:
+                    ret = self.parse_smartoutput(smartdata)
+                    state += ret["html"]
+                    color = setcolor(ret["color"], color)
+                    state += "</fieldset>"
+                smartdata = []
+                params = line.split(":")
+                param = params.pop(0)
+                for param in params:
+                    tokens = param.split("=")
+                    if len(tokens) != 2:
+                        self.logger.error(f"SMARTHEADER: Invalid token {tokens}")
+                        continue
+                    if tokens[0] == 'device':
+                        device = tokens[1]
+                state += f"<fieldset><legend>{device}</legend>\n"
+            else:
+                #state += line + "\n"
+                smartdata.append(line)
+        ret = self.parse_smartoutput(smartdata)
+        state += ret["html"]
+        color = setcolor(ret["color"], color)
+        state += "</fieldset>"
+        tend = time.time()
+        state += f"</p>Seconds: {tend - now}"
+        self.column_update(hostname, "smartx", color, int(tend), state, 2 * 60 * 60, sender)
+        return True
+
     def parse_hostdata(self, hdata, addr):
         hostname = None
         section = None
@@ -4380,6 +4558,11 @@ class xythonsrv:
                         ret = self.parse_dmesg(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
+                    if section == '[smart]':
+                        handled = True
+                        ret = self.parse_smart(hostname, buf, addr)
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[clientversion]':
                         handled = True
                         H = self.find_host(hostname)
@@ -4422,7 +4605,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]', '[smart]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:

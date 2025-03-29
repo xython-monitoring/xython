@@ -1,0 +1,46 @@
+smartctl 7.3 2022-02-28 r5338 [ppc64le-linux-6.1.0-21-powerpc64le] (local build)
+Copyright (C) 2002-22, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               WD
+Product:              WD2001FYYG-01SL3
+Revision:             VR08
+Compliance:           SPC-4
+User Capacity:        2,000,398,934,016 bytes [2.00 TB]
+Logical block size:   512 bytes
+Rotation Rate:        7200 rpm
+Form Factor:          3.5 inches
+Logical Unit id:      0x50000c0f01f3662c
+Serial number:        WMC160D3ZDE3
+Device type:          disk
+Transport protocol:   SAS (SPL-4)
+Local Time is:        Tue Sep 17 15:25:29 2024 CEST
+SMART support is:     Available - device has SMART capability.
+SMART support is:     Disabled
+Temperature Warning:  Enabled
+
+=== START OF READ SMART DATA SECTION ===
+SMART Health Status: OK
+
+Current Drive Temperature:     32 C
+Drive Trip Temperature:        40 C
+
+Accumulated power on time, hours:minutes 30107:32
+Manufactured in week 43 of year 2014
+Specified cycle count over device lifetime:  1048576
+Accumulated start-stop cycles:  94
+Specified load-unload count over device lifetime:  1114112
+Accumulated load-unload cycles:  0
+Elements in grown defect list: 0
+
+Error counter log:
+           Errors Corrected by           Total   Correction     Gigabytes    Total
+               ECC          rereads/    errors   algorithm      processed    uncorrected
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:         10        0         0        10          0          3.464           0
+write:        56        2         2        58          2         32.436           0
+
+Non-medium error count:    11288
+
+No Self-tests have been logged
+
