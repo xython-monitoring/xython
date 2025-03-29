@@ -350,6 +350,7 @@ class xythonsrv:
         self.tls_key = None
         self.colnames = {}
         self.colnames['mdstat'] = 'raid'
+        self.colnames['smart'] = 'smart'
         self.inventory_cache = {}
 
     def stat(self, name, value):
@@ -4310,6 +4311,362 @@ class xythonsrv:
         self.column_update(hostname, "dmesg", color, int(tend), state, 60 * 60, sender)
         return True
 
+    def parse_smartoutput(self, data):
+        ret = {}
+        ret["color"] = 'green'
+        ret["html"] = ""
+        first_self_test = None
+        last_self_test = None
+        prevsection = None
+        section = None
+        attr_ids = {}
+        for line in data:
+            ret["html"] += line + "\n"
+            line = line.lstrip(" ")
+            # print(f"SMART: {section} {len(line.split())} {line}")
+            if len(line.split()) < 1:
+                section = None
+                continue
+            if "SMART Self-test log structure revision number" in line:
+                prevsection = section
+                section = "selftestlog"
+            if "SMART Selective self-test log data structure revision number" in line:
+                prevsection = section
+                section = "sselftestlog"
+            if "Selective Self-tests/Logging not supported" in line:
+                prevsection = section
+                section = None
+            if "SMART Error Log Version" in line:
+                prevsection = section
+                section = None
+            if prevsection == "selftestlog" and first_self_test is not None:
+                ret["html"] += f"&clear last selftest is {first_self_test}\n"
+                prevsection = None
+                limit = 45
+                if "tpower" in ret and limit > 0:
+                    diff = ret["tpower"] - first_self_test
+                    if "wrap" in ret:
+                        while diff > 65536:
+                            ret["html"] == 'Handle wrapping\n'
+                            diff -= 65536
+                    if diff/24 > limit:
+                        ret["html"] += f"&yellow Last selftest is too old {diff/24} days ago > {limit}\n"
+                        ret["color"] = setcolor('yellow', ret["color"])
+                    else:
+                        ret["html"] += f"&green Last selftest is recent {diff/24} days ago < {limit}\n"
+            if "FAILING_NOW" in line:
+                ret["html"] += "&red Failling\n"
+                ret["color"] = setcolor('red', ret["color"])
+            if "SMART overall-health self-assessment test result" in line:
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                v = tokens[1].lstrip(" ")
+                if v not in ['PASSED', 'FAILED!']:
+                    ret["html"] += "&red Unknow value {v}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    ret["health"] = 'unk'
+                elif v == 'PASSED':
+                    ret["html"] += "&green Health OK\n"
+                    ret["health"] = 'ok'
+                else:
+                    ret["html"] += "&red Health KO\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    ret["health"] = 'ko'
+            if "SMART Health Status:" in line:
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                v = tokens[1].lstrip(" ")
+                if v != 'OK':
+                    ret["html"] += "&red Unknow value {v}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                else:
+                    ret["html"] += "&green Health OK\n"
+            if "Current Drive Temperature:" in line:
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += f"&red invalid line {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                t = tokens[1].lstrip(" ")
+                if t[-1] != 'C':
+                    ret["html"] += f"&red TEMP not in C in {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                toks = t.split(" ")
+                if len(toks) != 2:
+                    ret["html"] += f"&red invalid temperature in {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                temp = toks[0]
+                try:
+                    tempi = int(temp)
+                except ValueError:
+                    ret["html"] += f"&red non integer temperature in {line}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                limit = 70
+                if tempi < limit:
+                    ret["html"] += f"&green Temperature {tempi}\n"
+                else:
+                    ret["html"] += f"&red Temperature {tempi}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                ret["current_temp"] = tempi
+
+            if section == 'Attributes' and 'FAIL' in attr_ids and "ATTRIBUTE_NAME" in attr_ids:
+                tokens = line.split()
+                idx = attr_ids['FAIL']
+                if len(tokens) <= idx:
+                    continue
+                if tokens[idx] != '-':
+                    if tokens[idx] in ['NOW', 'FAILING_NOW']:
+                        ret["html"] += "&red attribute is failling\n"
+                        ret["color"] = setcolor('red', ret["color"])
+                    else:
+                        ret["html"] += f"&red unknow fail attribute {tokens[idx]}\n"
+                        ret["color"] = setcolor('red', ret["color"])
+                    if "FAIL" not in ret:
+                        ret["FAIL"] = {}
+                    idx = attr_ids["ATTRIBUTE_NAME"]
+                    name = tokens[idx]
+                    ret["FAIL"][name] = 0
+
+            if line[:3] == 'ID#':
+                tokens = line.split()
+                i = 0
+                while len(tokens) > 0:
+                    p = tokens.pop(0)
+                    if i == 0 and p != 'ID#':
+                        ret["html"] += "&red Invalid ID line\n"
+                        ret["color"] = setcolor('red', ret["color"])
+                        continue
+                    for aname in ["RAW_VALUE", "FAIL", "ATTRIBUTE_NAME"]:
+                        if p == aname:
+                            attr_ids[aname] = i
+                    if p == 'WHEN_FAILED':
+                        attr_ids['FAIL'] = i
+                    i += 1
+                section = 'Attributes'
+
+            if "Reallocated_Sector_Ct" in line or "Reallocated_Event_Count" in line:
+                if "RAW_VALUE" not in attr_ids:
+                    ret["html"] += "&red Cannot analyze without RAW_VALUE id\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                idx = attr_ids["RAW_VALUE"]
+                tokens = line.split()
+                v = tokens[idx]
+                try:
+                    reallocated = int(v)
+                except ValueError:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                limit = 0
+                ret["reallocated_count"] = reallocated
+                if reallocated <= limit:
+                    ret["html"] += f"&green {reallocated} <= {limit}\n"
+                else:
+                    ret["html"] += f"&red {reallocated} > {limit}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+            if "Temperature_Celsius" in line or "Airflow_Temperature_Cel" in line:
+                if "RAW_VALUE" not in attr_ids:
+                    ret["html"] += "&red Cannot analyze without RAW_VALUE id\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                idx = attr_ids["RAW_VALUE"]
+                tokens = line.split()
+                v = tokens[idx]
+                try:
+                    temp = int(v)
+                except ValueError:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                ret["Temperature_Celsius"] = temp
+                limit = 70
+                if temp <= limit:
+                    ret["html"] += f"&green {temp} <= {limit}\n"
+                else:
+                    ret["html"] += f"&red {temp} > {limit}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+            # NVME
+            if "Temperature:" in line or "Temperature Sensor 1:" in line:
+                tokens = line.split(':')
+                if len(tokens) != 2:
+                    ret["html"] += f"&red Temperature need 2 tokens in {tokens}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                temp = tokens[1].lstrip(" ").split(" ")
+                if len(temp) != 2:
+                    ret["html"] += f"&red Temperature need 2 tokens in {temp}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                if temp[1] not in  ['Celsius', 'C']:
+                    ret["html"] += f"&red did not found Celsius in {temp}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                try:
+                    temp = int(temp[0])
+                except ValueError:
+                    ret["html"] += "&red Fail to convert {temp[0]} to integer\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                limit = 70
+                if temp <= limit:
+                    ret["html"] += f"&green {temp} <= {limit}\n"
+                else:
+                    ret["html"] += f"&red {temp} > {limit}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+            # Power_On_Hours_and_Msec report 21405h+54m+09.330s
+            # Power_On_Hours report int
+            if "Power_On_Hours" in line:
+                if "RAW_VALUE" not in attr_ids:
+                    ret["html"] += "&red Cannot analyze without RAW_VALUE id\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                idx = attr_ids["RAW_VALUE"]
+                tokens = line.split()
+                v = tokens[idx]
+                if "h" in v:
+                    i = 0
+                    vv = ""
+                    while i < len(v) and v[i] != 'h':
+                        vv += v[i]
+                        i += 1
+                    v = vv
+                try:
+                    tpower = int(v)
+                except ValueError:
+                    ret["html"] += "&red invalid power on hours\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                ret["html"] += f"&green Power_On_Hours {tpower}\n"
+                ret["tpower"] = tpower
+            if "occurred at disk power-on lifetime" in line:
+                # Error 21 occurred at disk power-on lifetime: 57509 hours (2396 days + 5 hours)
+                tokens = line.split(":")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid error line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                tokens = tokens[1].lstrip().split(" ")
+                if tokens[1] != 'hours':
+                    ret["html"] += f"&red invalid error line, expected hours got {tokens[1]}\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                try:
+                    hours = int(tokens[0])
+                except ValueError:
+                    ret["html"] += "&red invalid error hours\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                # 1 week
+                limit = 24 * 7
+                if "tpower" not in ret:
+                    ret["html"] += "&red we dont have disk uptime\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                else:
+                    tpower = ret["tpower"]
+                    if hours + limit < tpower:
+                        ret["html"] += f"&green error detected at {hours}\n"
+                    else:
+                        ret["html"] += f"&red error detected at {hours}\n"
+                        ret["color"] = setcolor('red', ret["color"])
+            if section == 'selftestlog' and len(line) > 0 and line[0] == '#':
+                limit = 0
+                if "Extended offline" in line:
+                    sline = ' '.join(line.split())
+                    tokens = sline.split(" ")
+                    try:
+                        hours = int(tokens[-2])
+                    except ValueError:
+                        continue
+                    ret["html"] += f"&clear Hours {hours}\n"
+                    if "tpower" in ret:
+                        diff = ret["tpower"] - hours
+                        #ret["html"] += f"Diff {diff} {diff/24}\n"
+                        if first_self_test is None:
+                            first_self_test = hours
+                        if last_self_test is not None:
+                            if hours > last_self_test:
+                                # wrapping
+                                ret["wrap"] = True
+                                ret["html"] += f"&clear wrapping\n"
+                        last_self_test = hours
+                        if last_self_test is None:
+                            if limit > 0 and diff/24 > limit:
+                                ret["html"] += f"&yellow Last selftest is too old {diff/24} days ago > {limit}\n"
+                                ret["color"] = setcolor('yellow', ret["color"])
+                            else:
+                                ret["html"] += f"&green Last selftest is recent {diff/24} days ago < {limit}\n"
+                        last_self_test = hours
+            # TODO NVME Available Spare
+            # TODO NVME Percentage Used
+            if 'SMART_RETURNCODE=' in line:
+                tokens = line.split("=")
+                if len(tokens) != 2:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                try:
+                    returncode = int(tokens[1])
+                except ValueError:
+                    ret["html"] += "&red invalid\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
+                if returncode != 0 and returncode != 64:
+                    ret["html"] += "&red return code\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                else:
+                    ret["html"] += "&green return code\n"
+
+        return ret
+
+    def parse_smart(self, hostname, hdata, sender):
+        now = time.time()
+        color = 'green'
+        state  = f"{xytime(now, self.tz)} - smart Ok\n<p>"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for dmesg")
+            return False
+        device = None
+        smartdata = []
+        for line in hdata.split("\n"):
+            if line[:12] == 'SMARTHEADER:':
+                if device is not None:
+                    ret = self.parse_smartoutput(smartdata)
+                    state += ret["html"]
+                    color = setcolor(ret["color"], color)
+                    state += "</fieldset>"
+                smartdata = []
+                params = line.split(":")
+                param = params.pop(0)
+                for param in params:
+                    tokens = param.split("=")
+                    if len(tokens) != 2:
+                        self.logger.error(f"SMARTHEADER: Invalid token {tokens}")
+                        continue
+                    if tokens[0] == 'device':
+                        device = tokens[1]
+                state += f"<fieldset><legend>{device}</legend>\n"
+            else:
+                smartdata.append(line)
+        ret = self.parse_smartoutput(smartdata)
+        state += ret["html"]
+        color = setcolor(ret["color"], color)
+        state += "</fieldset>"
+        tend = time.time()
+        state += f"Seconds: {tend - now}"
+        self.column_update(hostname, self.colnames["smart"], color, int(tend), state, 2 * 60 * 60, sender)
+        return True
+
     def parse_hostdata(self, hdata, addr):
         hostname = None
         section = None
@@ -4380,6 +4737,11 @@ class xythonsrv:
                         ret = self.parse_dmesg(hostname, buf, addr)
                         if ret >= 1:
                             save_hostdata = True
+                    if section == '[smart]':
+                        handled = True
+                        ret = self.parse_smart(hostname, buf, addr)
+                        if ret >= 1:
+                            save_hostdata = True
                     if section == '[clientversion]':
                         handled = True
                         H = self.find_host(hostname)
@@ -4422,7 +4784,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]', '[smart]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
@@ -4679,7 +5041,7 @@ class xythonsrv:
         except sqlite3.OperationalError as e:
             self.error(f"ERROR: fail to commit sqlite {self.db} {str(e)}")
             sys.exit(1)
-        for column in ['mdstat']:
+        for column in ['mdstat', 'smart']:
             cname = self.xython_getvar(f'COLUMN_NAME_{column}')
             if cname is None:
                 continue

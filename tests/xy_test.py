@@ -2304,6 +2304,90 @@ def test_analysis():
     assert H.rules["MEMSWAP"].panic == 85
     assert H.rules["SENSOR"] is not None
 
+    setup_clean(X)
 
+def test_smart():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-smart/'
+    setup_testdir(X, 'xython-smart')
+    X.lldebug = True
+    X.init()
+
+    with open("tests/smart/smart.raptor") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'green'
+
+    with open("tests/smart/smart.ssdnvidia") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'green'
+
+    with open("tests/smart/gs9") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    print(ret)
+    assert ret["color"] == 'red'
+    assert ret["tpower"] == 6135
+    assert ret["reallocated_count"] == 0
+    assert 'FAIL' in ret
+    assert 'End-to-End_Error' in ret["FAIL"]
+
+    with open("tests/smart/gs16") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'red'
+    assert ret["tpower"] == 21405
+    assert ret["reallocated_count"] == 1
+
+    with open("tests/smart/arnold") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'green'
+    assert ret["tpower"] == 67877
+    assert ret["reallocated_count"] == 0
+
+    with open("tests/smart/smartctl-SKhynix-SC308SATA256GB.txt") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'red'
+    assert ret["health"] == 'ko'
+    assert ret["tpower"] == 28816
+    assert ret["Temperature_Celsius"] == 99
+    assert ret["reallocated_count"] == 0
+
+    with open("tests/smart/smartctl-Samsung-SSD-850-PRO-2TB.txt") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'red'
+    assert ret["health"] == 'ok'
+    assert ret["tpower"] == 36022
+    assert ret["reallocated_count"] == 101
+
+    with open("tests/smart/INTEL-DC-S3700-SSDSC2BA800G3E.txt") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'red'
+    assert ret["health"] == 'ko'
+    assert ret["tpower"] == 48594
+    assert ret["reallocated_count"] == 0
+    assert "FAIL" in ret
+    assert "Program_Fail_Count_Chip" in ret["FAIL"]
+
+    with open("tests/smart/toshiba") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'red'
+    assert ret["health"] == 'ko'
+    assert "FAIL" in ret
+    assert "Seek_Error_Rate" in ret["FAIL"]
+
+    with open("tests/smart/hitashi") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'red'
+    assert ret["health"] == 'ko'
+    assert "FAIL" in ret
+    assert "Reallocated_Sector_Ct" in ret["FAIL"]
 
     setup_clean(X)
