@@ -2162,7 +2162,7 @@ class xythonsrv:
                 return False
             if simple:
                 v = " ".join(tokens[1:]).rstrip()
-                self.debug(f"INVENTORY: {v}")
+                # self.debug(f"INVENTORY: {v}")
             else:
                 v = tokens[1].rstrip()
             if v == sha256:
