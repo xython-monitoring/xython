@@ -124,6 +124,7 @@ class xy_host:
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
+        self.rules["LSMOD"] = {}
         self.certs = {}
         self.sslwarn = 30
         self.sslalarm = 10
@@ -273,6 +274,7 @@ class xythonsrv:
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
+        self.rules["LSMOD"] = {}
         self.autoreg = True
         self.celtasks = []
         self.celerytasks = {}
@@ -349,6 +351,7 @@ class xythonsrv:
         self.tls_cert = None
         self.tls_key = None
         self.colnames = {}
+        self.colnames['lsmod'] = 'lsmod'
         self.colnames['mdstat'] = 'raid'
         self.colnames['smart'] = 'smart'
         self.inventory_cache = {}
@@ -2817,6 +2820,28 @@ class xythonsrv:
         ret['ltoks'] = ltoks
         return ret
 
+    def analysis_lsmod(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        if len(ltoks) < 1:
+            self.error(f'ERROR: missing LSMOD parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        mn = {}
+        module_name = ltoks.pop(0)
+        mn["module_name"] = module_name
+        ret["setting"] = mn
+        while len(ltoks) > 0:
+            arg = ltoks.pop(0)
+            if arg == "COLOR":
+                TODO = 1
+            else:
+                ret['err'] = True
+                return ret
+        ret['ltoks'] = ltoks
+        return ret
+
     def analysis_port(self, ltoks):
         ret = {}
         ret['err'] = False
@@ -3054,6 +3079,7 @@ class xythonsrv:
         self.rules["MEMSWAP"] = None
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
+        self.rules["LSMOD"] = {}
         if self.rules["SENSOR"] is None:
             self.rules["SENSOR"] = xy_rule_sensors()
         self.rules["SENSOR"].add("DEFAULT C 50 60 10 0")
@@ -3074,6 +3100,7 @@ class xythonsrv:
             H.rules["PROC"] = []
             H.rules["PORT"] = []
             H.rules["SENSOR"] = None
+            H.rules["LSMOD"] = {}
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         selector = None
         for line in f:
@@ -3158,6 +3185,13 @@ class xythonsrv:
                         continue
                     self.debugdev("todo", f"TODO: SVC")
                     ltoks = ret["ltoks"]
+                elif keyword == 'LSMOD':
+                    ret = self.analysis_lsmod(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = "LSMOD"
                 else:
                     self.error(f"ERROR: unknow keyword {keyword}")
             else:
@@ -3282,6 +3316,9 @@ class xythonsrv:
                                 setting["panic"],
                                 setting["mwarn"],
                                 setting["mpanic"])
+                        elif settingname == 'LSMOD':
+                            mname = setting["module_name"]
+                            H.rules["LSMOD"][mname] = {}
                         else:
                             self.error(f"ERROR: unknow settingname {settingname}")
 
@@ -4311,6 +4348,36 @@ class xythonsrv:
         self.column_update(hostname, "dmesg", color, int(tend), state, 60 * 60, sender)
         return True
 
+    def parse_lsmod(self, hostname, hdata, sender):
+        now = time.time()
+        color = 'green'
+        state  = f"{xytime(now, self.tz)} - lsmod Ok\n<p>"
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for lsmod")
+            return False
+        if len(H.rules["LSMOD"]) == 0:
+            return True
+        for rmod in H.rules["LSMOD"]:
+            H.rules["LSMOD"][rmod]["found"] = False
+        for line in hdata.split("\n"):
+            state += f"{line}\n"
+            tokens = line.split(" ")
+            modname = tokens[0]
+            for rmod in H.rules["LSMOD"]:
+                if rmod == modname:
+                    H.rules["LSMOD"][rmod]["found"] = True
+                    state += f"&green {rmod} present\n"
+        for rmod in H.rules["LSMOD"]:
+            if not H.rules["LSMOD"][rmod]["found"]:
+                state += f"&red {rmod} not found\n"
+                color = setcolor('red', color)
+        tend = time.time()
+        state += f"</p>Seconds: {tend - now}"
+        self.column_update(hostname, self.colnames["lsmod"], color, int(tend), state, self.ST_INTERVAL + 60, sender)
+        return True
+
+
     def parse_smartoutput(self, data):
         ret = {}
         ret["color"] = 'green'
@@ -4760,6 +4827,7 @@ class xythonsrv:
                         ret = self.do_inventory(hostname, "cpumicrocode", buf, True)
                     if section == '[lsmod]':
                         handled = True
+                        self.parse_lsmod(hostname, buf, addr)
                         ret = self.do_inventory(hostname, "lsmod", buf, False)
                     if section == '[lspci]':
                         handled = True
