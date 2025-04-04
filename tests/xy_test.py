@@ -607,6 +607,11 @@ def test_rule_cpu():
     ret = xrc.cpucheck(" 9:27AM  up 389 days, 23:32, 1 user, load averages: 0.19, 0.14, 0.09")
     assert ret is not None
     assert xrc.xuptime == 389 * DAY_M + 23 * 60 + 32
+
+    ret = xrc.cpucheck("9:55PM  up 9 hrs, 2 users, load averages: 0.52, 0.33, 0.27")
+    assert ret is not None
+    assert xrc.xuptime == 9 * 60
+
     # libreELEC
     ret = xrc.cpucheck(" 16:40:58 up 26 min,  load average: 0.72, 0.61, 0.48")
     assert ret is not None

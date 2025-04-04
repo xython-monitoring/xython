@@ -462,6 +462,10 @@ class xy_rule_cpu():
         tmp = re.search(r'([0-9]+)\s*day', sup)
         if tmp and tmp.lastindex == 1:
             self.xuptime += int(tmp.group(1)) * 24 * 60
+        # convert x hrs in minutes
+        tmp = re.search(r'([0-9]+)\s*hrs', sup)
+        if tmp and tmp.lastindex == 1:
+            self.xuptime += int(tmp.group(1)) * 60
         # convert x mins in minutes
         tmp = re.search(r'([0-9]+)\s*min', sup)
         if tmp and tmp.lastindex == 1:
