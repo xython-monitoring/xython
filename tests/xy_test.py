@@ -2401,3 +2401,39 @@ def test_smart():
     assert "Reallocated_Sector_Ct" in ret["FAIL"]
 
     setup_clean(X)
+
+def test_time():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-smart/'
+    setup_testdir(X, 'xython-smart')
+    X.lldebug = True
+    X.init()
+
+    with open("tests/ntp/ntpq.ok") as f:
+        data = f.read()
+    X.parse_ntp("test01", data, "fake")
+    H = X.find_host("test01")
+
+    with open("tests/rtc/rtc.ok") as f:
+        data = f.read()
+    X.parse_rtc("test01", data, "fake")
+    H = X.find_host("test01")
+
+    assert "ntp" in H.coltime
+    assert H.coltime["ntp"]["color"] == 'green'
+    assert "rtc" in H.coltime
+    assert H.coltime["rtc"]["color"] == 'green'
+
+    with open("tests/ntp/ntpq.ko") as f:
+        data = f.read()
+    X.parse_ntp("test01", data, "fake")
+    H = X.find_host("test01")
+    assert H.coltime["ntp"]["color"] == 'red'
+
+    with open("tests/rtc/rtc.ko") as f:
+        data = f.read()
+    X.parse_rtc("test01", data, "fake")
+    H = X.find_host("test01")
+    assert H.coltime["rtc"]["color"] == 'red'
+
+    setup_clean(X)

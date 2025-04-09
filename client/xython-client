@@ -435,6 +435,18 @@ if [ $ISLINUX -eq 1 ];then
 		cat /sys/devices/system/cpu/cpu0/microcode/version
 	fi
 
+	if [ -e /proc/driver/rtc ];then
+		echo '[rtc]'
+		if [ -e /sys/class/rtc/rtc0/name ];then
+			cat /sys/class/rtc/rtc0/name
+		fi
+		cat /proc/driver/rtc
+	fi
+	if [ -e /usr/bin/ntpq ];then
+		echo [ntp]
+		ntpq -n -c as -c peers
+	fi
+
 	if [ $DPKG -eq 1 ];then
 		run_less 3600 dpkg
 		# same as xymon-client patched by debian

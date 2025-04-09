@@ -134,6 +134,8 @@ class xy_host:
         self.dmesg_last_ts = -1
         self.dmesg = {}
         self.xclass = xclass
+        self.coltime = {}
+        self.coltime["time"] = 0
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -354,6 +356,7 @@ class xythonsrv:
         self.colnames['lsmod'] = 'lsmod'
         self.colnames['mdstat'] = 'raid'
         self.colnames['smart'] = 'smart'
+        self.colnames['time'] = 'time'
         self.inventory_cache = {}
 
     def stat(self, name, value):
@@ -4377,6 +4380,77 @@ class xythonsrv:
         self.column_update(hostname, self.colnames["lsmod"], color, int(tend), state, self.ST_INTERVAL + 60, sender)
         return True
 
+    def parse_time(self, hostname):
+        now = time.time()
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for time")
+            return False
+        color = 'green'
+        state  = f"{xytime(now, self.tz)} - time Ok\n<p>"
+        if "ntp" in H.coltime:
+            state += H.coltime["ntp"]["state"]
+            color = setcolor(H.coltime["ntp"]["color"], color)
+        if "rtc" in H.coltime:
+            state += H.coltime["rtc"]["state"]
+            color = setcolor(H.coltime["rtc"]["color"], color)
+        self.column_update(hostname, self.colnames["time"], color, int(now), state, self.ST_INTERVAL + 60, "xythond")
+
+    def parse_ntp(self, hostname, hdata, sender):
+        now = time.time()
+        color = 'green'
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for ntp")
+            return False
+
+        ntp_state = "<fieldset><legend>NTP</legend>"
+        ntp_sync = False
+        for line in hdata.split("\n"):
+            ntp_state += f"{line}\n"
+            if len(line) > 0 and line[0] == '*':
+                ntp_sync = True
+        if not ntp_sync:
+            ntp_state += "&red NTP is not sync\n"
+            color = setcolor('red', color)
+        tend = time.time()
+        ntp_state += "</fieldset>"
+        H.coltime["ntp"] = {}
+        H.coltime["ntp"]["color"] = color
+        H.coltime["ntp"]["state"] = ntp_state
+        if H.coltime["time"] + 10 > now:
+            self.parse_time(hostname)
+        H.coltime["time"] = now
+        return True
+
+    def parse_rtc(self, hostname, hdata, sender):
+        now = time.time()
+        color = 'green'
+        H = self.find_host(hostname)
+        if H is None:
+            self.error(f"ERROR: fail to find {hostname} for rtc")
+            return False
+
+        rtc_state = "<fieldset><legend>RTC</legend>"
+        for line in hdata.split("\n"):
+            rtc_state += f"{line}\n"
+            if "batt_status" in line:
+                tokens = line.split()
+                if tokens[2] == 'okay':
+                    rtc_state += "&green battery ok\n"
+                else:
+                    # dead
+                    rtc_state += "&red battery ko\n"
+                    color = setcolor('red', color)
+        tend = time.time()
+        rtc_state += f"</fieldset>"
+        H.coltime["rtc"] = {}
+        H.coltime["rtc"]["color"] = color
+        H.coltime["rtc"]["state"] = rtc_state
+        if H.coltime["time"] + 10 > now:
+            self.parse_time(hostname)
+        H.coltime["time"] = now
+        return True
 
     def parse_smartoutput(self, data):
         ret = {}
@@ -4825,6 +4899,12 @@ class xythonsrv:
                     if section == '[cpumicrocode]':
                         handled = True
                         ret = self.do_inventory(hostname, "cpumicrocode", buf, True)
+                    if section == '[rtc]':
+                        handled = True
+                        self.parse_rtc(hostname, buf, addr)
+                    if section == '[ntp]':
+                        handled = True
+                        self.parse_ntp(hostname, buf, addr)
                     if section == '[lsmod]':
                         handled = True
                         self.parse_lsmod(hostname, buf, addr)
@@ -4852,7 +4932,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]', '[smart]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]', '[smart]', '[rtc]', '[ntp]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
