@@ -210,8 +210,7 @@ def xydelay(s):
                 return int(v) * 60 * 60
             if pfix == 'd':
                 return int(v) * 60 * 60 * 24
-            if pfix == 'w':
-                return int(v) * 60 * 60 * 24 * 7
+            return int(v) * 60 * 60 * 24 * 7
             # print("UNREACHABLE")
         return int(s)
     except ValueError:
