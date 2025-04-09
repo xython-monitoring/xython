@@ -1,0 +1,18 @@
+rtc_time	: 22:11:38
+rtc_date	: 2025-04-04
+alrm_time	: 12:38:31
+alrm_date	: 2025-03-31
+alarm_IRQ	: no
+alrm_pending	: no
+update IRQ enabled	: no
+periodic IRQ enabled	: no
+periodic IRQ frequency	: 1024
+max user IRQ frequency	: 64
+24hr		: yes
+periodic_IRQ	: no
+update_IRQ	: no
+HPET_emulated	: no
+BCD		: yes
+DST_enable	: no
+periodic_freq	: 1024
+batt_status	: dead

@@ -1,0 +1,20 @@
+ind assid status  conf reach auth condition  last_event cnt
+===========================================================
+  1  7249  9014   yes   yes  none    reject   reachable  1
+  2  7250  9024   yes   yes  none    reject   reachable  2
+  3  7251  9014   yes   yes  none    reject   reachable  1
+  4  7252  9014   yes   yes  none    reject   reachable  1
+  5  7253  9014   yes   yes  none    reject   reachable  1
+  6  7254  9014   yes   yes  none    reject   reachable  1
+  7  7255  9014   yes   yes  none    reject   reachable  1
+
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
+ 82.66.40.79     .PI3.            1 u  525 1024    3   24.471   +1.123   0.102
+ 82.67.41.119    134.59.1.5       3 u  507 1024    3   18.011   +2.792   0.901
+ 2a02:2178:1000: 210.65.119.71    2 u  513 1024    3   14.353   +1.452   0.914
+ 195.154.226.102 193.190.230.37   2 u  492 1024    3   13.892   +1.378   0.577
+ 37.59.63.125    193.67.79.202    2 u  485 1024    3   18.099   +1.910   0.441
+ 5.196.160.139   145.238.80.80    2 u  534 1024    3   18.832   +1.148   0.736
+ 2001:41d0:2:c83 193.190.230.37   2 u  499 1024    3   18.223   +2.185   0.734
+
