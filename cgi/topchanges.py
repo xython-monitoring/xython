@@ -29,13 +29,13 @@ if os.environ['REQUEST_METHOD'] != 'GET':
     sys.exit(0)
 
 POST = {}
-stdin = sys.stdin.read()
-args = stdin.split('&')
-for arg in args:
-    t = arg.split('=')
-    if len(t)>1:
-        k, v = arg.split('=')
-        POST[k] = v
+#stdin = sys.stdin.read()
+# args = stdin.split('&')
+# for arg in args:
+#    t = arg.split('=')
+#    if len(t)>1:
+#        k, v = arg.split('=')
+#        POST[k] = v
 if "QUERY_STRING" in os.environ:
     QUERY_STRING = os.environ["QUERY_STRING"]
     args = QUERY_STRING.split('&')
@@ -44,6 +44,9 @@ if "QUERY_STRING" in os.environ:
         if len(t)>1:
             k, v = arg.split('=')
             POST[k] = v
+else:
+    print("ERROR: not runned as CGI")
+    sys.exit(1)
 
 # starttime
 if "FROMTIME" not in POST:
@@ -84,16 +87,18 @@ else:
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
     sock.connect(XYTHON_SOCK)
-except FileNotFoundError:
-    print(f"FAIL to connect to xythond, no such file or directory")
+    sock.send(f"TOPCHANGES {FROMTIME} {TOTIME}\n".encode("UTF8"))
+    buf = sock.recv(640000)
+    print(buf.decode("UTF8"))
+    sock.close()
+except FileNotFoundError as e:
+    print(f"FAIL to connect to xythond, {str(e)}")
     sys.exit(0)
-except ConnectionRefusedError:
-    print(f"FAIL to connect to xythond")
+except ConnectionRefusedError as e:
+    print(f"FAIL to connect to xythond, {str(e)}")
     sys.exit(0)
-sock.send(f"TOPCHANGES {FROMTIME} {TOTIME}\n".encode("UTF8"))
-#sock.send(data.encode("UTF8"))
-buf = sock.recv(640000)
-print(buf.decode("UTF8"))
-sock.close()
+except ConnectionResetError as e:
+    print(f"FAIL to connect to xythond, {str(e)}")
+    sys.exit(0)
 
 sys.exit(0)

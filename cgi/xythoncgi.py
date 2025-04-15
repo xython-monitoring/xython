@@ -13,16 +13,8 @@ import sys
 
 
 print("Content-type: text/html\n")
-print("\n")
 
 POST = {}
-stdin = sys.stdin.read()
-args = stdin.split('&')
-for arg in args:
-    t = arg.split('=')
-    if len(t) > 1:
-        k, v = arg.split('=')
-        POST[k] = v
 if "QUERY_STRING" in os.environ:
     QUERY_STRING = os.environ["QUERY_STRING"]
     args = QUERY_STRING.split('&')
@@ -31,6 +23,9 @@ if "QUERY_STRING" in os.environ:
         if len(t) > 1:
             k, v = arg.split('=')
             POST[k] = v
+else:
+    print("ERROR: not runned as CGI")
+    sys.exit(1)
 
 
 hostname = None
@@ -39,8 +34,7 @@ if "HOST" in POST:
 if "hostname" in POST:
     hostname = POST["hostname"]
 if hostname is None:
-    print('Status: 400 Bad Request\n')
-    print("\n")
+    print('ERROR: no hostname')
     sys.exit(0)
 
 svc = None
@@ -49,8 +43,7 @@ if "SERVICE" in POST:
 if "service" in POST:
     svc = POST["service"]
 if svc is None:
-    print('Status: 400 Bad Request\n')
-    print("\n")
+    print('ERROR: no service')
     sys.exit(0)
 dsvc = None
 if "DSERVICE" in POST:
@@ -74,34 +67,62 @@ if "action" in POST:
     action = POST["action"]
 else:
     action = None
-if cause is not None and duration is not None and action == 'ack':
+
+XYTHON_SOCK = '/run/xython/xython.sock'
+
+if "XYTHON_SOCK" in os.environ:
+    XYTHON_SOCK = os.environ["XYTHON_SOCK"]
+
+if action == 'ack':
+    if cause is None:
+        print("ERROR: ack need cause")
+        sys.exit(0)
+    if duration is None:
+        print("ERROR: ack need duration")
+        sys.exit(0)
     buf = "acknowledge %s.%s %s %s\n" % (hostname, svc, duration, cause)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    # TODO this must be not hardcoded
-    sock.connect('/run/xython/xython.sock')
+    sock.connect(XYTHON_SOCK)
     sock.send(buf.encode("UTF8"))
     sock.close()
-if cause is not None and duration is not None and action == 'disable':
+elif action == 'disable':
+    if cause is None:
+        print("ERROR: disable need cause")
+        sys.exit(0)
+    if duration is None:
+        print("ERROR: disable need duration")
+        sys.exit(0)
+    if dsvc is None:
+        print("ERROR: disable need dsvc")
+        sys.exit(0)
     buf = "disable %s.%s %s %s\n" % (hostname, dsvc, duration, cause)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    # TODO this must be not hardcoded
-    sock.connect('/run/xython/xython.sock')
+    sock.connect(XYTHON_SOCK)
     sock.send(buf.encode("UTF8"))
     sock.close()
+elif action is not None:
+    print("ERROR: invalid action")
+    sys.exit(0)
 
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:
-    sock.connect('/run/xython/xython.sock')
-except:
-    print("xythoncgi: FAIL to connect to xythond")
+    sock.connect(XYTHON_SOCK)
+    if timebuf is None:
+        buf = "GETSTATUS %s %s\n" % (hostname, svc)
+    else:
+        buf = "GETSTATUS %s %s %s\n" % (hostname, svc, timebuf)
+    sock.send(buf.encode("UTF8"))
+    buf = sock.recv(640000)
+    print(buf.decode("UTF8"))
+    sock.close()
+except FileNotFoundError as e:
+    print(f"FAIL to connect to xythond, {str(e)}")
     sys.exit(0)
-if timebuf is None:
-    buf = "GETSTATUS %s %s" % (hostname, svc)
-else:
-    buf = "GETSTATUS %s %s %s" % (hostname, svc, timebuf)
-sock.send(buf.encode("UTF8"))
-buf = sock.recv(640000)
-print(buf.decode("UTF8"))
-sock.close()
+except ConnectionRefusedError as e:
+    print(f"FAIL to connect to xythond, {str(e)}")
+    sys.exit(0)
+except ConnectionResetError as e:
+    print(f"FAIL to connect to xythond, {str(e)}")
+    sys.exit(0)
 
 sys.exit(0)
