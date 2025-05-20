@@ -2135,6 +2135,24 @@ def test_mdstat():
 
     setup_clean(X)
 
+def test_hist():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-debug/'
+    setup_testdir(X, 'xython-debug')
+    X.lldebug = True
+    X.init()
+
+    # verify it handle bad unicode
+    data = "test\udcfc"
+    X.save_histlogs("host01", "col", data, 0, "green", "tester")
+    hdir = "%s/%s/%s" % (X.xt_histlogs, "host01", "col")
+    hfile = "%s/0" % hdir
+    with open(hfile) as f:
+        data = f.read()
+        print(data)
+
+    setup_clean(X)
+
 def test_analysis():
     X = xythonsrv()
     X.etcdir = './tests/etc/xython-analysis/'
