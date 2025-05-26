@@ -136,6 +136,7 @@ class xy_host:
         self.xclass = xclass
         self.coltime = {}
         self.coltime["time"] = 0
+        self.uptime = 0
 
     # def debug(self, buf):
     #    if self.edebug:
@@ -3829,6 +3830,7 @@ class xythonsrv:
         sbuf = f"{xytime(now, self.tz)} {udisplay}\n"
         # Check with global rules
         gret = self.rules["CPU"].cpucheck(buf)
+        H.uptime = gret['uptime']
         self.do_rrd(hostname, 'la', 'la', 'la', gret['la'], ['DS:la:GAUGE:600:0:U'])
         # check gret not None
         if H.rules["CPU"] is not None:
@@ -3846,6 +3848,7 @@ class xythonsrv:
         else:
             color = setcolor(gret["UP"]["color"], color)
             sbuf += gret["UP"]["txt"]
+        sbuf += "<br>\n"
         sbuf += buf
         ret = self.column_update(hostname, "cpu", color, now, sbuf, self.ST_INTERVAL + 60, sender)
         return ret
@@ -4294,11 +4297,12 @@ class xythonsrv:
             return False
         curr_level = None
         lastts = 0
+        multiline = None
         for line in hdata.split("\n"):
             if len(line) <= 1:
                 continue
             if line[0] != '#':
-                self.error(f"ERROR: invalid dmesg line {line}")
+                self.error(f"ERROR: {hostname} invalid dmesg line {line}")
                 continue
             if line[1] == '#':
                 if curr_level is not None:
@@ -4318,6 +4322,7 @@ class xythonsrv:
                 its = float(ts.group(2))
                 tsa = ts.group(1) + ts.group(2) + ts.group(3)
                 line = line.replace(tsa, '')
+            howold = H.uptime * 60 - its
             # filter also the [Txxx] [Cxxx]
             kid = re.search(r'^\[\s*[CT][0-9]+\]\s', line)
             if kid is not None:
@@ -4327,6 +4332,16 @@ class xythonsrv:
                 # ignore it for now
                 self.debugdev('dmesg', f"DEBUG: dmesg: ignore multi part {line}")
                 continue
+            if re.search(r'------------.*cut here', line):
+                multiline = line + "\n<br>"
+                continue
+            if multiline is not None and re.search(r'---.*end trace', line):
+                multiline += line + "\n<br>"
+                line = multiline
+                multiline = None
+            if multiline is not None:
+                multiline += line + "\n<br>"
+                continue
             ignore = False
             for p in patterns:
                 if ignore:
@@ -4335,6 +4350,9 @@ class xythonsrv:
                     ignore = True
             if ignore:
                 state += f"&clear {line}<br>\n"
+            elif howold > 60 * 60 * 24:
+                state += f"&red {line}\n"
+                state += 'Too old<br>\n'
             else:
                 state += f"&red {line}\n"
                 if curr_level in ['emerg', 'alert', 'crit', 'err']:

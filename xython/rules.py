@@ -470,6 +470,7 @@ class xy_rule_cpu():
         tmp = re.search(r'([0-9]+)\s*min', sup)
         if tmp and tmp.lastindex == 1:
             self.xuptime += int(tmp.group(1))
+        ret["uptime"] = self.xuptime
         # convert xxx.xx hours in minutes
         if self.xuptime <= self.bootlimit / 60:
             ret["UP"] = {}
