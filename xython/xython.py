@@ -16,6 +16,7 @@ import time
 import re
 import ssl
 import sys
+import warnings
 from random import randint
 import resource
 import shutil
@@ -457,7 +458,9 @@ class xythonsrv:
             if sline[0] == varname:
                 found = sline[1]
                 # self.debug(f"getvar {varname}={found}")
+                f.close()
                 return found
+        f.close()
         self.debugdev('vars', "DEBUG: did not found %s" % varname)
         return None
 
@@ -646,6 +649,7 @@ class xythonsrv:
             self.error(f"ERROR: cannot open {pclientlocalcfg}")
             return self.RET_ERR
         lines = clientlocalcfg.readlines()
+        clientlocalcfg.close()
         section = None
         for line in lines:
             line = line.rstrip()
@@ -685,6 +689,7 @@ class xythonsrv:
             self.error(f"ERROR: cannot open {pxserver}")
             return self.RET_ERR
         lines = xserver.readlines()
+        xserver.close()
         for line in lines:
             line = line.rstrip()
             line = line.lstrip()
@@ -1450,6 +1455,7 @@ class xythonsrv:
         self.page_init()
         self.debugdev('loading', f"DEBUG: HOSTS: read {fpath}")
         dhosts = fhosts.read()
+        fhosts.close()
         dhosts = dhosts.replace('\\\n', '')
         current_parent = 'all'
         current_page = 'all'
@@ -1572,6 +1578,7 @@ class xythonsrv:
             self.error("ERROR: cannot open protocols.cfg")
             return self.RET_ERR
         dprotocols = fprotocols.read()
+        fprotocols.close()
         cproto = None
         P = None
         for line in dprotocols.split('\n'):
@@ -2229,6 +2236,7 @@ class xythonsrv:
                     byservice[column] += 1
                 else:
                     byservice[column] = 1
+            fhost.close()
         # sort values
         byhosts = []
         htotal = 0
@@ -3325,6 +3333,7 @@ class xythonsrv:
                             H.rules["LSMOD"][mname] = {}
                         else:
                             self.error(f"ERROR: unknow settingname {settingname}")
+        f.close()
 
     def rrd_pathname(self, cname, ds):
         if ds == 'la':
@@ -3364,6 +3373,7 @@ class xythonsrv:
             self.error(f"ERROR: cannot open {prrddef}")
             return self.RET_ERR
         lines = rrddef.readlines()
+        rrddef.close()
         section = None
         for line in lines:
             line = line.rstrip()
@@ -3408,6 +3418,7 @@ class xythonsrv:
             self.error(f"ERROR: cannot open {pgraphs}")
             return self.RET_ERR
         lines = fgraphs.readlines()
+        fgraphs.close()
         section = None
         for line in lines:
             line = line.rstrip()
@@ -5157,6 +5168,8 @@ class xythonsrv:
                 os.mkdir(self.xt_state)
             if not os.path.exists(self.xt_inventorydir):
                 os.mkdir(self.xt_inventorydir)
+        warnings.filterwarnings('error', category=FutureWarning)
+        logging.captureWarnings(True)
         FileOutputHandler = logging.FileHandler(self.xt_logdir + 'logging.log')
         FileOutputHandler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         self.logger.addHandler(FileOutputHandler)
