@@ -2054,15 +2054,34 @@ def test_dmesg():
     X.lldebug = True
     X.init()
 
-    f = open("./tests/dmesg/dmesg-rpi")
-    dmesgrpi = f.read()
-    f.close()
+    with open("./tests/dmesg/dmesg-rpi") as f:
+        dmesgrpi = f.read()
     X.parse_dmesg("test01", dmesgrpi, "fake")
+    assert X.get_column_color('test01', 'dmesg') == 'yellow'
 
-    f = open("./tests/dmesg/dmesg-red")
-    dmesgred = f.read()
-    f.close()
+    with open("./tests/dmesg/dmesg-red") as f:
+        dmesgred = f.read()
+    X.load_dmesg_regex()
     X.parse_dmesg("test01", dmesgred, "fake")
+    assert X.get_column_color('test01', 'dmesg') == 'red'
+
+    X.DMESG_REGEX = 'donotexists'
+    X.parse_dmesg("test01", dmesgred, "fake")
+    assert X.get_column_color('test01', 'dmesg') == 'red'
+
+    X.DMESG_REGEX = 'dmesg.fail'
+    X.load_dmesg_regex()
+    X.parse_dmesg("test01", dmesgred, "fake")
+    assert X.get_column_color('test01', 'dmesg') == 'red'
+
+    with open("./tests/dmesg/dmesg-t1") as f:
+        dmesgt1 = f.read()
+    X.parse_dmesg("test01", dmesgt1, "fake")
+    assert X.get_column_color('test01', 'dmesg') == 'yellow'
+
+    X.DMESG_REGEX = 'dmesg.t1'
+    X.parse_dmesg("test01", dmesgt1, "fake")
+    assert X.get_column_color('test01', 'dmesg') == 'green'
 
     setup_clean(X)
 
