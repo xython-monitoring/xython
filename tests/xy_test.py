@@ -1423,6 +1423,8 @@ def test_celery_http():
     ret = dohttp("test", ['https://customca.xython.fr'], 'http')
     err = re.search("unable to get local issuer certificate", ret['txt'])
     assert ret["color"] == 'red'
+    if err is None:
+        print(ret)
     assert err
 
     ret = dohttp("test", ['https://customca.xython.fr;verify=./tests/customca.xython.fr.ca'], 'http')
