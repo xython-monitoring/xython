@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, "3.10.11", "3.11.5", "3.12"]
+        python-version: [3.8, 3.9, "3.10.11", "3.11.5", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, "3.10.11", "3.11.5"]
+        python-version: [3.8, 3.9, "3.10.11", "3.11.5", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -141,7 +141,7 @@ jobs:
         run: |
           sudo apt-get -y install librrd-dev
           python -m pip install --upgrade pip
-          pip install flake8 pytest coverage redis pysnmp
+          pip install flake8 pytest coverage redis pysnmp setuptools
           python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
