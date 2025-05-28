@@ -1426,6 +1426,8 @@ def test_celery_http():
     assert err
 
     ret = dohttp("test", ['https://customca.xython.fr;verify=./tests/customca.xython.fr.ca'], 'http')
+    if ret["color"] != 'green':
+        print(ret)
     assert ret["color"] == 'green'
     ret = dohttp("test", ['https://tests.xython.fr/test.200', 'https://tests.xython.fr/test.403;httpcode=403'], 'http')
     assert ret["color"] == 'green'
