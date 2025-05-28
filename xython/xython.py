@@ -360,6 +360,7 @@ class xythonsrv:
         self.colnames['smart'] = 'smart'
         self.colnames['time'] = 'time'
         self.inventory_cache = {}
+        self.DMESG_REGEX = 'dmesg.regex'
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -4292,16 +4293,40 @@ class xythonsrv:
             self.column_update(hostname, cname, "blue", dstart, blue_status, howlongs, "bluter")
         return True
 
+    def load_dmesg_regex(self):
+        try:
+            path_dmesg = self.etcdir + '/' + self.DMESG_REGEX
+            print(f"DEBUG load {path_dmesg}")
+            f = open(path_dmesg)
+            patterns = f.read().splitlines()
+            f.close()
+        except FileNotFoundError:
+            print(f'ERROR {path_dmesg}')
+            patterns = []
+            self.dmesg_regexs = []
+            return True
+        self.dmesg_regexs = []
+        for p in patterns:
+            if len(p) == 0:
+                continue
+            if p[0] == '#':
+                continue
+            try:
+                r = re.compile(p)
+            except re.error as e:
+                self.logger.error(f"ERROR: fail to compile regex of {path_dmesg} {str(e)}")
+                continue
+            except FutureWarning as e:
+                self.logger.error(f"ERROR: fail to compile regex of {path_dmesg} {str(e)} {p}")
+                continue
+            self.dmesg_regexs.append(r)
+        return True
+
     def parse_dmesg(self, hostname, hdata, sender):
         now = time.time()
         color = 'green'
         state  = f"{xytime(now, self.tz)} - dmesg Ok\n<p>"
-        try:
-            f = open(self.etcdir + '/dmesg.regex')
-            patterns = f.read().splitlines()
-            f.close()
-        except FileNotFoundError:
-            patterns = []
+        self.load_dmesg_regex()
         H = self.find_host(hostname)
         if H is None:
             self.error(f"ERROR: fail to find {hostname} for dmesg")
@@ -4343,7 +4368,7 @@ class xythonsrv:
                 # ignore it for now
                 self.debugdev('dmesg', f"DEBUG: dmesg: ignore multi part {line}")
                 continue
-            if re.search(r'------------.*cut here', line):
+            if re.search(r'--------.*cut here', line):
                 multiline = line + "\n<br>"
                 continue
             if multiline is not None and re.search(r'---.*end trace', line):
@@ -4354,7 +4379,7 @@ class xythonsrv:
                 multiline += line + "\n<br>"
                 continue
             ignore = False
-            for p in patterns:
+            for p in self.dmesg_regexs:
                 if ignore:
                     continue
                 if re.search(p, line):
