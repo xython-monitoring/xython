@@ -837,6 +837,9 @@ def test_reload():
     assert len(X.xy_hosts) == 3
     X.sqc.execute('SELECT * FROM tests')
     results = X.sqc.fetchall()
+    if len(results) != 2:
+        print("=========================== test_reload2")
+        print(results)
     assert len(results) == 2
     assert len(X.xy_hosts) == 3
 
@@ -940,17 +943,27 @@ def test_reload():
     print("Test include with good rights")
     os.chmod("./tests/etc/xython-load/hosts-include.cfg", 0o644)
     ret = X.read_hosts()
+    print(X.mtimes_hosts)
     assert ret == X.RET_NEW
     assert X.find_host("itest2")
-    print(X.mtimes_hosts)
     assert "./tests/etc/xython-load/hosts-include.cfg" in X.mtimes_hosts
 
+    print("==========================")
+    print("create include outside with full path")
     # create a include outside with a full path
     tmpdir = tempfile.TemporaryDirectory()
+    print(f"DEBUG: created {tmpdir.name}")
     with open(f"{tmpdir.name}/test.conf", 'w') as f:
         f.write("127.0.0.1 fullpathhost\n")
+    mtime0 = os.path.getmtime("./tests/etc/xython-load/hosts.cfg")
+    print(f"mtime0={mtime0}")
     with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
         f.write(f"directory {tmpdir.name}\n")
+    # this test fail sometime because write is too fast, so lets sync
+    time.sleep(0.1)
+    mtime1 = os.path.getmtime("./tests/etc/xython-load/hosts.cfg")
+    print(f"mtime1={mtime1}")
+    assert mtime0 != mtime1
     ret = X.read_hosts()
     if ret != X.RET_NEW:
         print(X.xy_hosts)

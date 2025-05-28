@@ -1381,7 +1381,7 @@ class xythonsrv:
             self.mtimes_hosts[snmpd_path] = {}
             self.mtimes_hosts[snmpd_path]["mtime"] = 0
             self.mtimes_hosts[snmpd_path]["optional"] = True
-        # self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
+        self.debug(f"DEBUG: compare mtime={mtime} and time_read_hosts={self.time_read_hosts}")
         need_reload = False
         if self.time_read_hosts < mtime:
             self.time_read_hosts = mtime
