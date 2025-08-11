@@ -4388,7 +4388,7 @@ class xythonsrv:
                 state += f"&clear {line}<br>\n"
             elif howold > 60 * 60 * 24:
                 state += f"&red {line}\n"
-                state += 'Too old<br>\n'
+                state += f'Too old {xydhm(its, H.uptime * 60)}<br>\n'
             else:
                 state += f"&red {line}\n"
                 if curr_level in ['emerg', 'alert', 'crit', 'err']:
