@@ -34,8 +34,8 @@ dependencies = [
     "celery>=2",
     "requests>=2",
     "paramiko",
-    "pyasn1<0.4.9",
-    "pysnmp==5.1.0",
+    "pyasn1",
+    "pysnmp",
     "pytz"
 ]
 

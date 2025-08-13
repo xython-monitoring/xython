@@ -27,16 +27,63 @@ from xython.common import xytime
 
 from datetime import datetime
 
+import asyncio
+#from packaging.version import Version
+try:
+    from pysnmp.hlapi.v3arch.asyncio import *
+    from pysnmp.hlapi import *
+    oldsnmp = False
+except:
+    oldsnmp = True
+    pass
+
 # requests use urllib3, we dont want to see TLS warnings about self signed cert
 urllib3.disable_warnings()
 
 # TODO permit to configure localhost
 app = Celery('tasks', backend='redis://localhost', broker='redis://localhost')
 
+async def snmp_get71(oid, hostname, port, snmp_community):
+    ret = {}
+    ret["err"] = -1
+    snmpEngine = SnmpEngine()
+    iterator = get_cmd(
+        snmpEngine,
+        CommunityData(snmp_community, mpModel=0),
+        await UdpTransportTarget.create((hostname, port)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid)),
+    )
+
+    errorIndication, errorStatus, errorIndex, varBinds = await iterator
+
+    if errorIndication:
+        ret["errmsg"] = str(errorIndication)
+        return ret
+    elif errorStatus:
+        errorf = "{} at {}".format(
+                errorStatus.prettyPrint(),
+                errorIndex and varBinds[int(errorIndex) - 1][0] or "?",
+            )
+        ret["errmsg"] = str(errorStatus.prettyPrint())
+        return ret
+    for varBind in varBinds:
+        ret["pretty"] = ' = '.join([x.prettyPrint() for x in varBind])
+        ret["oid"] = varBind[0]
+        ret["v"] = varBind[1]
+    ret["err"] = 0
+    snmpEngine.close_dispatcher()
+    return ret
 
 def snmp_get(oid, hostname, port, snmp_community):
     ret = {}
     ret["err"] = -1
+    ret["snmpversion"] = pysnmp.__version__
+    #if Version(pv) > Version("5.1.0"):
+    if not oldsnmp:
+        loop = asyncio.get_event_loop()
+        ret = loop.run_until_complete(asyncio.gather(snmp_get71(oid, hostname, port, snmp_community)))
+        return ret[0]
     try:
         iterator = hlapi.getCmd(
             hlapi.SnmpEngine(),

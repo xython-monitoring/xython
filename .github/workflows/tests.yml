@@ -155,6 +155,36 @@ jobs:
         run: |
           python setup.py install
 
+  build-with-oldsnmp51:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10.11", "3.11.5", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sed -i 's,pysnmp,pysnmp==5.1.0,' pyproject.toml
+          sed -i 's,pyasn1,pyasn1<0.4.9,' pyproject.toml
+          sed -i 's,pysnmp,pysnmp==5.1.0,' setup.py
+          python -m pip install --upgrade pip
+          pip install flake8 pytest coverage redis pysnmp setuptools
+          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e "."
+      - name: Test with pytest
+        run: |
+          pwd
+          ls -l
+          pytest -rsfEx
+      - name: Try to setup.py
+        run: |
+          python setup.py install
+
   build-ubuntu-alone:
     runs-on: ubuntu-latest
     name: build on ubuntu without xymon
@@ -167,6 +197,7 @@ jobs:
       - name: Install package
         run: |
           pip install  .
+          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
       - name: build with cmake
         run: |
           cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local/ -DXYTHON_ETC=etc/xython .
