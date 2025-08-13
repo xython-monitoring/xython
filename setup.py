@@ -29,7 +29,7 @@ requires = [
     "celery>=2",
     "requests>=2",
     "paramiko",
-    "pysnmp==5.1.0",
+    "pysnmp",
     "pytz"
 ]
 test_requirements = [
