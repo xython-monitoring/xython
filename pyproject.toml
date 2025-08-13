@@ -1,6 +1,6 @@
 [project]
 name = "xython"
-version = "0.2.5"
+version = "0.2.6"
 description="xython is a rewrite in python of xymon"
 readme = "README.md"
 authors=[

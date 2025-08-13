@@ -56,14 +56,16 @@ First you need to add xython repository
 Add in /etc/apt/sources.list.d/xython.list
 > deb `https://www.xython.fr/mirror/bookworm` /
 
-For bullseye/jammy/noble simply replace bookworm by their name in the URL.
+For bullseye/jammy/noble/trixie simply replace bookworm by their name in the URL.
 
 And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
 > apt-get install gnupg
+>
 > wget `https://www.xython.fr/pgp-key.public`
+>
 > gpg -o /etc/apt/trusted.gpg.d/xython.gpg --dearmour pgp-key.public
 
-Or the old way:
+Or the old deprecated way:
 > apt-key add pgp-key.public
 
 Then install packages
@@ -71,11 +73,14 @@ Then install packages
 
 Enable necessary apache modules
 > a2enmod cgi
+>
 > a2enconf xython
+>
 > systemctl restart apache2
 
 Start services
 > /etc/init.d/redis-server start
+>
 > /etc/init.d/xython start
 
 <!--
@@ -116,6 +121,7 @@ We need to wait on <https://bugzilla.redhat.com/show_bug.cgi?id=2032543>
 But I have packaged missing ones in the xython repository.
 
 > Add <https://www.xython.fr/mirror/xython.repo> in /etc/yum.repos.d/
+
 You need to edit it and replace __OSNAME__ by either rockylinux8 or rockylinux9
 
 One package needed is present in EPEL repository
@@ -123,6 +129,7 @@ One package needed is present in EPEL repository
 
 Then you just have to
 > yum install xython
+
 or for the client only
 > yum install xython-client
 
@@ -132,8 +139,11 @@ or for the client only
 
 Create a virtualenv for xython
 > virtualenv xython
+>
 > source xython/bin/activate
+>
 > pip install celery[redis] requests
+>
 > ./setup.py install
 
 Copy xymon configuration into /etc/xython
@@ -160,10 +170,15 @@ This is the only case were you could safely point XYMONVAR to xymon files.
 Simply ran xython-celery, xythond and xython client either via their init files or their systemd unit.
 
 > /etc/init.d/xython-celery start
+>
 > /etc/init.d/xythond start
+>
 > /etc/init.d/xython-client start
+>
 > systemctl start xython-celery
+>
 > systemctl start xythond
+>
 > systemctl start xython-client
 
 ### docker
@@ -232,6 +247,7 @@ xython-nshow is an example of using it for displaying a ncurses overview.
 
 Example of setupping the rabbitMQ xython user:
 > rabbitmqctl add_user xython "password"
+>
 > rabbitmqctl set_permissions -p "/" "xython" ".*" ".*" ".*"
 
 ## equivalence
