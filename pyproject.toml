@@ -32,6 +32,7 @@ dependencies = [
     "celery>=2",
     "requests>=2",
     "paramiko",
+    "pyasyncore",
     "pyasn1",
     "pysnmp",
     "pytz"

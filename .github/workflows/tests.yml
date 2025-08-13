@@ -22,7 +22,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest coverage redis setuptools pysnmp
-          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
       - name: Lint with flake8
@@ -76,7 +75,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest coverage redis setuptools pysnmp
-          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
           pip install pika
@@ -142,7 +140,6 @@ jobs:
           sudo apt-get -y install librrd-dev
           python -m pip install --upgrade pip
           pip install flake8 pytest coverage redis pysnmp setuptools
-          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
           pip install rrdtool
@@ -173,7 +170,6 @@ jobs:
           sed -i 's,pysnmp,pysnmp==5.1.0,' setup.py
           python -m pip install --upgrade pip
           pip install flake8 pytest coverage redis pysnmp setuptools
-          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
       - name: Test with pytest
@@ -197,7 +193,6 @@ jobs:
       - name: Install package
         run: |
           pip install  .
-          python --version |grep -q 'Python 3.12' && echo "PYTHON3.12 HACK" && pip install pyasyncore
       - name: build with cmake
         run: |
           cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local/ -DXYTHON_ETC=etc/xython .
