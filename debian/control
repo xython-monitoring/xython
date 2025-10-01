@@ -61,3 +61,8 @@ Depends: lsb-base (>= 3.0-6),
          ${shlibs:Depends}
 Recommends: lm-sensors, iproute2, procps, openssl
 Description: client for the Xython network monitor
+  Client data collection package for Xython.
+  .
+  This gathers statistics and data from a single system and reports it to
+  the Xytgon monitor. You should install this package on all systems if you
+  have a Xython server running.
