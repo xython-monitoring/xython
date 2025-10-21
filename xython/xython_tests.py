@@ -81,7 +81,15 @@ def snmp_get(oid, hostname, port, snmp_community):
     ret["snmpversion"] = pysnmp.__version__
     #if Version(pv) > Version("5.1.0"):
     if not oldsnmp:
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError as e:
+            if str(e).startswith('There is no current event loop in thread'):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            else:
+                ret["errmsg"] = str(e)
+                return ret
         ret = loop.run_until_complete(asyncio.gather(snmp_get71(oid, hostname, port, snmp_community)))
         return ret[0]
     try:
