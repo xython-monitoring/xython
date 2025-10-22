@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import hashlib
 from xython.common import gcolor
 from xython.common import gif
 from xython.common import tokenize
@@ -955,14 +956,23 @@ def test_reload():
     print(f"DEBUG: created {tmpdir.name}")
     with open(f"{tmpdir.name}/test.conf", 'w') as f:
         f.write("127.0.0.1 fullpathhost\n")
-    mtime0 = os.path.getmtime("./tests/etc/xython-load/hosts.cfg")
+    n = hashlib.sha256()
+    THOSTS = "./tests/etc/xython-load/hosts.cfg"
+    n.update(open(THOSTS, 'rb').read())
+    sha0 = n.hexdigest()
+    mtime0 = os.path.getmtime(THOSTS)
     print(f"mtime0={mtime0}")
     with open("./tests/etc/xython-load/hosts.cfg", "w") as f:
         f.write(f"directory {tmpdir.name}\n")
     # this test fail sometime because write is too fast, so lets sync
     time.sleep(0.1)
-    mtime1 = os.path.getmtime("./tests/etc/xython-load/hosts.cfg")
+    mtime1 = os.path.getmtime(THOSTS)
+    n = hashlib.sha256()
+    n.update(open(THOSTS, 'rb').read())
+    sha1 = n.hexdigest()
     print(f"mtime1={mtime1}")
+    print(sha0)
+    print(sha1)
     assert mtime0 != mtime1
     ret = X.read_hosts()
     if ret != X.RET_NEW:
