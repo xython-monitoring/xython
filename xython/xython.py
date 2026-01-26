@@ -671,6 +671,8 @@ class xythonsrv:
                     self.client_local_cfg[section] = []
                 continue
             self.client_local_cfg[section].append(line)
+        for section in self.client_local_cfg:
+            self.client_local_cfg[section].append("\n")
         return self.RET_OK
 
     def load_xymonserver_cfg(self):

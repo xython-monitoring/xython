@@ -1891,16 +1891,16 @@ def test_clientlocal():
     assert ret == ["fqdn.hostname", "linux", "class"]
 
     ret = X.send_client_local("[collector:]\nclient fqdn.hostname.linux class")
-    assert ret == ['log:/var/log/messages:10240', 'ignore MARK']
+    assert ret == ['log:/var/log/messages:10240', 'ignore MARK', '\n']
     # check priority of hostname
     ret = X.send_client_local("[collector:]\nclient test1.linux class")
-    assert ret == ['datatest1']
+    assert ret == ['datatest1', '\n']
     # check priority of class
     ret = X.send_client_local("[collector:]\nclient test4.linux test2")
-    assert ret == ['data', 'test2']
+    assert ret == ['data', 'test2', '\n']
     # test non-linux
     ret = X.send_client_local("client test4.freebsd test2")
-    assert ret == ['data', 'test2']
+    assert ret == ['data', 'test2', '\n']
 
     shutil.rmtree(X.xt_data)
 
