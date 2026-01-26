@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import time
 import hashlib
+import asyncio
 from xython.common import gcolor
 from xython.common import gif
 from xython.common import tokenize
@@ -2499,5 +2500,135 @@ def test_time():
     X.parse_rtc("test01", data, "fake")
     H = X.find_host("test01")
     assert H.coltime["rtc"]["color"] == 'red'
+
+    setup_clean(X)
+
+def handle_net_message(buf, addr):
+    ret = {}
+    ret["done"] = 1
+    ret["send"] = f"GOT={len(buf)}\n"
+    return ret
+
+async def network_inet_write(testid, daddr, dport):
+    await asyncio.sleep(1)
+    reader, writer = await asyncio.open_connection(daddr, dport)
+    try:
+        msg = ""
+        if testid == 'BIG':
+            msg = open("./tests/messagebig", 'r').read()
+            msg += "\n"
+        elif testid == 'ZERO':
+            msg = ""
+        elif testid == 'PING':
+            msg = "PING\n"
+        I = 100000
+        for i in range(0, len(msg), I):
+            smsg = msg[i:i+I]
+            writer.write(smsg.encode("UTF8"))
+            await writer.drain()
+    except ConnectionResetError:
+        return False
+    await asyncio.sleep(4)
+    if testid == "BIG":
+        timeout = 0
+        while timeout < 10:
+            r = await reader.readline()
+            if "GOT=" in r.decode("UTF8"):
+                timeout = 10
+            timeout += 1
+            await asyncio.sleep(1)
+        rr = r.decode("UTF8")
+        if rr[:4] == 'GOT=':
+            n = int(rr[4:])
+        else:
+            n = -1
+        if n != len(msg):
+            return False
+    await asyncio.sleep(4)
+    return True
+
+async def network_unix_write(unixpath, testid):
+    await asyncio.sleep(1)
+    reader, writer = await asyncio.open_unix_connection(unixpath)
+    try:
+        msg = ""
+        if testid == 'BIG':
+            msg = open("./tests/messagebig", 'r').read()
+            msg += "\n"
+        elif testid == 'ZERO':
+            msg = ""
+        I = 100000
+        for i in range(0, len(msg), I):
+            smsg = msg[i:i+I]
+            writer.write(smsg.encode("UTF8"))
+            await writer.drain()
+    except ConnectionResetError:
+        return False
+    await asyncio.sleep(4)
+    if testid == "BIG":
+        r = await reader.read(256)
+        rr = r.decode("UTF8")
+        if rr[:4] == 'GOT=':
+            n = int(rr[4:])
+        else:
+            n = -1
+        if n != len(msg):
+            return False
+    await asyncio.sleep(4)
+    return True
+
+@pytest.mark.asyncio
+async def test_network_unix_big():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    X.unixsock = './tests/run/xython.sock'
+    setup_testdir(X, 'xython-smart')
+    X.lldebug = True
+    X.netport = 18888
+    X.init()
+    X.handle_net_message = handle_net_message
+
+    tasks = []
+    coro = X.start_unix()
+    tasks.append(coro)
+    sc = asyncio.create_task(network_unix_write(X.unixsock, "BIG"))
+    tasks.append(sc)
+    r = await asyncio.gather(*tasks)
+    assert r[1]
+
+    tasks = []
+    coro = X.start_unix()
+    tasks.append(coro)
+    sc = asyncio.create_task(network_unix_write(X.unixsock, "ZERO"))
+    tasks.append(sc)
+    r = await asyncio.gather(*tasks)
+    assert r[1]
+
+    tasks = []
+    coro = X.start_inet4()
+    tasks.append(coro)
+    sc = asyncio.create_task(network_inet_write("BIG", "127.0.0.1", X.netport))
+    tasks.append(sc)
+    r = await asyncio.gather(*tasks)
+    assert r[1]
+
+    tasks = []
+    X.netport = 18889
+    coro = X.start_inet4()
+    tasks.append(coro)
+    sc = asyncio.create_task(network_inet_write("PING", "127.0.0.1", X.netport))
+    tasks.append(sc)
+    r = await asyncio.gather(*tasks)
+    assert r[1]
+
+    tasks = []
+    X.netport = 18890
+    X.ipv6 = True
+    coro = X.start_inet6()
+    tasks.append(coro)
+    sc = asyncio.create_task(network_inet_write("PING", "::1", X.netport))
+    tasks.append(sc)
+    r = await asyncio.gather(*tasks)
+    assert r[1]
 
     setup_clean(X)

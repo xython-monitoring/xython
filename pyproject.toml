@@ -51,6 +51,7 @@ packages = [
 dev = [
   "coverage",
   "pytest",
+  "pytest-asyncio",
 ]
 
 [tool.setuptools.package-data]

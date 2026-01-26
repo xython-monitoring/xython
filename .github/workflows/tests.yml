@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest coverage redis setuptools pysnmp
+          pip install flake8 pytest coverage redis setuptools pysnmp pytest-asyncio
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
       - name: Lint with flake8
@@ -74,7 +74,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest coverage redis setuptools pysnmp
+          pip install flake8 pytest coverage redis setuptools pysnmp pytest-asyncio
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
           pip install pika
@@ -139,7 +139,7 @@ jobs:
         run: |
           sudo apt-get -y install librrd-dev
           python -m pip install --upgrade pip
-          pip install flake8 pytest coverage redis pysnmp setuptools
+          pip install flake8 pytest coverage redis pysnmp setuptools pytest-asyncio
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
           pip install rrdtool
@@ -169,7 +169,7 @@ jobs:
           sed -i 's,pyasn1,pyasn1<0.4.9,' pyproject.toml
           sed -i 's,pysnmp,pysnmp==5.1.0,' setup.py
           python -m pip install --upgrade pip
-          pip install flake8 pytest coverage redis pysnmp setuptools
+          pip install flake8 pytest coverage redis pysnmp setuptools pytest-asyncio
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e "."
       - name: Test with pytest
