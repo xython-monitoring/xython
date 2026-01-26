@@ -104,7 +104,10 @@ except ConnectionRefusedError:
     sys.exit(0)
 try:
     sock.send(f"HTTPTLSproxy {ipaddr}\n".encode("UTF8"))
-    sock.send(data.encode("UTF8"))
+    I = 100000
+    for i in range(0, len(data), I):
+        smsg = data[i:i+I]
+        sock.send(smsg.encode("UTF8"))
     buf = sock.recv(640000)
     print(buf.decode("UTF8"))
 except ConnectionResetError:

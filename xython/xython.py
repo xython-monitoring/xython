@@ -361,6 +361,7 @@ class xythonsrv:
         self.colnames['time'] = 'time'
         self.inventory_cache = {}
         self.DMESG_REGEX = 'dmesg.regex'
+        self.CLIENT_MSGMAX = 500 * 1000
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -5337,8 +5338,17 @@ class xythonsrv:
             await asyncio.sleep(1)
 
     async def handle_unix_client(self, reader, writer):
-        data = await reader.read(320000)
-        message = data.decode("UTF8")
+        finish = False
+        message = ""
+        while not finish:
+            try:
+                data = await asyncio.wait_for(reader.read(self.CLIENT_MSGMAX), timeout=1)
+                print(len(data))
+                message += data.decode("UTF8")
+                if len(data) == 0:
+                    finish = True
+            except (TimeoutError, asyncio.TimeoutError):
+                finish = True
         ret = self.handle_net_message(message, "unix")
         if "send" in ret:
             writer.write(ret["send"].encode("UTF8"))
@@ -5356,7 +5366,7 @@ class xythonsrv:
     async def handle_inet_client(self, reader, writer):
         peername = writer.get_extra_info('peername')
         try:
-            data = await asyncio.wait_for(reader.readline(), timeout=10)
+            data = await asyncio.wait_for(reader.readline(), timeout=5)
         except TimeoutError:
             writer.close()
             return
@@ -5368,14 +5378,27 @@ class xythonsrv:
             await writer.drain()
         while True:
             try:
-                data = await asyncio.wait_for(reader.read(320000), timeout=10)
+                data = await asyncio.wait_for(reader.read(self.CLIENT_MSGMAX), timeout=5)
+                if len(data) == self.CLIENT_MSGMAX:
+                    self.error(f"CLIENT MESSAGE IS BIGGER THAN {self.CLIENT_MSGMAX}")
                 message += data.decode("UTF8", 'surrogateescape')
                 if len(data) == 0:
                     self.handle_net_message(message, peername)
                     writer.close()
                     return
                 await writer.drain()
-            except TimeoutError:
+            except (TimeoutError, asyncio.TimeoutError):
+                ret = self.handle_net_message(message, peername)
+                if "send" in ret:
+                    writer.write(ret["send"].encode("UTF8"))
+                if "bsend" in ret:
+                    writer.write(ret["bsend"])
+                try:
+                    await writer.drain()
+                except BrokenPipeError as e:
+                    self.error(f"ERROR: handle_inet_client: {str(e)}")
+                except ConnectionResetError as e:
+                    self.error(f"ERROR: handle_inet_client: {str(e)}")
                 writer.close()
                 return
             except ConnectionResetError:
@@ -5386,6 +5409,36 @@ class xythonsrv:
                 writer.close()
                 return
 
+    def start_unix(self):
+        if os.path.exists(self.unixsock):
+            os.unlink(self.unixsock)
+        self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            self.us.bind(self.unixsock)
+        except FileNotFoundError as e:
+            self.error(f"ERROR: fail to bind to {self.unixsock} {str(e)}")
+            return None
+        # TODO does it is necessary ?, check setup with apache
+        os.chmod(self.unixsock, 0o666)
+        self.us.listen(100)
+        return asyncio.start_unix_server(self.handle_unix_client, sock=self.us)
+
+    def start_inet4(self):
+        return asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.netport, backlog=1000, sock=self.s)
+
+    def start_inet6(self):
+        if self.ipv6:
+            return asyncio.start_server(self.handle_inet_client, '::', self.netport, backlog=1000)
+        return None
+
+    def start_tls(self):
+        if self.tls_cert and self.tls_key:
+            ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_ctx.load_cert_chain(self.tls_cert, self.tls_key)
+            self.log(self.daemon_name, "START TLS");
+            coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.tlsport, backlog=1000, ssl=ssl_ctx)
+            return coro
+
     async def run(self):
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
         self.debug(f"DEBUG: resources hard={hard} soft={soft}")
@@ -5394,10 +5447,10 @@ class xythonsrv:
         self.debug(f"DEBUG: resources after hard={hard} soft={soft}")
         self.tasks = []
 
-        coro = asyncio.start_server(self.handle_inet_client, '0.0.0.0', self.netport, backlog=1000, sock=self.s)
+        coro = self.start_inet4()
         self.tasks.append(coro)
         if self.ipv6:
-            coro = asyncio.start_server(self.handle_inet_client, '::', self.netport, backlog=1000)
+            coro = self.start_inet6()
             self.tasks.append(coro)
         if self.tls_cert and self.tls_key:
             ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -5407,18 +5460,9 @@ class xythonsrv:
             self.tasks.append(coro)
         else:
             self.log(self.daemon_name, f"DO NOT START TLS")
-        if os.path.exists(self.unixsock):
-            os.unlink(self.unixsock)
-        self.us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            self.us.bind(self.unixsock)
-        except FileNotFoundError as e:
-            self.error(f"ERROR: fail to bind to {self.unixsock} {str(e)}")
+        coro = self.start_unix()
+        if coro is None:
             return
-        # TODO does it is necessary ?, check setup with apache
-        os.chmod(self.unixsock, 0o666)
-        self.us.listen(100)
-        coro = asyncio.start_unix_server(self.handle_unix_client, sock=self.us)
         self.tasks.append(coro)
         sc = asyncio.create_task(self.do_scheduler())
         self.tasks.append(sc)
