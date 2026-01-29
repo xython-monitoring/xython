@@ -2632,3 +2632,83 @@ async def test_network_unix_big():
     assert r[1]
 
     setup_clean(X)
+
+def test_ethtool():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'ethtool')
+    X.lldebug = True
+    X.init()
+
+    f = open("./tests/ethtool/message")
+    data = f.read()
+    f.close()
+    X.handle_net_message(data, "fake")
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test1" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'green'
+
+    f = open("./tests/ethtool/test1")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test1', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test1" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'green'
+
+    f = open("./tests/ethtool/test2")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test1', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test1" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'red'
+
+    f = open("./tests/ethtool/test3")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test1', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test1" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'red'
+
+    f = open("./tests/ethtool/test4")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test1', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test1" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'green'
+
+    f = open("./tests/ethtool/test3")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test2', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test2" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
+    result = results[0]
+    assert result[4] == 'green'
+
+    f = open("./tests/ethtool/try2crash")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test1', data, 'fake')
+
+    setup_clean(X)
