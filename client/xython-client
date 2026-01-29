@@ -421,6 +421,21 @@ if [ $ISLINUX -eq 1 ];then
 	echo '[lspci]'
 	lspci -kv 2>/dev/null
 
+	if [ -x /usr/sbin/ethtool ];then
+		echo '[ethtool]'
+		for ipath in /sys/class/net/*
+		do
+			iface=$(basename $ipath)
+			if [ ! -e /sys/class/net/$iface/device ];then
+				continue
+			fi
+			if [ -e /sys/class/net/$iface/wireless ];then
+				continue
+			fi
+			ethtool $iface 2>/dev/null
+		done
+	fi
+
 	run_less ONCE dmidecode
 	if [ $? -eq 0 ];then
 		dmidecode --version 2>/dev/null >/dev/null

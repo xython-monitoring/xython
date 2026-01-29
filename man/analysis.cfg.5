@@ -231,6 +231,19 @@ Example:
 lsmod will go red if nct6775 is not loaded
 .BR Xython: OK
 
+.SH ETHTOOL STATUS COLUMN SETTINGS
+.sp
+.BR "ETHTOOL interface [IGNORE]"
+.sp
+For the moment, the only configuration possible is to ignore some interface for ethtool tests
+.br
+.sp
+Example:
+.br
+	SENSOR eth0 IGNORE
+.br
+.BR Xython: OK
+
 .SH SENSOR STATUS COLUMN SETTINGS
 .sp
 .BR "SENSOR adapter sensorname warnmax criticmax [minwarn mincritic]"

@@ -2987,6 +2987,27 @@ class xythonsrv:
         ret['setting'] = rp
         return ret
 
+    def analysis_ethtool(self, ltoks):
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        rs = {}
+        rs["ignore"] = False
+        if len(ltoks) < 2:
+            self.error(f'ERROR: missing ETHTOOL parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        rs["if"] = ltoks.pop(0)
+        arg = ltoks.pop(0)
+        if arg == 'IGNORE' or arg == 'ignore':
+            rs["ignore"] = True
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        self.error(f'ERROR: ETHTOOL: invalid config {arg}')
+        ret['err'] = True
+        return ret
+
     def analysis_sensor(self, ltoks):
         ret = {}
         ret['err'] = False
@@ -3105,6 +3126,7 @@ class xythonsrv:
         self.rules["SENSOR"].add("DEFAULT % 100 200 10 0")
         self.rules["SENSOR"].add("DEFAULT V 1000 2000 -1 -2")
         self.rules["SENSOR"].add("DEFAULT RPM 4000 5000 100 0")
+        self.rules["ETHTOOL"] = None
         for hostname in self.xy_hosts:
             H = self.xy_hosts[hostname]
             H.rules["CPU"] = None
@@ -3116,6 +3138,7 @@ class xythonsrv:
             H.rules["PROC"] = []
             H.rules["PORT"] = []
             H.rules["SENSOR"] = None
+            H.rules["ETHTOOL"] = None
             H.rules["LSMOD"] = {}
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         selector = None
@@ -3182,6 +3205,13 @@ class xythonsrv:
                     ltoks = ret["ltoks"]
                     setting = ret["setting"]
                     settingname = "UP"
+                elif keyword == 'ETHTOOL':
+                    ret = self.analysis_ethtool(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = "ETHTOOL"
                 elif keyword == 'SENSOR':
                     ret = self.analysis_sensor(ltoks)
                     if ret["err"]:
@@ -3323,6 +3353,11 @@ class xythonsrv:
                             H.rules[settingname] = xy_rule_mem()
                             H.rules[settingname].warn = setting["warn"]
                             H.rules[settingname].panic = setting["panic"]
+                        elif settingname == 'ETHTOOL':
+                            if H.rules["ETHTOOL"] is None:
+                                H.rules["ETHTOOL"] = []
+                            print('============= ETHTOOL RULES')
+                            H.rules["ETHTOOL"].append(setting)
                         elif settingname == 'SENSOR':
                             if H.rules["SENSOR"] is None:
                                 H.rules["SENSOR"] = xy_rule_sensors()
@@ -4089,6 +4124,107 @@ class xythonsrv:
                 self.do_rrd(hostname, column, mnt, 'pct', pct, ['DS:pct:GAUGE:600:0:100'])
         sbuf += buf
         ret = self.column_update(hostname, column, color, now, sbuf, self.ST_INTERVAL + 60, sender)
+        return ret
+
+    def ethtool_get_best_mode(self, lmline, limit):
+        best = None
+        speed = 0
+        duplex = None
+        modelist = []
+        for line in lmline.split(' '):
+            if len(line) == 0:
+                continue
+            if not line[0].isnumeric():
+                continue
+            if limit is not None and line not in limit:
+                continue
+            modelist.append(line)
+            r = re.match('^[0-9]+', line)
+            c = int(r.group(0))
+            d = line.split('/')[1]
+            if c > speed:
+                best = line
+                speed = c
+                duplex = d
+            elif duplex == 'Half' and d == 'Full':
+                best = line
+                speed = c
+                duplex = d
+        return [best, speed, duplex, modelist]
+
+    # TODO test autoneg, link up/down
+    def parse_ethtools(self, hostname, buf, sender):
+        now = int(time.time())
+        column = 'ethtool'
+        color = 'green'
+        sbuf = f"{xytime(now, self.tz)} - ethtool Ok\n"
+
+        H = self.find_host(hostname)
+        if H is None:
+            self.error("ERROR: parse_ethtool: host is None")
+            return 2
+        # put all links speed on one line
+        buf = re.sub(r"\n\s+([0-9])", r' \1', buf)
+        sline = buf.split("\n")
+        ifname = None
+        balink = None
+        bplink = None
+        bestlink = None
+        ignore = False
+        for line in sline:
+            if "Settings for" in line:
+                if ifname is not None:
+                    sbuf += '</fieldset>\n'
+                ignore = False
+                ifname = line.split(" ")[2]
+                ifname = ifname.split(':')[0]
+                sbuf += f'<fieldset><legend>{ifname}</legend>\n'
+                sbuf += line + '\n'
+                # check for ignore
+                if H.rules['ETHTOOL'] is not None:
+                    for rs in H.rules['ETHTOOL']:
+                        if rs['ignore'] and rs['if'] == ifname:
+                            ignore = True
+                continue
+            sbuf += line + '\n'
+            if ignore:
+                continue
+            if "Advertised link modes" in line:
+                balink = self.ethtool_get_best_mode(line, None)
+                if balink is not None:
+                    sbuf +=f"&clear best advertised is {balink[0]}"
+                bestlink = balink
+            if "Link partner advertised link modes" in line:
+                bplink = self.ethtool_get_best_mode(line, balink[3])
+                if bplink is not None:
+                    sbuf += f"&clear best partner is {bplink[0]}"
+                bestlink = bplink
+            if "Duplex" in line:
+                r = re.search(r'Duplex: ([A-Z][a-z]+)', line)
+                duplex = line.split(':')[1]
+                duplex = r.group(1)
+                if balink is not None:
+                    if duplex == bestlink[2]:
+                        sbuf += f'&green Duplex is {duplex}\n'
+                    else:
+                        sbuf += f'&red Duplex is {duplex}\n'
+                        color = setcolor('red', color)
+            if "Speed" in line:
+                r = re.search(r'[0-9]+', line)
+                if r is None:
+                    color = setcolor('red', color)
+                    sbuf += f'&red Speed is bad<br>\n'
+                    continue
+                speed = int(r.group(0))
+                if balink is not None:
+                    if speed < bestlink[1]:
+                        sbuf += f'&red Speed {speed} below max {bestlink[1]}<br>\n'
+                        color = setcolor('red', color)
+                    else:
+                        sbuf += f'&green Speed {speed} is max<br>\n'
+        if ifname is not None:
+            sbuf += '</fieldset>\n'
+        ret = self.column_update(hostname, self.colnames["iflink"], color, now, sbuf, self.ST_INTERVAL + 60, sender)
         return ret
 
     def parse_status(self, msg):
@@ -4900,6 +5036,9 @@ class xythonsrv:
                         ret = self.parse_df(hostname, buf, False, addr)
                         if ret >= 1:
                             save_hostdata = True
+                    if section == '[ethtool]':
+                        handled = True
+                        ret = self.parse_ethtools(hostname, buf, addr)
                     if section == '[inode]':
                         handled = True
                         ret = self.parse_df(hostname, buf, True, addr)
@@ -4989,7 +5128,7 @@ class xythonsrv:
                 section = line
                 buf = ""
                 continue
-            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]', '[smart]', '[rtc]', '[ntp]']:
+            if section in ['[uptime]', '[ps]', '[df]', '[collector:]', '[inode]', '[free]', '[ports]', '[lmsensors]', '[mdstat]', '[ss]', '[clientversion]', '[uname]', '[osversion]', '[dmesg]', '[lsmod]', '[lspci]', '[dpkg]', '[rpm]', '[cpumicrocode]', '[dmidecode]', '[smart]', '[rtc]', '[ntp]', '[ethtool]']:
                 buf += line
                 buf += '\n'
         if hostname is not None:
@@ -5248,12 +5387,13 @@ class xythonsrv:
         except sqlite3.OperationalError as e:
             self.error(f"ERROR: fail to commit sqlite {self.db} {str(e)}")
             sys.exit(1)
-        for column in ['mdstat', 'smart']:
+        for column in ['iflink', 'mdstat', 'smart']:
+            self.colnames[column] = column
             cname = self.xython_getvar(f'COLUMN_NAME_{column}')
             if cname is None:
                 continue
             if is_valid_column(cname):
-                self.debug(f"DEBUG: mdstat column renamed from {self.colnames[column]} to {cname}")
+                self.debug(f"DEBUG: {column} column renamed from {self.colnames[column]} to {cname}")
                 self.colnames[column] = cname
             else:
                 self.error(f"ERROR: COLUMN_NAME_{column} give a bad name {cname}")
