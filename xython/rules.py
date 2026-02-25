@@ -482,7 +482,7 @@ class xy_rule_cpu():
         else:
             ret["UP"] = {}
             ret["UP"]["color"] = 'green'
-            ret["UP"]["txt"] = f'&green uptime (in minutes) {self.xuptime} < {self.bootlimit / 60}'
+            ret["UP"]["txt"] = f'&green uptime (in minutes) {self.xuptime} > {self.bootlimit / 60}'
         return ret
 
 
