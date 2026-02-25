@@ -4358,12 +4358,12 @@ class xythonsrv:
             return False
         howlong = lmsg.pop(0)
         howlongs = xydelay(howlong)
-        # TODO the real expire in DB could be some secs after
-        now = time.time()
-        expire = now + howlongs
         if howlongs is None:
             self.error(f"ERROR: invalid duration {howlong}")
             return False
+        # TODO the real expire in DB could be some secs after
+        now = time.time()
+        expire = now + howlongs
         why = " ".join(lmsg)
         self.debug(f"DEBUG: I will acknowledge {who} for {howlongs}s due to {why}")
 
@@ -4401,11 +4401,11 @@ class xythonsrv:
             return False
         howlong = lmsg.pop(0)
         howlongs = xydelay(howlong)
-        # TODO the real expire in DB could be some secs after
-        expire = dstart + howlongs
         if howlongs is None:
             self.error(f"ERROR: invalid duration {howlong}")
             return False
+        # TODO the real expire in DB could be some secs after
+        expire = dstart + howlongs
         why = " ".join(lmsg)
         self.debug(f"DEBUG: I will disable {who} for {howlongs}s due to {why}")
 
