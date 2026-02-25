@@ -299,7 +299,7 @@ class xy_rule_sensors():
             return [sname, rawv, 'J']
         if sline[1] == 'MJ':
             rawv = float(sline[0]) * 1000 * 1000
-            return [sname, sline[0], 'J']
+            return [sname, rawv, 'J']
         if sline[1] == 'GJ':
             rawv = float(sline[0]) * 1000 * 1000 * 1000
             return [sname, rawv, 'J']

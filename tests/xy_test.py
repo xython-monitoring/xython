@@ -785,9 +785,9 @@ def test_lmsensors():
     d = X.get_histlogs("test01", "sensor", ts)
     raw = ''.join(d['raw'])
     assert 'yellow Chip 0 Vdd CHECK=(0.841 => 0.8)' in raw
-    assert 'red APSS 14 CHECK=(104.14 => 30.0)' in raw
+    assert 'red APSS 14 CHECK=(104140000.0 => 30.0)' in raw
     assert 'yellow System CHECK=(226.0 <= MINWARN=1000.0)' in raw
-    assert 'red APSS 0 CHECK=(865.94 <= MINPANIC=999.0)' in raw
+    assert 'red APSS 0 CHECK=(865940000.0 => 5020.0)' in raw
 
     f = open("./tests/sensors/sensors5")
     data5 = f.read()
