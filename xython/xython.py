@@ -1060,6 +1060,7 @@ class xythonsrv:
                 self.write_html(pagename, html)
 
     # TODO template jinja ?
+    # TODO clean code as gen_html seems now only for svcstatus
     def gen_html(self, pagename, hostname, column, ts):
         now = time.time()
         color = 'green'
@@ -1091,8 +1092,6 @@ class xythonsrv:
             hlist.append('<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"])
             hlist.append('<PRE>')
             data = ''.join(rdata["data"])
-            data.replace("\n", '<br>\n')
-            # data = re.sub("\n", '<br>\n', data)
             for gifc in COLORS:
                 data = re.sub("&%s" % gifc, '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % gifc, data)
             hlist.append(data)
@@ -2564,6 +2563,10 @@ class xythonsrv:
         buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
         buf += f"xymonserver.cfg mtime {xytime(self.time_read_xserver_cfg)}\n"
         buf += f"Local time: {xytime(now)} TZ={self.tz}\n"
+        if has_rrdtool:
+            buf += 'Optional: RRD\n'
+        else:
+            buf += 'Optional: NO RRD\n'
         nghost = 0
         for ghost in self.ghosts:
             if ghost["ts"] + 300 < now:
@@ -4429,6 +4432,7 @@ class xythonsrv:
         return True
 
     def load_dmesg_regex(self):
+        # TODO cache this
         try:
             path_dmesg = self.etcdir + '/' + self.DMESG_REGEX
             print(f"DEBUG load {path_dmesg}")
@@ -4964,7 +4968,7 @@ class xythonsrv:
         state  = f"{xytime(now, self.tz)} - smart Ok\n<p>"
         H = self.find_host(hostname)
         if H is None:
-            self.error(f"ERROR: fail to find {hostname} for dmesg")
+            self.error(f"ERROR: fail to find {hostname} for smart")
             return False
         device = None
         smartdata = []

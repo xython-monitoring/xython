@@ -424,7 +424,7 @@ class xy_rule_cpu():
         ret = {}
         loadavg = re.search(r"load average[s]*: [0-9]+[,\.][0-9]+,\s([0-9]+[,\.][0-9]+),", upline)
         if not loadavg:
-            xlog_error("ERROR: fail to find load in {upline}")
+            xlog_error(f"ERROR: fail to find load in {upline}")
             return None
         load = loadavg.group(1).replace(',', '.')
         self.xload = float(load)
@@ -452,7 +452,6 @@ class xy_rule_cpu():
             xlog_error(f"ERROR: failed to find uptime in {upline}")
             return None
         sup = rup.group(1)
-        sup.replace(",", '')
         self.xuptime = 0
         # convert HH:MM in minutes
         tmp = re.search(r'([0-9]+):([0-9][0-9])', sup)
