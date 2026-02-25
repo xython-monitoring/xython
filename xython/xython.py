@@ -362,6 +362,7 @@ class xythonsrv:
         self.inventory_cache = {}
         self.DMESG_REGEX = 'dmesg.regex'
         self.CLIENT_MSGMAX = 500 * 1000
+        self.xversion = version("xython")
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -831,7 +832,7 @@ class xythonsrv:
         fh.close()
         html = re.sub("&XYMONBODYHEADER", body_header, html)
         html = re.sub("&XYMONBODYFOOTER", "", html)
-        html = re.sub("&XYMONDREL", f'{version("xython")}', html)
+        html = re.sub("&XYMONDREL", f'{self.xversion}', html)
         html = re.sub("&XYMWEBREFRESH", "60", html)
         html = re.sub("&XYMWEBBACKGROUND", color, html)
         html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
