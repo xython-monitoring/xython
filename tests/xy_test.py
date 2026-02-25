@@ -187,6 +187,7 @@ def test_validator():
     assert not is_valid_hostname("test*")
     assert not is_valid_hostname("teséàçö")
     assert not is_valid_hostname(None)
+    assert not is_valid_hostname("")
     assert is_valid_column("test")
     assert is_valid_column("test46")
     assert is_valid_column("test_46")
