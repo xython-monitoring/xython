@@ -390,8 +390,7 @@ class xythonsrv:
             self.stats[name]["max"]))
 
     def history_update(self, hostname, cname, ts, duration, color, ocolor):
-        req = f'INSERT INTO history(hostname, column, ts, duration, color, ocolor)VALUES ("{hostname}", "{cname}", {ts}, {duration}, "{color}", "{ocolor}")'
-        self.sqc.execute(req)
+        self.sqc.execute('INSERT INTO history(hostname, column, ts, duration, color, ocolor) VALUES (?, ?, ?, ?, ?, ?)', (hostname, cname, ts, duration, color, ocolor))
 
     # used only at start, expire is set to let enough time to arrive before purpleing
     def column_set(self, hostname, cname, color, ts, expire, ts_expire):
@@ -468,8 +467,7 @@ class xythonsrv:
         return None
 
     def xython_is_ack(self, hostname, column):
-        req = f'SELECT ackend, ackcause FROM columns WHERE hostname="{hostname}" AND column="{column}"'
-        self.sqc.execute(req)
+        self.sqc.execute('SELECT ackend, ackcause FROM columns WHERE hostname=? AND column=?', (hostname, column))
         results = self.sqc.fetchall()
         if len(results) == 0:
             return None
@@ -482,11 +480,9 @@ class xythonsrv:
         self.debug(f"DROP COLUMN {hostname} {column}")
         ret = ""
         # delete internal state
-        req = f'DELETE FROM columns WHERE hostname = "{hostname}" AND column = "{column}"'
-        res = self.sqc.execute(req)
+        res = self.sqc.execute('DELETE FROM columns WHERE hostname = ? AND column = ?', (hostname, column))
         # verify it is clean
-        req = f'SELECT * FROM columns WHERE hostname = "{hostname}" AND column = "{column}"'
-        res = self.sqc.execute(req)
+        res = self.sqc.execute('SELECT * FROM columns WHERE hostname = ? AND column = ?', (hostname, column))
         results = self.sqc.fetchall()
         for res in results:
             self.debug(f"DEBUG: DROP REMAIN {res}")
@@ -765,9 +761,12 @@ class xythonsrv:
         self.debugdev('vars', "DEBUG: did not found %s" % varname)
         return ""
 
-    def html_history(self, now, history_extra):
+    def html_history(self, now, hostname=None, column=None):
         hlist = []
-        self.sqc.execute(f"SELECT * FROM history WHERE ts > {now} - 240 *60 {history_extra} ORDER BY ts DESC LIMIT 100")
+        if hostname is not None and column is not None:
+            self.sqc.execute("SELECT * FROM history WHERE ts > ? - 240*60 AND hostname=? AND column=? ORDER BY ts DESC LIMIT 100", (now, hostname, column))
+        else:
+            self.sqc.execute("SELECT * FROM history WHERE ts > ? - 240*60 ORDER BY ts DESC LIMIT 100", (now,))
         results = self.sqc.fetchall()
         hcount = len(results)
         if hcount > 0:
@@ -874,7 +873,6 @@ class xythonsrv:
 
     def html_page(self, pagename):
         now = time.time()
-        history_extra = ""
         color = 'blue'
         if pagename == 'acknowledgements':
             header = 'acknowledge_header'
@@ -928,7 +926,7 @@ class xythonsrv:
                     hlist += ret["html"]
                     color = setcolor(ret["color"], color)
             if pagename in ['all', 'nongreen']:
-                hlist += self.html_history(now, history_extra)
+                hlist += self.html_history(now)
         hlist += self.html_footer(footer)
         html = self.html_finalize(color, hlist, pagename)
         return html
@@ -1079,7 +1077,6 @@ class xythonsrv:
                     color = setcolor(ret["color"], color)
             self.stat("HTML_hostlist", time.time() - ts)
 
-        history_extra = ""
         if pagename == 'svcstatus':
             rdata = self.get_histlogs(hostname, column, ts)
             if rdata is None:
@@ -1109,7 +1106,6 @@ class xythonsrv:
             else:
                 hlist.append('<a href="$XYMONSERVERCGIURL/svcstatus.sh?CLIENT={hostname}">Client data</a> available<br>')
             hlist.append('</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n')
-            history_extra = f'AND hostname="{hostname}" AND column="{column}"'
 
             self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
             ackinfos = self.sqc.fetchall()
@@ -1154,7 +1150,7 @@ class xythonsrv:
 
         # history
         if pagename in ["svcstatus", "all", "nongreen"]:
-            hlist += self.html_history(now, history_extra)
+            hlist += self.html_history(now, hostname, column)
 
         hlist += self.html_footer('stdnormal_footer')
 
@@ -1721,7 +1717,7 @@ class xythonsrv:
     # return all cname for a host in a list
     def get_columns(self, hostname):
         print(f"DEBUG: get_columns {hostname}")
-        self.sqc.execute(f'SELECT column FROM columns WHERE hostname == "{hostname}"')
+        self.sqc.execute('SELECT column FROM columns WHERE hostname == ?', (hostname,))
         results = self.sqc.fetchall()
         if len(results) >= 1:
             allc = []
@@ -2344,7 +2340,7 @@ class xythonsrv:
                 self.debug("DEBUG: gentest %s %s" % (H.name, T.type))
                 # self.debug(T.urls)
                 tnext = now + randint(1, 10)
-                self.sqc.execute(f'INSERT OR REPLACE INTO tests(hostname, column, next) VALUES ("{H.name}", "{T.type}", {tnext})')
+                self.sqc.execute('INSERT OR REPLACE INTO tests(hostname, column, next) VALUES (?, ?, ?)', (H.name, T.type, tnext))
 
     def dump_tests(self):
         for T in self.tests:
@@ -4262,8 +4258,7 @@ class xythonsrv:
         return False
 
     def do_ack(self, hostname, cname, expire, why):
-        req = f'UPDATE columns SET ackcause="{why}", ackend={expire} WHERE hostname="{hostname}" AND column="{cname}" AND color != "green"'
-        self.sqc.execute(req)
+        self.sqc.execute('UPDATE columns SET ackcause=?, ackend=? WHERE hostname=? AND column=? AND color != "green"', (why, expire, hostname, cname))
         # TODO check if we changed at least one line
 
     def read_acks(self):
