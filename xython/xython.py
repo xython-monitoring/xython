@@ -3312,7 +3312,7 @@ class xythonsrv:
                             self.rules["CPU"] = xy_rule_cpu()
                         self.rules["CPU"].loadset = True
                         self.rules["CPU"].loadwarn = setting["loadwarn"]
-                        self.rules["CPU"].loadwarn = setting["loadpanic"]
+                        self.rules["CPU"].loadpanic = setting["loadpanic"]
                     elif settingname in ['MEMSWAP', 'MEMACT', 'MEMPHYS']:
                         self.rules[settingname] = xy_rule_mem()
                         self.rules[settingname].warn = setting["warn"]
@@ -3339,7 +3339,7 @@ class xythonsrv:
                                 H.rules["CPU"] = xy_rule_cpu()
                             H.rules["CPU"].loadset = True
                             H.rules["CPU"].loadwarn = setting["loadwarn"]
-                            H.rules["CPU"].loadwarn = setting["loadpanic"]
+                            H.rules["CPU"].loadpanic = setting["loadpanic"]
                         elif settingname == 'UP':
                             if H.rules["CPU"] is None:
                                 H.rules["CPU"] = xy_rule_cpu()

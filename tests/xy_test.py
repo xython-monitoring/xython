@@ -2352,6 +2352,8 @@ def test_analysis():
     print(H.rules["CPU"])
     assert H.rules["CPU"].bootlimit == xydelay('4d')
     assert H.rules["CPU"].toolonglimit == xydelay('90d')
+    assert H.rules["CPU"].loadwarn == 15
+    assert H.rules["CPU"].loadpanic == 20
 
     print(H.rules["SENSOR"])
     assert H.rules["SENSOR"]
