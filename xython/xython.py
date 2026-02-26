@@ -2804,6 +2804,7 @@ class xythonsrv:
         if not is_valid_color(color):
             ltoks.insert(0, arg)
             ret['ltoks'] = ltoks
+            ret['err'] = True
             return ret
         self.debug(f"DEBUG: UP color {color}")
         ru["upcolor"] = color

@@ -2384,6 +2384,21 @@ def test_analysis():
 
     setup_clean(X)
 
+def test_read_analysis2():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-page/'
+    setup_testdir(X, 'read_analysis2')
+    X.init()
+
+    tdir = 'tests/crash/'
+    dirFiles = os.listdir(tdir)
+    for file in dirFiles:
+        print(f"TESTING crashfile {file}")
+        X.etcdir = tdir + file
+        X.read_analysis2()
+
+    setup_clean(X)
+
 def test_smart():
     X = xythonsrv()
     X.etcdir = './tests/etc/xython-smart/'
