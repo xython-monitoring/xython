@@ -196,12 +196,17 @@ class host_selector:
 
     def setregex(self, r, exclude=False):
         if r[0] != '%':
-            return False
+            return f'regex {r} not starting with %'
+        rgx = r[1:]
+        try:
+            self.rgx = re.compile(rgx)
+        except re.PatternError as e:
+            return str(e)
         if exclude:
             self.exregex = r[1:]
         else:
             self.regex = r[1:]
-        # TODO compile regex for validating it
+        return None
 
     def match(self, H):
         hostname = H.name
@@ -3262,7 +3267,9 @@ class xythonsrv:
                     if data[0] == '*':
                         selector_new.all = True
                     elif data[0] == '%':
-                        selector_new.setregex(data)
+                        ret = selector_new.setregex(data)
+                        if ret:
+                            self.error(ret)
                     elif "," in data:
                         for hostname in data.split(","):
                             selector_new.hosts.append(hostname)
@@ -3272,7 +3279,9 @@ class xythonsrv:
                     if selector_new is None:
                         selector_new = host_selector()
                     if data[0] == '%':
-                        selector_new.setregex(data, exclude=True)
+                        ret = selector_new.setregex(data, exclude=True)
+                        if ret:
+                            self.error(ret)
                     elif "," in data:
                         for hostname in data.split(","):
                             selector_new.exhosts.append(hostname)
