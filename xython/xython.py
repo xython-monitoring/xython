@@ -460,7 +460,8 @@ class xythonsrv:
             if line[0] == '#':
                 continue
             sline = line.split("=")
-            if len(sline) < 1:
+            if len(sline) < 2:
+                self.error(f"ERROR: Invalid line {line}")
                 continue
             if sline[0] == varname:
                 found = sline[1]
@@ -3871,7 +3872,8 @@ class xythonsrv:
                 rrdmemtype = 'actual'
             if memtype == 'MEMSWAP':
                 rrdmemtype = 'swap'
-            self.do_rrd(hostname, 'memory', rrdmemtype, 'realmempct', ret['v'], ['DS:realmempct:GAUGE:600:0:U'])
+            if 'v' in ret:
+                self.do_rrd(hostname, 'memory', rrdmemtype, 'realmempct', ret['v'], ['DS:realmempct:GAUGE:600:0:U'])
 
         sbuf += buf
         ret = self.column_update(hostname, "memory", color, now, sbuf, self.ST_INTERVAL + 60, sender)
@@ -3890,6 +3892,8 @@ class xythonsrv:
         sbuf = f"{xytime(now, self.tz)} {udisplay}\n"
         # Check with global rules
         gret = self.rules["CPU"].cpucheck(buf)
+        if gret is None:
+            return 2
         H.uptime = gret['uptime']
         self.do_rrd(hostname, 'la', 'la', 'la', gret['la'], ['DS:la:GAUGE:600:0:U'])
         # check gret not None
