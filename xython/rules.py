@@ -103,6 +103,9 @@ class xy_rule_disks():
         line = re.sub(r"\s+", ' ', line)
         line = line.rstrip()
         sline = line.split(" ")
+        if len(sline) < 6:
+            xlog_error(f"ERROR: invalid line {line}")
+            return None
         part = sline[5]
         rawpc = sline[4]
         # returned by df -i, for FS without inode
@@ -111,7 +114,10 @@ class xy_rule_disks():
         if rawpc[-1] != '%':
             xlog_error(f"ERROR: invalid percent in {line}")
             return None
-        pc = int(rawpc.rstrip('%'))
+        try:
+            pc = int(rawpc.rstrip('%'))
+        except ValueError:
+            return None
         if part in self.ignore:
             return None
         for pignore in self.rignore:
@@ -373,7 +379,11 @@ class xy_rule_sensors():
             # print(f"DEBUG: no {sunit} in DEFAULT")
             return None
         rule = self.rules["DEFAULT"]["rules"][sunit]["rule"]
-        return rule.check(sname, float(rawv))
+        try:
+            fv = float(rawv)
+        except ValueError:
+            return None
+        return rule.check(sname, fv)
 
 
 class xy_rule_cpu():

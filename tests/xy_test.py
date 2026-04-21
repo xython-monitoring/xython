@@ -33,6 +33,7 @@ from xython.common import setcolor
 from xython.common import is_valid_hostname
 from xython.common import is_valid_color
 from xython.common import is_valid_column
+from xython.common import is_valid_port_str
 from xython.rules import xy_rule_disks
 from xython.rules import xy_rule_port
 from xython.rules import xy_rule_proc
@@ -65,6 +66,11 @@ if 'PING_TARGET' in os.environ:
 
 # being root breaks EPERM tests
 assert os.getuid() != 0
+
+def copy_dir(src):
+    tmpdir = tempfile.TemporaryDirectory()
+    shutil.copytree(src, tmpdir.name, dirs_exist_ok=True)
+    return tmpdir
 
 def clean_html(hdir):
     dirFiles = os.listdir(hdir)
@@ -203,6 +209,23 @@ def test_validator():
     assert not is_valid_color("teséàçö")
     assert is_valid_color("green")
     assert not is_valid_color(None)
+    ret = is_valid_port_str('80')
+    assert ret[0]
+    assert ret[1] == 80
+    ret = is_valid_port_str('0')
+    assert ret[0]
+    assert ret[1] == 0
+    ret = is_valid_port_str('65535')
+    assert ret[0]
+    assert ret[1] == 65535
+    ret = is_valid_port_str('65536')
+    assert not ret[0]
+    ret = is_valid_port_str('-1')
+    assert not ret[0]
+    ret = is_valid_port_str('a')
+    assert not ret[0]
+    ret = is_valid_port_str('0a')
+    assert not ret[0]
 
 
 def test_read_xymonserver():
@@ -2390,7 +2413,7 @@ def test_read_analysis2():
     setup_testdir(X, 'read_analysis2')
     X.init()
 
-    tdir = 'tests/crash/'
+    tdir = 'tests/crash/read_analysis2/'
     dirFiles = os.listdir(tdir)
     for file in dirFiles:
         print(f"TESTING crashfile {file}")
@@ -2729,4 +2752,43 @@ def test_ethtool():
     f.close()
     X.parse_ethtools('test1', data, 'fake')
 
+    setup_clean(X)
+
+def test_parse_hostdata():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'parse_hostdata')
+    X.lldebug = True
+    X.init()
+
+    tdir = 'tests/crash/hostdatas/'
+    dirFiles = os.listdir(tdir)
+    for file in dirFiles:
+        print(f"TESTING hostdata {file}")
+        with open(tdir + file, 'rb') as f:
+            data = f.read()
+            X.parse_hostdata(data.decode('UTF8', errors="replace"), '127.0.0.1')
+
+    setup_clean(X)
+
+def test_read_protocols():
+    tmpdir = copy_dir('./tests/etc/full/')
+    assert tmpdir
+    X = xythonsrv()
+    X.etcdir = tmpdir.name
+    setup_testdir(X, 'parse_protocols')
+    X.lldebug = True
+    X.init()
+
+    tdir = 'tests/crash/protocols/'
+    dirFiles = os.listdir(tdir)
+    for file in dirFiles:
+        print(f"TESTING protocols {file}")
+        with open(tdir + file, 'rb') as f:
+            data = f.read()
+        with open(tmpdir.name + '/protocols.cfg', 'wb') as f:
+            f.write(data)
+        X.read_protocols()
+
+    tmpdir.cleanup()
     setup_clean(X)

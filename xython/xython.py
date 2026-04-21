@@ -64,6 +64,7 @@ from .common import COLORS
 from .common import is_valid_hostname
 from .common import is_valid_color
 from .common import is_valid_column
+from .common import is_valid_port_str
 
 from .rules import xy_rule_disks
 from .rules import xy_rule_port
@@ -1460,7 +1461,11 @@ class xythonsrv:
             return self.RET_ERR
         self.page_init()
         self.debugdev('loading', f"DEBUG: HOSTS: read {fpath}")
-        dhosts = fhosts.read()
+        try:
+            dhosts = fhosts.read()
+        except UnicodeDecodeError as e:
+            self.error(f"ERROR: Cannot open {fpath} {str(e)}")
+            return self.RET_ERR
         fhosts.close()
         dhosts = dhosts.replace('\\\n', '')
         current_parent = 'all'
@@ -1602,8 +1607,15 @@ class xythonsrv:
                 cproto = line.replace('[', '').replace(']', '')
                 P = xy_protocol()
                 continue
+            if not P:
+                self.error('ERROR: unexpected line not inside a protocol')
+                return self.RET_ERR
             if line[0:5] == 'port ':
-                P.port = int(line[5:])
+                ret, port, txt = is_valid_port_str(line[5:])
+                if not ret:
+                    self.error(txt)
+                    return self.RET_ERR
+                P.port = port
                 continue
             if line[0:8] == 'options ':
                 P.options = line[8:]
