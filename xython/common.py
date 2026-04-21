@@ -235,3 +235,15 @@ def is_valid_column(column):
 
 def is_valid_color(color):
     return color in ['green', 'yellow', 'red', 'purple', 'blue', 'clear']
+
+def is_valid_port(port: int):
+    if port < 0 or port > 65535:
+        return [False, -1, 'Port not in range 0-65535']
+    return [True, port, '']
+
+def is_valid_port_str(buf: str):
+    try:
+        port = int(buf)
+    except ValueError:
+        return [False, -1, 'Invalid port number']
+    return is_valid_port(port)

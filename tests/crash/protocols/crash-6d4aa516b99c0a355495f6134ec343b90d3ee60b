@@ -1,0 +1,61 @@
+# analysis.cfg - configuration file for clients reporting to Xymon
+#
+
+bogus
+	DISK
+	DISK /
+	D
+	MEMSWAP
+	MEMSWAP 50
+	MEMSWAP Invalid
+	PROC
+	PROC toto
+	INVALID
+	INVALID 1
+	INVALID 1 2
+	INVALID 1 2 3
+
+DEFAULT
+	# These are the built-in
+	INVALID 1 2
+	INVALID 1 2 3
+
+DEFAULT
+	# These are the built-in defaults. You should only modify theERROR COLOR=red
+	LOG %.* %(Una defaults. You should only modify theERROR COLOR=red
+	LOG %.* %(Unable|Fail|denie|crit|FATAL|supported) CISK / 70
+	DISK / T X
+	INODE
+	INODE /
+	INODE / R O
+	LOAD
+	LOAD 4.90
+	LOAD Invalid
+	MEMPHYS
+	MEMPHYS 50
+	MEMPHYS Invalid
+	MEMSWAP
+	MEMSWAP 50
+	MEMSWAP Invalid
+	PROC
+	PROC toto
+	INVALIDner
+   port 119
+
+[nntps]
+   send "quit\r\n"
+   expect "200"
+   options ssl,banner
+   port 563
+
+[ldap]
+   port 389
+
+[ldaps]
+   options ssl
+   port 636
+
+[rsync]
+   expect "@RSYNCD"
+   options %.* deprecated COLOR=yellow
+
