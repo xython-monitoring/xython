@@ -979,10 +979,21 @@ class xythonsrv:
         hlist.append('</TR><TR><TD COLSPAN={len(results)}><HR WIDTH="100%%"></TD></TR>\n')
 
         if pagename == 'nongreen':
-            self.sqc.execute('SELECT hostname,column,ts,color,ackend,ackcause FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen") ORDER by hostname, column')
+            if cols:
+                col_placeholders = ','.join('?' * len(cols))
+                self.sqc.execute(
+                    f'SELECT hostname,column,ts,color,ackend,ackcause FROM columns'
+                    f' WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color NOT IN ("green","blue","clear")'
+                    f'   AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen"))'
+                    f' AND column IN ({col_placeholders})'
+                    f' ORDER BY hostname, column',
+                    cols)
+                results = self.sqc.fetchall()
+            else:
+                results = []
         else:
             self.sqc.execute('SELECT hostname,column,ts,color,ackend,ackcause FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == ? AND groupname == ?) ORDER BY hostname,column', (pagename, str(group)))
-        results = self.sqc.fetchall()
+            results = self.sqc.fetchall()
         chost = None
         ci = 0
         for result in results:
