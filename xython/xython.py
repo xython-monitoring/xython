@@ -962,7 +962,7 @@ class xythonsrv:
         if pagename == 'nongreen':
             self.sqc.execute("SELECT DISTINCT column FROM columns WHERE color != 'green' AND color != 'blue' AND color != 'clear' AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == 'nongreen') ORDER BY column")
         else:
-            self.sqc.execute(f'SELECT DISTINCT column FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "{pagename}" AND groupname == "{group}") ORDER BY column')
+            self.sqc.execute('SELECT DISTINCT column FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == ? AND groupname == ?) ORDER BY column', (pagename, str(group)))
         results = self.sqc.fetchall()
         cols = []
         for col in results:
@@ -981,7 +981,7 @@ class xythonsrv:
         if pagename == 'nongreen':
             self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen") ORDER by hostname, column')
         else:
-            self.sqc.execute(f'SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "{pagename}" AND groupname == "{group}") ORDER BY hostname,column')
+            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == ? AND groupname == ?) ORDER BY hostname,column', (pagename, str(group)))
         results = self.sqc.fetchall()
         chost = None
         ci = 0
@@ -1114,7 +1114,7 @@ class xythonsrv:
                 hlist.append('<a href="$XYMONSERVERCGIURL/svcstatus.sh?CLIENT={hostname}">Client data</a> available<br>')
             hlist.append('</font></td></tr>\n</table>\n</CENTER>\n<BR><BR>\n')
 
-            self.sqc.execute(f'SELECT ackend, ackcause FROM columns WHERE hostname == "{hostname}" and column == "{column}"')
+            self.sqc.execute('SELECT ackend, ackcause FROM columns WHERE hostname == ? AND column == ?', (hostname, column))
             ackinfos = self.sqc.fetchall()
             if len(ackinfos) == 1:
                 ackinfo = ackinfos[0]
@@ -1122,8 +1122,6 @@ class xythonsrv:
                 if ackend is not None:
                     ackmsg = ackinfo[1]
                     hlist.append(f'<CENTER>Current acknowledgement: {ackmsg}<br>Next update at: {xytime(int(ackend))}</CENTER>\n')
-            else:
-                print(f"ackinfo is len={len(ackinfo)}")
             # TODO acknowledge is only for non-history and non-green
             # if color != 'green':
             hlist.append('<CENTER>\n<form action="$XYMONSERVERCGIURL/xythoncgi.py" method="post">\n')
