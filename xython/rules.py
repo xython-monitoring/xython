@@ -286,7 +286,10 @@ class xy_rule_sensors():
         if sline[1] == 'V':
             return [sname, sline[0], 'V']
         if sline[1] == 'mV':
-            rawv = float(sline[0]) / 1000
+            try:
+                rawv = float(sline[0]) / 1000
+            except ValueError:
+                return None
             return [sname, rawv, 'V']
         if sline[1] == 'A':
             return [sname, sline[0], 'A']
@@ -519,6 +522,10 @@ class xy_rule_mem():
             ret['txt'] = 'invalid data'
             return ret
         memtotal = int(int(mem.group(1)) / 1024)
+        if memtotal == 0:
+            ret["color"] = 'red'
+            ret['txt'] = 'invalid data'
+            return ret
         memused = int(int(mem.group(2)) / 1024)
         memusedpct = int(int(memused / memtotal * 100))
         memactfree = int(int(mem.group(6)) / 1024)

@@ -127,6 +127,7 @@ class xy_host:
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
         self.rules["LSMOD"] = {}
+        self.rules["ETHTOOL"] = {}
         self.certs = {}
         self.sslwarn = 30
         self.sslalarm = 10
@@ -3159,6 +3160,7 @@ class xythonsrv:
             H.rules["SENSOR"] = None
             H.rules["ETHTOOL"] = None
             H.rules["LSMOD"] = {}
+        # TODO handle PermissionError:
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         selector = None
         for line in f:
@@ -4167,6 +4169,8 @@ class xythonsrv:
             modelist.append(line)
             r = re.match('^[0-9]+', line)
             c = int(r.group(0))
+            if '/' not in line:
+                continue
             d = line.split('/')[1]
             if c > speed:
                 best = line
@@ -4202,7 +4206,12 @@ class xythonsrv:
                 if ifname is not None:
                     sbuf += '</fieldset>\n'
                 ignore = False
-                ifname = line.split(" ")[2]
+                toks = line.split(" ")
+                if len(toks) < 3:
+                    sbuf += "&red corrupted line"
+                    color = setcolor('red', color)
+                    continue
+                ifname = toks[2]
                 ifname = ifname.split(':')[0]
                 sbuf += f'<fieldset><legend>{ifname}</legend>\n'
                 sbuf += line + '\n'
@@ -4227,7 +4236,9 @@ class xythonsrv:
                 bestlink = bplink
             if "Duplex" in line:
                 r = re.search(r'Duplex: ([A-Z][a-z]+)', line)
-                duplex = line.split(':')[1]
+                if not r:
+                    sbuf += '&red invalid or corrupted duplex\n'
+                    continue
                 duplex = r.group(1)
                 if balink is not None:
                     if duplex == bestlink[2]:
@@ -4528,6 +4539,9 @@ class xythonsrv:
             kid = re.search(r'^\[\s*[CT][0-9]+\]\s', line)
             if kid is not None:
                 line = line.replace(kid.group(0), '')
+            if len(line) < 2:
+                self.error(f'Malformed dmesg line {line}')
+                continue
             if line[1] == ' ':
                 # TODO multi line, found only on rpi kernel or crashes
                 # ignore it for now
@@ -4654,8 +4668,8 @@ class xythonsrv:
         for line in hdata.split("\n"):
             rtc_state += f"{line}\n"
             if "batt_status" in line:
-                tokens = line.split()
-                if tokens[2] == 'okay':
+                # only 2 possibilty okay or dead
+                if 'okay' in line:
                     rtc_state += "&green battery ok\n"
                 else:
                     # dead
@@ -4820,6 +4834,10 @@ class xythonsrv:
                     continue
                 idx = attr_ids["RAW_VALUE"]
                 tokens = line.split()
+                if len(tokens) <= idx:
+                    ret["html"] += "&red invalid SMART output\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
                 v = tokens[idx]
                 try:
                     reallocated = int(v)
@@ -4841,6 +4859,10 @@ class xythonsrv:
                     continue
                 idx = attr_ids["RAW_VALUE"]
                 tokens = line.split()
+                if idx >= len(tokens):
+                    ret["html"] += "&red Invalid SMART line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
                 v = tokens[idx]
                 try:
                     temp = int(v)
@@ -4892,6 +4914,10 @@ class xythonsrv:
                     continue
                 idx = attr_ids["RAW_VALUE"]
                 tokens = line.split()
+                if idx >= len(tokens):
+                    ret["html"] += "&red Invalid SMART line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
                 v = tokens[idx]
                 if "h" in v:
                     i = 0
@@ -4916,6 +4942,10 @@ class xythonsrv:
                     ret["color"] = setcolor('red', ret["color"])
                     continue
                 tokens = tokens[1].lstrip().split(" ")
+                if len(tokens) < 2:
+                    ret["html"] += f"&red invalid error line\n"
+                    ret["color"] = setcolor('red', ret["color"])
+                    continue
                 if tokens[1] != 'hours':
                     ret["html"] += f"&red invalid error line, expected hours got {tokens[1]}\n"
                     ret["color"] = setcolor('red', ret["color"])
