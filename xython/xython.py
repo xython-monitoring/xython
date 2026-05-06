@@ -370,6 +370,7 @@ class xythonsrv:
         self.DMESG_REGEX = 'dmesg.regex'
         self.CLIENT_MSGMAX = 500 * 1000
         self.xversion = version("xython")
+        self._file_cache = {}
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -806,37 +807,28 @@ class xythonsrv:
         hlist.append('</center>')
         return hlist
 
+    def _read_cached(self, fname):
+        if fname not in self._file_cache:
+            try:
+                with open(fname, "r") as fh:
+                    self._file_cache[fname] = fh.readlines()
+            except FileNotFoundError as e:
+                self.error(f"ERROR: fail to open {fname}")
+                self._file_cache[fname] = [f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"]
+        return list(self._file_cache[fname])
+
     def html_header(self, header):
-        # self.debug(f"DEBUG: read {self.webdir}/{header}")
-        fname = f"{self.webdir}/{header}"
-        try:
-            fh = open(fname, "r")
-            html = fh.readlines()
-            fh.close()
-        except FileNotFoundError as e:
-            self.error(f"ERROR: fail to open {fname}")
-            return [f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"]
-        return html
+        return self._read_cached(f"{self.webdir}/{header}")
 
     def html_footer(self, footer):
-        fname = f"{self.webdir}/{footer}"
-        try:
-            fh = open(fname, "r")
-            html = fh.readlines()
-            fh.close()
-        except FileNotFoundError as e:
-            self.error(f"ERROR: fail to open {fname}")
-            return [f"<h1>ERROR: Fail to open {fname} {str(e)}</h1>"]
-        return html
+        return self._read_cached(f"{self.webdir}/{footer}")
 
     # replace all variables in HTML
     # this means also adding xymonmenu
     def html_finalize(self, color, hlist, pagename):
         ts_start = time.time()
         html = '\n'.join(hlist)
-        fh = open(self.etcdir + "/xymonmenu.cfg")
-        body_header = fh.read()
-        fh.close()
+        body_header = ''.join(self._read_cached(self.etcdir + "/xymonmenu.cfg"))
         html = re.sub("&XYMONBODYHEADER", body_header, html)
         html = re.sub("&XYMONBODYFOOTER", "", html)
         html = re.sub("&XYMONDREL", f'{self.xversion}', html)
