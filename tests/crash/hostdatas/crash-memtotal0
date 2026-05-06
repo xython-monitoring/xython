@@ -1,0 +1,571 @@
+client trash01.linux linux
+[date]
+Wed Oct 22 11:30:56 CEST 2025
+[uname]
+Linux trash01 6.12.31-gentoo x86_64
+[osversion]
+Gentoo 2.18
+LSB Version:	n/a
+Distributor ID:	Gentoo
+Description:	Gentoo Linux
+Release:	2.18
+Codename:	n/a
+[uptime]
+ 11:30:56 up 28 days,  2:10,  1 user,  load average: 0.33, 0.45, 0.32
+[who]
+root     pts/0        Oct 22 08:16 (192.168.1.100)
+[df]
+Filesystem              1024-blocks     Used Available Capacity Mounted on
+/dev/root                 102626232 47872356  49494612      50% /
+devtmpfs                      10240        0     10240       0% /dev
+tmpfs                       1612792     1712   1611080       1% /run
+shm                         4031980       60   4031920       1% /dev/shm
+/dev/mapper/myvg-docker   102626232  3673052  93693916       4% /var/lib/docker
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/nrg/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/amaz/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/trash01/tmp
+overlay                   102626232or
+#[1908616.663438] ata4: SError: { UnrecovData Handshk }
+#[1908616.663441] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663443] ata4.00: cmd 61/40:00:10:02:21/01:00:00:00:00/40 tag 0 ncq dma 163840 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663449] ata4.00: status: { DRDY }
+#[1908616.663451] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663452] ata4.00: cmd 61/98:08:48:4d:60/02:00:03:00:00/40 tag 1 ncq dma 339968 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663458] ata4.00: status: { DRDY }
+#[1908616.663460] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663461] ata4.00: cmd 61/f0:10:20:56:54/00:00:02:00:00/40 tag 2 ncq dma 122880 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663466] ata4.00: status: { DRDY }
+#[1908616.663468] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663469] ata4.00: cmd 61/48:70:90:8c:98/03:00:07:00:00/40 tag 14 ncq dma 430080 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663474] ata4.00: status: { DRDY }
+#[1908616.663475] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663477] ata4.00: cmd 61/20:78:e0:b2:98/03:00:07:00:00/40 tag 15 ncq dma 409600 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663482] ata4.00: status: { DRDY }
+#[1908616.663483] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663484] ata4.00: cmd 61/88:80:18:77:0c/00:00:0c:00:00/40 tag 16 ncq dma 69632 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663489] ata4.00: status: { DRDY }
+#[1908616.663491] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663492] ata4.00: cmd 61/50:88:10:a2:dc/01:00:03:00:00/40 tag 17 ncq dma 172032 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663497] ata4.00: status: { DRDY }
+#[1908616.663498] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663500] ata4.00: cmd 61/30:90:50:03:21/00:00:00:00:00/40 tag 18 ncq dma 24576 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663504] ata4.00: status: { DRDY }
+#[1908616.663506] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663507] ata4.00: cmd 61/28:e8:80:03:21/00:00:00:00:00/40 tag 29 ncq dma 20480 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663512] ata4.00: status: { DRDY }
+#[1908616.663514] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1908616.663515] ata4.00: cmd 61/58:f0:a8:03:21/00:00:00:00:00/40 tag 30 ncq dma 45056 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1908616.663519] ata4.00: status: { DRDY }
+#[1909648.031011] ata4.00: exception Emask 0x10 SAct 0xfbffffff SErr 0x400100 action 0x6 frozen
+#[1909648.031021] ata4.00: irq_stat 0x08000000, interface fatal error
+#[1909648.031023] ata4: SError: { UnrecovData Handshk }
+#[1909648.031027] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031029] ata4.00: cmd 61/40:00:80:ce:44/05:00:06:00:00/40 tag 0 ncq dma 688128 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031035] ata4.00: status: { DRDY }
+#[1909648.031037] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031039] ata4.00: cmd 61/00:08:08:74:74/0a:00:03:00:00/40 tag 1 ncq dma 1310720 ou
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031044] ata4.00: status: { DRDY }
+#[1909648.031046] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031047] ata4.00: cmd 61/18:10:e8:d4:a0/00:00:05:00:00/40 tag 2 ncq dma 12288 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031052] ata4.00: status: { DRDY }
+#[1909648.031054] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031055] ata4.00: cmd 61/f8:18:08:7e:74/01:00:03:00:00/40 tag 3 ncq dma 258048 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031060] ata4.00: status: { DRDY }
+#[1909648.031061] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031063] ata4.00: cmd 61/40:20:c0:d3:44/05:00:06:00:00/40 tag 4 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031068] ata4.00: status: { DRDY }
+#[1909648.031069] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031070] ata4.00: cmd 61/00:28:40:9f:74/0a:00:03:00:00/40 tag 5 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031075] ata4.00: status: { DRDY }
+#[1909648.031077] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031078] ata4.00: cmd 61/40:30:c0:be:44/05:00:06:00:00/40 tag 6 ncq dma 688128 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031083] ata4.00: status: { DRDY }
+#[1909648.031084] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031085] ata4.00: cmd 61/10:38:30:87:04/00:00:0c:00:00/40 tag 7 ncq dma 8192 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031090] ata4.00: status: { DRDY }
+#[1909648.031092] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031093] ata4.00: cmd 61/40:40:00:c4:44/05:00:06:00:00/40 tag 8 ncq dma 688128 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031098] ata4.00: status: { DRDY }
+#[1909648.031099] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031101] ata4.00: cmd 61/00:48:30:0d:76/0a:00:03:00:00/40 tag 9 ncq dma 1310720 ou
+#                          res 40/00:00:09:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031105] ata4.00: status: { DRDY }
+#[1909648.031107] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031108] ata4.00: cmd 61/60:50:40:a9:74/06:00:03:00:00/40 tag 10 ncq dma 835584 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031113] ata4.00: status: { DRDY }
+#[1909648.031115] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031116] ata4.00: cmd 61/10:58:90:8c:04/00:00:0c:00:00/40 tag 11 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031121] ata4.00: status: { DRDY }
+#[1909648.031122] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031123] ata4.00: cmd 61/10:60:60:8d:04/00:00:0c:00:00/40 tag 12 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031128] ata4.00: status: { DRDY }
+#[1909648.031130] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031131] ata4.00: cmd 61/10:68:f0:96:04/00:00:0c:00:00/40 tag 13 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031136] ata4.00: status: { DRDY }
+#[1909648.031138] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031139] ata4.00: cmd 61/00:70:78:d4:76/0a:00:03:00:00/40 tag 14 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031144] ata4.00: status: { DRDY }
+#[1909648.031145] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031146] ata4.00: cmd 61/10:78:b0:97:04/00:00:0c:00:00/40 tag 15 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031151] ata4.00: status: { DRDY }
+#[1909648.031153] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031154] ata4.00: cmd 61/10:80:30:7d:06/01:00:0c:00:00/40 tag 16 ncq dma 139264 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031159] ata4.00: status: { DRDY }
+#[1909648.031160] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031161] ata4.00: cmd 61/80:88:78:de:76/09:00:03:00:00/40 tag 17 ncq dma 1245184 ou
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031166] ata4.00: status: { DRDY }
+#[1909648.031168] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031169] ata4.00: cmd 61/40:90:40:c9:44/05:00:06:00:00/40 tag 18 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031174] ata4.00: status: { DRDY }
+#[1909648.031175] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031176] ata4.00: cmd 61/10:98:60:9b:04/00:00:0c:00:00/40 tag 19 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031181] ata4.00: status: { DRDY }
+#[1909648.031183] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031184] ata4.00: cmd 61/10:a0:30:9c:04/00:00:0c:00:00/40 tag 20 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031189] ata4.00: status: { DRDY }
+#[1909648.031190] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031191] ata4.00: cmd 61/50:a8:00:d5:a0/00:00:05:00:00/40 tag 21 ncq dma 40960 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031196] ata4.00: status: { DRDY }
+#[1909648.031198] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031199] ata4.00: cmd 61/10:b0:a0:53:04/00:00:0c:00:00/40 tag 22 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031204] ata4.00: status: { DRDY }
+#[1909648.031205] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031207] ata4.00: cmd 61/40:b8:00:af:44/05:00:06:00:00/40 tag 23 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031211] ata4.00: status: { DRDY }
+#[1909648.031213] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031214] ata4.00: cmd 61/10:c0:50:68:04/00:00:0c:00:00/40 tag 24 ncq dma 8192 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031219] ata4.00: status: { DRDY }
+#[1909648.031220] ata4.00: fciled command: WRITE FPDMA QUEUED
+#[1909648.031222] ata4.00: cmd 61/60:c8:30:17:76/09:00:03:00:00/40 tag 25 ncq dma 1228800 ou
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031226] ata4.00: status: { DRDY }
+#[1909648.031228] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031229] ata4.00: cmd 61/80:d8:00:d9:44/02:00:06:00:00/40 tag 27 ncq dma 327680 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031234] ata4.00: status: { DRDY }
+#[1909648.031236] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031237] ata4.00: cmd 61/10:e0:d0:73:04/00:00:0c:00:00/40 tag 28 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031242] ata4.00: status: { DRDY }
+#[1909648.031243] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031244] ata4.00: cmd 61/10:e8:70:86:04/00:00:0c:00:00/40 tag 29 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031249] ata4.00: status: { DRDY }
+#[1909648.031251] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031252] ata4.00: cmd 61/40:f0:40:b4:44/05:00:06:00:00/40 tag 30 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031257] ata4.00: status: { DRDY }
+#[1909648.031258] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1909648.031259] ata4.00: cmd 61/40:f8:80:b9:44/05:00:06:00:00/40 tag 31 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1909648.031264] ata4.00: status: { DRDY }
+#[1910602.550739] ata4.00: exception Emask 0x10 SAct 0x4000 SErr 0x400100 action 0x6 frozen
+#[1910602.550747] ata4.00: irq_stat 0x08000000, interface fatal error
+#[1910602.550749] ata4: SError: { UnrecovData Handshk }
+#[1910602.550754] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1910602.550755] ata4.00: cmd 61/38:70:98:fc:46/05:00:06:00:00/40 tag 14 ncq dma 684032 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1910602.550762] ata4.00: status: { DRDY }
+#[1912143.010348] ata4.00: exception Emask 0x10 SAct 0xfffffdff SErr 0x400100 action 0x6 frozen
+#[1912143.010359] ata4.00: irq_stat 0x08000000, interface fatal error
+#[1912143.010362] ata4: SError: { UnrecovData Handshk }
+#[1912143.010365] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010367] ata4.00: cmd 61/18:00:48:50:04/00:00:00:00:00/40 tag 0 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010374] ata4.00: status: { DRDY }
+#[1912143.010376] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010378] ata4.00: cmd 61/18:08:e8:5f:04/00:00:00:00:00/40 tag 1 ncq dma 12288 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010384] ata4.00: status: { DRDY }
+#[1912143.010386] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010387] ata4.00: cmd 61/18:10:60:65:04/00:00:00:00:00/40 tag 2%ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010392] ata4.00: status: { DRDY }
+#[1912143.010394] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010395] ata4.00: cmd 61/18:18:e8:69:04/00:00:00:00:00/40 tag 3 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010401] ata4.00: status: { DRDY }
+#[1912143.010402] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010404] ata4.00: cmd 61/18:20:00:76:04/00:00:00:00:00/40 tag 4 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010409] ata4.00: status: { DRDY }
+#[1912143.010410] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010412] ata4.00: cmd 61/18:28:80:76:04/00:00:00:00:00/40 tag 5 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010417] ata4.00: status: { DRDY }
+#[1912143.010419] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010420] ata4.00: cmd 61/18:30:c8:7a:04/00:00:00:00:00/40 tag 6 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[19121      443.010425] ata4.00: status: { DRDY }
+#[1912143.010427] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010428] ata4.00: cmd 61/18:38:88:ce:04/00:00:00:00:00/40 tag 7 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010433] ata4.00: status: { DRDY }
+#[1912143.010435] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010436] ata4.00: cmd 61/18:40:e0:29:05/00:00:00:00:00/40 tag 8 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010441] ata4.00: status: { DRDY }
+#[1912143.010443] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010444] ata4.00: cmd 61/c8:50:00:2f:50/03:00:08:00:00/40 tag 10 ncq dma 495616 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010450] ata4.00: status: { DRDY }
+#[1912143.010451] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010453] ata4.00: cmd 61/38:58:00:84:69/01:00:00:00:00/40 tag 11 ncq dma 159744 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010458] ata4.00: status: { DRDY }
+#[1912143.010460] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010461] ata4.00: cmd 61/30:60:a8:69:04/00:00:00:00:00/40 tag 12 ncq dma 24576 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010466] ata4.00: status: { DRDY }
+#[1912143.010468] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010469] ata4.00: cmd 61/30:68:20:6a:04/00:00:00:00:00/40 tag 13 ncq dma 24576 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010474] ata4.00: status: { DRDY }
+#[1912143.010476] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010477] ata4.00: cmd 61/30:70:e8:6e:04/00:00:00:00:00/40 tag 14 ncq dma 24576 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010482] ata4.00: status: { DRDY }
+#[1912143.010484] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010485] ata4.00: cmd 61/48:78:90:4a:05/00:00:00:00:00/40 tag 15 ncq dma 36864 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010490] ata4.00: status: { DRDY }
+#[1912143.010492] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010493] ata4.00: cmd 61/30:80:e0:1b:05/00:00:00:00:00/40 tag 16 ncq dma 24576 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010499] ata4.00: status: { DRDY }
+#[1912143.010500] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010502] ata4.00: cmd 61/28:88:00:4a:05/00:00:00:00:00/40 tag 17 ncq dma 20480 out
+#                          res 40/00:00:e0:4f:c4/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010507] ata4.00: status: { DRDY }
+#[1912143.010509] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010510] ata4.00: cmd 61/20:90:d0:64:04/00:00:00:00:00/40 tag 18 ncq dma 16384 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010515] ata4.00: status: { DRDY }
+#[1912143.010517] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010518] ata4.00: cmd 61/20:98:70:6f:04/00:00:00:00:00/40 tag 19 ncq dma 16384 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010523] ata4.00: status: { DRDY }
+#[1912143.010525] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010526] ata4.00: cmd 61/20:a0:68:75:04/00:00:00:00:00/40 tag 20 ncq dma 16384 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010531] ata4.00: status: { DRDY }
+#[1912143.010533] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010534] ata4.00: cmd 61/20:a8:80:87:04/00:00:00:00:00/40 tag 21 ncq dma 16384 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010540] ata4.00: status: { DRDY }
+#[1912143.010541] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010542] ata4.00: cmd 61/20:b0:c0:8b:04/00:00:00:00:00/40 tag 22 ncq dma 16384 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010548] ata4.00: status: { DRDY }
+#[1912143.010549] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010550] ata4.00: cmd 61/20:b8:d0:98:04/00:00:00:00:00/40 tag 23 ncq dma 16384 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime)
+/dev/mapper/myvg-docker on /var/lib/docker type ext4 (rw,relatime)
+none on /var/lib/lava/dispatcher/nrg/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/amaz/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/trash01/tmp type tmpfs (rw,relatime)
+rpc_pipefs on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfsd on /proc/fs/nfsd type nfsd (rw,nosuid,nodev,noexec,relatime)
+overlay on /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/RDHGHP5VHHXWUJ535X6NEKU4GC:/var/lib/docker/overlay2/l/5IQHHUUKXDWHUIUII2RAJJPJKC:/var/lib/docker/overlay2/l/ZHEE4E6N4EZ7BW2EHM5DDDRJSI:/var/lib/docker/overlay2/l/PBKN233IMBJAQRRN7KWNT2YAFY:/var/lib/docker/overlay2/l/BZCQEVCCKVTM42F7JFYG3VN5U4:/var/lib/docker/overlay2/l/5RZTOMKDSI7B3US434IS5A2MUC:/var/lib/docker/overlay2/l/7MZRFUYAF5GMX3S4C4UDFBUT2L:/var/lib/docker/overlay2/l/YKAX2V7XZSIBHUBWRNMW6BD6SU:/var/lib/docker/overlay2/l/3JM74EFBY6JR4YWBAKE5J55RML:/var/lib/docker/overlay2/l/DMA6MWRSZUA7SH4TDCAMPOU5GW:/var/lib/docker/overlay2/l/3W3M2HWGFYRFIM6LS6PWX2XRJR:/var/lib/docker/overlay2/l/O5AAKB7ELQU4AUMLRJZ7UNAX7T:/var/lib/docker/overlay2/l/LLGM3HQEPMDNI27KN4DMXOH3AM,upperdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/diff,workdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/work)
+nsfs on /run/docker/netns/3142edec3d4a type nsfs (rw)
+[free]
+               total        used        free      shared  buff/cache   available
+Mem:   0     8063960     1079160     1484620      144500     5798972     6984800
+Swap:              0           0           0
+[ifconfig]
+br-628e27766cb2: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.24.0.1  netmask 255.255.0.0  broadcast 172.24.255.255
+        ether 9a:e9:86:6e:b2:94  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-a82a28732686: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.18.0.1  netmask 255.255.0.0  broadcast 172.18.255.255
+        ether 9e:0e:11:c7:1a:62  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f6d073ab6503: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.19.0.1  netmask 255.255.0.0  broadcast 172.19.255.255
+        ether ca:47:f4:7d:4d:87  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TXclient trash01.linux linux
+[date]
+Wed Oct 22 11:30:56 CEST 2025
+[uname]
+Linux trash01 6.1                                                                                                                                                                                        
+tcp   ESTAB      0      0          127.0.0.1:8001      127.0.0.1:56076 users:(("lava-server",pid=4076,fd=22))                                                                                                                                                                                                                                                                         
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:52800                                                                                                                                                                                                                                                                                                                
+tcp   TIME-WAIT  0      0          127.0.0.1:56310     127.0.0.1:5432                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0          127.0.0.1:56076     127.0.0.1:8001  users:(("apache2",pid=4485,fd=21))                                                                                                                                                                                                                                                                             
+tcp   TIME-WAIT  0      0          127.0.0.1:34496     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0       192.168.1.40:44248  192.168.1.40:80    users:(("lava-worker",pid=21314,fd=12))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:33954     127.0.0.1:5432                                                                                                                                                                                                                                                                                                                                                                                                                   
+tcp   TIME-WAIT  0      0       192.168.1.40:60020 192.168.1.100:12346                                                                                                                                                                                                                                                                                                                
+tcp   ESTAB      0      0       192.168.1.40:44238  192.168.1.40:80    users:(("lava-worker",pid=21190,fd=13))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:59836     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:58186     127.0.0.1:8001                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0       192.168.1.40:44246  192.168.1.40:80    users:(("lava-worker",pid=21252,fd=13))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:59776                                                                                                                                                                                                                                                                                                                
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:56196                                                                                                                                                                                              
+tcp   ESTAB      0      0       192.168.1.40:52820  192.168.1.40:80    users:(("lava-worker",pid=21383,fd=13))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:57922                                                                                                                                                                                                                                                                                                                
+tcp   ESTAB      0      0          127.0.0.1:5500      127.0.0.1:50 errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f95f70130408: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.20.0.1  netmask 255.255.0.0  broadcast 172.20.255.255
+        ether bsk 255.255.0.0  broadcast 172.17.255.255
+        ether ba:f2:42:46:f1:22  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+enp3s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.40  netmask 255.255.255.0  broadcast 192.168.1.255
+        ether bc:5f:f4:37:37:36  txqueuelen 1000  (Ethernet)
+        RX packets 140804100  bytes 79502538920 (74.0 GiB)
+        RX errors 0  dropped 8  overruns 0  frame 0
+        TX packets 126712401  bytes 155789506338 (145.0 GiB)
+        TX errors 0  dropped 3 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0                                                                                                                            .0.0
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 93049845  bytes 101668190423 (94.6 GiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        T         X packets 93049845  bytes 101668190423 (94.6 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+qemubr0: flags=4355<UP,BROADCAST,PROMISC,MULTICAST>  mtu 1500
+        inet 192.168.66.1  netmask 255.255.255.0  broadcast 192.168.66.255
+        ether 6a:ce:62:34:4c:84  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+veth3b26849: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 1e:19:da:a2:cf:19  txqueuelen 0  (Ethernet)
+        RX packets 40187  bytes 10685989 (10.1 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 28424  bytes 2080881 (1.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan_iot: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.35.1  netmask 255.255.255.0  broadcast 0.0.0.0
+        ether 02:22:5f:c4:ae:f1  txqueuelen 1000  (Ethernet)
+        550 users:(("lava-server",pid=4076,fd=17))                                                                                                                                                                                                                                                                         
+tcp   TIME-WAIT  0      0          127.0.0.1:60640     127.0.0.1:5432                                                                                                                                                                                                                                                                                                                                                                                            
+tcp   ESTAB      0      0          127.0.0.1:33678     127.0.0.1:8001  users:(("apache2",pid=22902,fd=21))                                                                                                                                                                                                                                                                            
+tcp   TIME-WAIT  0      0          127.0.0.1:36084     127.0.0.1:8001                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0       192.168.1.40:35030  192.168.1.40:80    users:(("lava-worker",pid=21190,fd=12))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:59840     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:51606     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:41186                                                                                                                                                                                                                                                                                                                
+tcp   TIME-WAIT  0      0       192.168.1.40:42      4880 20.106.67.191:9100                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:37174     127.0.0.1:5432                                                                          RX packets 50932  bytes 13734484 (13.0 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 57258  bytes 12513137 (11.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlp1s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 02:22:5f:c4:ae:f0  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 39  bytes 8040 (7.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[ss]
+Netid State      Recv-Q Send-Q Local Address:Port   Peer Address:Port Process                                                                                                                                                                                                                                                                                                                                                                                               
+udp   UNCONN     0      0            0.0.0.0:4500        0.0.0.0:*     users:(("charon",pid=7502,fd=13))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:57785       0.0.0.0:*     users:(("rpc.mountd",pid=24393,fd=8))                                                                                                                                                                                                                                                                          
+udp   UNCONN     0      0            0.0.0.0:500         0.0.0.0:*     users:(("charon",pid=7502,fd=12))                                                                                                                                                                                                                                                                                                                                      
+tcp   ESTAB      0      0          127.0.0.1:56060     127.0.0.1:8001  users:(("apache2",pid=30497,fd=21))                                                                                                                                                                                                                                                                            
+tcp   TIME-WAIT  0      0          127.0.0.1:39604     127.0.0.1:8001                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0       192.168.1.40:60020 192.168.1.100:12346                                                                                                                                                                                                                                                                                                                
+tcp   ESTAB      0      0       192.168.1.40:44238  192.168.1.40:80    users:(("lava-worker",pid=21190,fd=13))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:59836     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:58186     127.0.0.1:8001                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0       192.168.1.40:44246  192.168.1.40:80    users:(("lava-worker",pid=21252,fd=13))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:59776                                                                                                                                                                                                                                                                                                                
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:56196                                                                                                                                                                                                               
+udp   UNCONN     0      0                                     0.0.0.           
+tcp   T                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+tcp   ESTAB      0      0          127.0.0.1:33678     127.0.0.1:8001  users:(("apache2",pid=22902,fd=21))                                                                                                                                                                                                                                                                            
+tcp   TIME-WAIT  0      0          127.0.0.1:36084     127.0.0.1:8001                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0       192.168.1.40:35030  192.168.1.40:80    users:(("lava-worker",pid=21190,fd=12))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:59840     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:51606     127.0.0.1:8000                                                                   )                                                                                                                                                                                                                                              
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:41186                                                                                                                                                                                                                                                                                                                
+tcp   TIME-WAIT  0      0       788.168.1.40:42880 20.106.67.191:9100                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:37174     127.0.0.1:5432                                                                          RX packets 50932  bytes 13734484 (13.0 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 57258  bytes 12513137 (11.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlp1s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 02:22:5f:c4:ae:f0  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 39  bytes 8040 (7.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[ss]
+Netid State      Recv-Q Send-Q Local Address:Port   Peer Address:Port Process                                                                                                                                                                                                                                                                                                         
+udp   UNCONN     0      0            0.0.0.0:4500        0.0.0.0:*     users:(("charon",pid=7502,fd=13))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:57785       0.0.0.0:*     users:(("rpc.mountd",pid=24393,fd=8))                                                                                                                                                                                                                                                                          
+udp   UNCONN     0      0            0.0.0.0:500         0.0.0.0:*     users:(("charon",pid=7502,fd=12))                                                                                                                                                                                                                                                                                                                                      
+tcp   ESTAB      0      0          127.0.0.1:56060     127.0.0.1:8001  users:(("apache2",pid=30497,fd=21))                                                                                                                                                                                                                                                                            
+tcp   TIME-WAIT  0      0          127.0.0.1:39604     127.0.0.1:8001                                                                     client trash01.linux linux
+[date]
+Wed Oct 22 11:30:56 CEST 2025
+[uname]
+Linux trash01 6.12.31-gentoo x86_64
+[osversion]
+Gentoo 2.18
+LSB Version:	n/a
+Distributor ID:	Gentoo
+Description:	Gentoo Linux
+Release:	2.18
+Codename:	n/a
+[uptime]
+ 11:30:56 up 28 days,  2:10,  1 user,  load average: 0.33, 0.45, 0.32
+[who]
+root     pts/0        Oct 22 08:16 (192.168.1.100)
+[df]
+Filesystem              1024-blocks     Used Available Capacity Mounted on
+/dev/root                 102626232 47872356  49494612      50% /
+devtmpfs                      10240        0     10240       0% /dev
+tmpfs                       1612792     1712   1611080       1% /run
+shm                         4031980       60   4031920       1% /dev/shm
+/dev/mapper/myvg-docker   102626232  3673052  93693916       4% /var/lib/docker
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/nrg/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/amaz/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/trash01/tmp
+overlay                   102626232  3673052  93693916       4% /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged
+[inode]
+Filesystem               Inodes   IUsed   IFree IUse% Mounted on
+/dev/root               6553600 2355147 4198453   36% /
+devtmpfs                1007445    1619 1005826    1% /dev
+tmpfs                    819200    1398  817802    1% /run
+shm                     1007995      10 1007985    1% /dev/shm
+/dev/mapper/myvg-docker 6553600  157938 6395662    3% /var/lib/docker
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/nrg/tmp
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/amaz/tmp
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/trash01/tmp
+overlay                 6553600  157938 6395662    3% /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged
+[mount]
+/dev/sda1 on / type ext4 (rw,noatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,noexec,relatime,size=10240k,nr_inodes=1007445,mode=755)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,size=1612792k,nr_inodes=819200,mode=755)
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime)
+/dev/mapper/myvg-docker on /var/lib/docker type ext4 (rw,relatime)
+none on /var/lib/lava/dispatcher/nrg/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/amaz/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/trash01/tmp type tmpfs (rw,relatime)
+rpc_pipefs on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfsd on /proc/fs/nfsd type nfsd (rw,nosuid,nodev,noexec,relatime)
+overlay on /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/RDHGHP5VHHXWUJ535X6NEKU4GC:/var/lib/docker/overlay2/l/5IQHHUUKXDWHUIUII2RAJJPJKC:/var/lib/docker/overlay2/l/ZHEE4E6N4EZ7BW2EHM5DDDRJSI:/var/lib/docker/overlay2/l/PBKN233IMBJAQRRN7KWNT2YAFY:/var/lib/docker/overlay2/l/BZCQEVCCKVTM42F7JFYG3VN5U4:/var/lib/docker/overlay2/l/5RZTOMKDSI7B3US434IS5A2MUC:/var/lib/docker/overlay2/l/7MZRFUYAF5GMX3S4C4UDFBUT2L:/var/lib/docker/overlay2/l/YKAX2V7XZSIBHUBWRNMW6BD6SU:/var/lib/docker/overlay2/l/3JM74EFBY6JR4YWBAKE5J55RML:/var/lib/docker/overlay2/l/DMA6MWRSZUA7SH4TDCAMPOU5GW:/var/lib/docker/overlay2/l/3W3M2HWGFYRFIM6LS6PWX2XRJR:/var/lib/docker/overlay2/l/O5AAKB7ELQU4AUMLRJZ7UNAX7T:/var/lib/docker/overlay2/l/LLGM3HQEPMDNI27KN4DMXOH3AM,upperdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/diff,workdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/work)
+nsfs on /run/docker/netns/3142edec3d4a type nsfs (rw)
+[free]
+               total        used        free      shared  buff/cache   available
+Mem:         8063960     1079160     1484620      144500     5798972     6984800
+Swap:              0           0           0
+[ifconfig]
+br-628e27766cb2: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.24.0.1  netmask 255.255.0.0  broadcast 172.24.255.255
+        ether 9a:e9:86:6e:b2:94  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-a82a28732686: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.18.0.1  netmask 255.255.0.0  broadcast 172.18.255.255
+        ether 9e:0e:11:c7:1a:62  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f6d073ab6503: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.19.0.1  netmask 255.255.0.0  broadcast 172.19.255.255
+        ether ca:47:f4:7d:4d:87  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TXclient trash01.linux linux
+[date]
+Wed Oct 22 11:30:56 CEST 2025
+[uname]
+Linux trash01 6.1                                                                                                                                                                                        
+tcp   ESTAB      0      0          127.0.0.1:8001      127.0.0.1:56076 users:(("lava-server",pid=4076,fd=22))                                                                                                                                                                                                                                                                         
+tcp   TIME-WAIT  0      0       192.168.1.40:80     192.168.1.40:52800                                                                                                                                                                                                                                                                                                                
+tcp   TIME-WAIT  0      0          127.0.0.1:56310     127.0.0.1:5432                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0          127.0.0.1:56076     127.0.0.1:8001  users:(("apache2",pid=4485,fd=21))                                                                                                                                                                                                                                                                             
+tcp   TIME-WAIT  0      0          127.0.0.1:34496     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   ESTAB      0      0       192.168.1.40:44248  192.168.1.40:80    users:(("lava-worker",pid=21314,fd=12))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:33954     127.0.0.1:5432                                                                                                                                                                                                                                                                                                                                                                                                                   
+tcp   TIME-WAIT  0      0       192.168.1.40:60020 192.168.1.100:12346                                                                                                                                                                                                                                                                                                                
+tcp   ESTAB      0      0       192.168.1.40:44238  192.168.1.40:80    users:(("lava-worker",pid=21190,fd=13))                                                                                                                                                                                                                                                                        
+tcp   TIME-WAIT  0      0          127.0.0.1:59836     127.0.0.1:8000                                                                                                                                                                                                                                                                                                                 
+tcp   TIME-WAIT  0      0          127.0.0.1:58                                                                                                                  
+IME-WAudp   UNCONN     0      0            0.0.0.           
+tcp   TIME-WAIT  0      0          127.0.0.1:50422     127.0.0.1:8001                                                  IT  0      0          127.0.0.1:50      422     127.0.0.1:            08001                                              :49         81              0:4981 

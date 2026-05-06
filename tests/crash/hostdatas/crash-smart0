@@ -1,0 +1,1755 @@
+client trash01.linux linux
+[date]
+Wed Oct 22 11:30:56 CEST 2025
+[uname]
+Linux trash01 6.12.31-gentoo x86_64
+[osversion]
+Gentoo 2.18
+LSB Version:	n/a
+Distributor ID:	Gentoo
+Description:	Gentoo Linux
+Release:	2.18
+Codename:	n/a
+[uptime]
+ 11:30:56 up 28 days,  2:10,  1 user,  load average: 0.33, 0.45, 0.32
+[who]
+root     pts/0        Oct 22 08:16 (192.168.1.100)
+[df]
+Filesystem              1024-blocks     Used Available Capacity Mounted on
+/dev/root                 102626232 47872356  49494612      50% /
+devtmpfs                      10240        0     10240       0% /dev
+tmpfs                       1612792     1712   1611080       1% /run
+shm                         4031980       60   4031920       1% /dev/shm
+/dev/mapper/myvg-docker   102626232  3673052  93693916       4% /var/lib/docker
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/nrg/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/amaz/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/trash01/tmp
+overlay                   102626232  3673052  93693916       4% /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged
+[inode]
+Filesystem               Inodes   IUsed   IFree IUse% Mounted on
+/dev/root               6553600 2355147 4198453   36% /
+devtmpfs                1007445    1619 1005826    1% /dev
+tmpfs                    819200    1398  817802    1% /run
+shm                     1007995      10 1007985    1% /dev/shm
+/dev/mapper/myvg-docker 6553600  157938 6395662    3% /var/lib/docker
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/nrg/tmp
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/amaz/tmp
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/trash01/tmp
+overlay                 6553600  157938 6395662    3% /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged
+[mount]
+/dev/sda1 on / type ext4 (rw,noatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,noexec,relatime,size=10240k,nr_inodes=1007445,mode=755)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,size=1612792k,nr_inodes=819200,mode=755)
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime)
+/dev/mapper/myvg-docker on /var/lib/docker type ext4 (rw,relatime)
+none on /var/lib/lava/dispatcher/nrg/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/amaz/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/trash01/tmp type tmpfs (rw,relatime)
+rpc_pipefs on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfsd on /proc/fs/nfsd type nfsd (rw,nosuid,nodev,noexec,relatime)
+overlay on /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/RDHGHP5VHHXWUJ535X6NEKU4GC:/var/lib/docker/overlay2/l/5IQHHUUKXDWHUIUII2RAJJPJKC:/var/lib/docker/overlay2/l/ZHEE4E6N4EZ7BW2EHM5DDDRJSI:/var/lib/docker/overlay2/l/PBKN233IMBJAQRRN7KWNT2YAFY:/var/lib/docker/overlay2/l/BZCQEVCCKVTM42F7JFYG3VN5U4:/var/lib/docker/overlay2/l/5RZTOMKDSI7B3US434IS5A2MUC:/var/lib/docker/overlay2/l/7MZRFUYAF5GMX3S4C4UDFBUT2L:/var/lib/docker/overlay2/l/YKAX2V7XZSIBHUBWRNMW6BD6SU:/var/lib/docker/overlay2/l/3JM74EFBY6JR4YWBAKE5J55RML:/var/lib/docker/overlay2/l/DMA6MWRSZUA7SH4TDCAMPOU5GW:/var/lib/docker/overlay2/l/3W3M2HWGFYRFIM6LS6PWX2XRJR:/var/lib/docker/overlay2/l/O5AAKB7ELQU4AUMLRJZ7UNAX7T:/var/lib/docker/overlay2/l/LLGM3HQEPMDNI27KN4DMXOH3AM,upperdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/diff,workdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/work)
+nsfs on /run/docker/netns/3142edec3d4a type nsfs (rw)
+[free]
+               total        used        free      shared  buff/cache   available
+Mem:         8063960     1079160     1484620      144500     5798972     6984800
+Swap:              0           0           0
+[ifconfig]
+br-628e27766cb2: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.24.0.1  netmask 255.255.0.0  broadcast 172.24.255.255
+        ether 9a:e9:86:6e:b2:94  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-a82a28732686: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.18.0.1  netmask 255.255.0.0  broadcast 172.18.255.255
+        ether 9e:0e:11:c7:1a:62  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f6d073ab6503: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.19.0.1  netmask 255.255.0.0  broadcast 172.19.255.255
+        ether ca:47:f4:7d:4d:87  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f95f70130408: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.20.0.1  netmask 255.255.0.0  broadcast 172.20.255.255
+        ether b2:5c:6b:cf:21:9b  txqueuelen 0  (Ethernet)
+        RX packets 40187  bytes 10123371 (9.6 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 28424  bytes 2080881 (1.9 MiB)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+        ether ba:f2:42:46:f1:22  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+enp3s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.40  netmask 255.255.255.0  broadcast 192.168.1.255
+        ether bc:5f:f4:37:37:36  txqueuelen 1000  (Ethernet)
+        RX packets 140804100  bytes 79502538920 (74.0 GiB)
+        RX errors 0  dropped 8  overruns 0  frame 0
+        TX packets 126712401  bytes 155789506338 (145.0 GiB)
+        TX errors 0  dropped 3 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 93049845  bytes 101668190423 (94.6 GiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 93049845  bytes 101668190423 (94.6 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+qemubr0: flags=4355<UP,BROADCAST,PROMISC,MULTICAST>  mtu 1500
+        inet 192.168.66.1  netmask 255.255.255.0  broadcast 192.168.66.255
+        ether 6a:ce:62:34:4c:84  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+veth3b26849: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 1e:19:da:a2:cf:19  txqueuelen 0  (Ethernet)
+        RX packets 40187  bytes 10685989 (10.1 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 28424  bytes 2080881 (1.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan_iot: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.35.1  netmask 255.255.255.0  broadcast 0.0.0.0
+        ether 02:22:5f:c4:ae:f1  txqueuelen 1000  (Ethernet)
+        RX packets 50932  bytes 13734484 (13.0 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 57258  bytes 12513137 (11.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlp1s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 02:22:5f:c4:ae:f0  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 39  bytes 8040 (7.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[ss]
+Netid State      Recv-Q Send-Q Local Address:Port   Peer Address:Port Process                                                                                                                                                                                                                                                                                                         
+udp   UNCONN     0      0            0.0.0.0:4500        0.0.0.0:*     users:(("charon",pid=7502,fd=13))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:57785       0.0.0.0:*     users:(("rpc.mountd",pid=24393,fd=8))                                                                                                                                                                                                                                                                          
+udp   UNCONN     0      0            0.0.0.0:500         0.0.0.0:*     users:(("charon",pid=7502,fd=12))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:49810       0.0.0.0:*     users:(("python3",pid=18901,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0          127.0.0.1:663         0.0.0.0:*     users:(("rpc.statd",pid=24231,fd=5))                                                                                                                                                                                                                                                                           
+udp   UNCONN     0      0            0.0.0.0:37528       0.0.0.0:*     users:(("python3",pid=32741,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:50203       0.0.0.0:*     users:(("python3",pid=29106,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:58531       0.0.0.0:*     users:(("python3",pid=6708,fd=3))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:38243       0.0.0.0:*     users:(("python3",pid=9576,fd=3))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:34276       0.0.0.0:*     users:(("python3",pid=26091,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:46570       0.0.0.0:*     users:(("python3",pid=15146,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:46785       0.0.0.0:*                                                                                                                                                                                                                                                                                                                    
+udp   UNCONN     0      0            0.0.0.0:55044       0.0.0.0:*     users:(("python3",pid=17835,fd=3))                                                                                                                                                                                                                                                                             
+udp   ESTAB      0      0          127.0.0.1:42935     127.0.0.1:35177 users:(("squid",pid=6264,fd=16))                                                                                                                                                                                                                                                                               
+udp   UNCONN     0      0            0.0.0.0:51137       0.0.0.0:*     users:(("rpc.statd",pid=24231,fd=8))                                                                                                                                                                                                                                                                           
+udp   UNCONN     0      0            0.0.0.0:2049        0.0.0.0:*                                                                                                                                                                                                                                                                                                                    
+udp   UNCONN     0      0            0.0.0.0:47338       0.0.0.0:*     users:(("python3",pid=2226,fd=3))                                                                                                                                                                                                                                                                              
+udp   ESTAB      0      0          127.0.0.1:35177     127.0.0.1:42935 users:(("pinger",pid=20823,fd=1),("pinger",pid=20823,fd=0))                                                                                                                                                                                                                                                    
+udp   UNCONN     0      0            0.0.0.0:47749       0.0.0.0:*     users:(("python3",pid=10459,fd=3))                                                                                                                                                                                                                                                                             
+udp   ESTAB      0      0          127.0.0.1:52029     127.0.0.1:52029 users:(("postgres",pid=21015,fd=7),("postgres",pid=5233,fd=7),("postgres",pid=3583,fd=7),("postgres",pid=3582,fd=7),("postgres",pid=3581,fd=7),("postgres",pid=3580,fd=7),("postgres",pid=3579,fd=7),("postgres",pid=3578,fd=7),("postgres",pid=3573,fd=7))                                                    
+udp   UNCONN     0      0            0.0.0.0:52055       0.0.0.0:*     users:(("rsyslogd",pid=3172,fd=2))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:35681       0.0.0.0:*     users:(("python3",pid=18203,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:39865       0.0.0.0:*     users:(("python3",pid=28683,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:43962       0.0.0.0:*     users:(("python3",pid=20556,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:43982       0.0.0.0:*     users:(("python3",pid=26176,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:44377       0.0.0.0:*     users:(("python3",pid=20734,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:36222       0.0.0.0:*     users:(("python3",pid=27225,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:48522       0.0.0.0:*     users:(("python3",pid=15272,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:48600       0.0.0.0:*     users:(("python3",pid=18020,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:56824       0.0.0.0:*     users:(("rpc.mountd",pid=24393,fd=5))                                                                                                                                                                                                                                                                          
+udp   UNCONN     0      0            0.0.0.0:53114       0.0.0.0:*     users:(("rpc.mountd",pid=24393,fd=10))                                                                                                                                                                                                                                                                         
+udp   UNCONN     0      0            0.0.0.0:40842       0.0.0.0:*     users:(("python3",pid=14982,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:41015       0.0.0.0:*     users:(("squid",pid=6264,fd=8))                                                                                                                                                                                                                                                                                
+udp   UNCONN     0      0            0.0.0.0:67          0.0.0.0:*     users:(("dhcpd",pid=3870,fd=10))                                                                                                                                                                                                                                                                               
+udp   UNCONN     0      0            0.0.0.0:69          0.0.0.0:*     users:(("in.tftpd",pid=3989,fd=4))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0            0.0.0.0:111         0.0.0.0:*     users:(("rpcbind",pid=4380,fd=6))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0       192.168.35.1:123         0.0.0.0:*     users:(("ntpd",pid=8272,fd=24))                                                                                                                                                                                                                                         ed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+          8040      39      0       0       0       0 
+4: qemubr0: <NO-CARRIER,BROADCAST,MULTICAST,PROMISC,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default qlen 1000
+    link/ether 6a:ce:62:34:4c:84 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             0       0      0       2       0       0 
+5: br-f6d073ab6503: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether ca:47:f4:7d:4d:87 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             0       0      0       2       0       0 
+6: br-f95f70130408: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default 
+    link/ether b2:5c:6b:cf:21:9b brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+      10123371   40187      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       2080881   28424      0       2       0       0 
+7: br-628e27766cb2: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether 9a:e9:86:6e:b2:94 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             0       0      0       2       0       0 
+8: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether ba:f2:42:46:f1:22 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             0       0      0       2       0       0 
+9: br-a82a28732686: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether 9e:0e:11:c7:1a:62 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             0       0      0       2       0       0 
+10: veth3b26849@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-f95f70130408 state UP mode DEFAULT group default 
+    link/ether 1e:19:da:a2:cf:19 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    RX:  bytes packets errors dropped  missed   mcast           
+      10685989   40187      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       2080881   28424      0       0       0       0 
+15: wlan_iot: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether 02:22:5f:c4:ae:f1 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+      13734484   50932      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      12513137   57258      0       0       0       0 
+[iptables]
+Chain INPUT (policy ACCEPT 177M packets, 175G bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy DROP 727K packets, 55M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+19406 4459K ACCEPT     all  --  wlan_iot *       0.0.0.0/0            0.0.0.0/0           
+25534 2114K ACCEPT     all  --  *      wlan_iot  0.0.0.0/0            0.0.0.0/0           
+ 774K   66M DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+ 774K   66M DOCKER-FORWARD  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain OUTPUT (policy ACCEPT 171M packets, 253G bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain DOCKER (5 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  167 10020 ACCEPT     tcp  --  !br-f95f70130408 br-f95f70130408  0.0.0.0/0            172.20.0.2           tcp dpt:8080
+    0     0 DROP       all  --  !br-f6d073ab6503 br-f6d073ab6503  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  !br-f95f70130408 br-f95f70130408  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  !br-628e27766cb2 br-628e27766cb2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all ' --  !br-a82a28732686 br-a82a28732686  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  !docker0 docker0  0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-BRIDGE (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DOCKER     all  --  *      br-f6d073ab6503  0.0.0.0/0            0.0.0.0/0           
+  167 10020 DOCKER     all  --  *      br-f95f70130408  0.0.0.0/0            0.0.0.0/0           
+    0     0 DOCKER     all  --  *      br-628e27766cb2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DOCKER     all  --  *      br-a82a28732686  0.0.0.0/0            0.0.0.0/0           
+    0     0 DOCKER     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-CT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     all  --  *      br-f6d073ab6503  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+17583 1374K ACCEPT     all  --  *      br-f95f70130408  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     all  --  *      br-628e27766cb2  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     all  --  *      br-a82a28732686  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+
+Chain DOCKER-FORWARD (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 774K   66M DOCKER-CT  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+ 756K   65M DOCKER-ISOLATION-STAGE-1  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+ 756K   65M DOCKER-BRIDGE  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-f6d073ab6503 *       0.0.0.0/0            0.0.0.0/0           
+29510 9824K ACCEPT     all  --  br-f95f70130408 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-628e27766cb2 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-a82a28732686 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-ISOLATION-STAGE-1 (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DOCKER-ISOLATION-STAGE-2  all  --  br-f6d073ab6503 !br-f6d073ab6503  0.0.0.0/0            0.0.0.0/0           
+29510 9824K DOCKER-ISOLATION-STAGE-2  all  --  br-f95f70130408 !br-f95f70130408  0.0.0.0/0            0.0.0.0/0           
+    0     0 DOCKER-ISOLATION-STAGE-2  all  --  br-628e27766cb2 !br-628e27766cb2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DOCKER-ISOLATION-STAGE-2  all  --  br-a82a28732686 !br-a82a28732686  0.0.0.0/0            0.0.0.0/0           
+    0     0 DOCKER-ISOLATION-STAGE-2  all  --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-ISOLATION-STAGE-2 (5 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  *      docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  *      br-a82a28732686  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  *      br-628e27766cb2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  *      br-f95f70130408  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  *      br-f6d073ab6503  0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 774K   66M RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+Chain PREROUTING (policy ACCEPT 999K packets, 121M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+67933 5051K DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+Chain INPUT (policy ACCEPT 234K packets, 57M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 2454K packets, 151M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+ 628K   38M DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT 2454K packets, 151M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
+    0     0 MASQUERADE  all  --  *      !br-a82a28732686  172.18.0.0/16        0.0.0.0/0           
+    0     0 MASQUERADE  all  --  *      !br-628e27766cb2  172.24.0.0/16        0.0.0.0/0           
+    0     0 MASQUERADE  all  --  *      !br-f95f70130408  172.20.0.0/16        0.0.0.0/0           
+    0     0 MASQUERADE  all  --  *      !br-f6d073ab6503  172.19.0.0/16        0.0.0.0/0           
+12236  629K MASQUERADE  all  --  *      wlan_iot  0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 RETURN     all  --  br-a82a28732686 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 RETURN     all  --  br-628e27766cb2 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 RETURN     all  --  br-f95f70130408 *       0.0.0.0/0            0.0.0.0/0           
+    0     0 RETURN     all  --  br-f6d073ab6503 *       0.0.0.0/0            0.0.0.0/0           
+  167 10020 DNAT       tcp  --  !br-f95f70130408 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:8090 to:172.20.0.2:8080
+[lmsensors]
+drivetemp-scsi-3-0
+Adapter: SCSI adapter
+temp1:        +32.0 C  (low  =  +0.0 C, high = +60.0 C)
+                       (crit low =  +1.0 C, crit = +85.0 C)
+                       (lowest = +31.0 C, highest = +36.0 C)
+
+coretemp-isa-0000
+Adapter: ISA adapter
+Package id 0:  +41.0 C  (high = +82.0 C, crit = +102.0 C)
+Core 0:        +40.0 C  (high = +82.0 C, crit = +102.0 C)
+Core 1:        +39.0 C  (high = +82.0 C, crit = +102.0 C)
+
+nct6776-isa-0290
+Adapter: ISA adapter
+Vcore:         944.00 mV (min =  +0.00 V, max =  +1.74 V)
+in1:           176.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+AVCC:            3.31 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
++3.3V:           3.31 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in4:           520.00 mV (min =  +0.00 V, max =  +0.00 V)  ALARM
+in5:             1.71 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+in6:             1.86 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+3VSB:            3.41 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+Vbat:            3.28 V  (min =  +0.00 V, max =  +0.00 V)  ALARM
+fan1:             0 RPM  (min =    0 RPM)
+fan2:          1354 RPM  (min =    0 RPM)
+fan3:             0 RPM  (min =    0 RPM)
+fan4:             0 RPM  (min =    0 RPM)
+fan5:            R 0 PM  (min =    0 RPM)
+SYSTIN:         +33.0 C  (high =  +0.0 C, hyst =  +0.0 C)  ALARM  sensor = thermistor
+CPUTIN:         +55.5 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor
+AUXTIN:         -29.5 C  (high = +80.0 C, hyst = +75.0 C)  sensor = thermistor
+PECI Agent 0:   +39.0 C  (high = +80.0 C, hyst = +75.0 C)
+                         (crit = +102.0 C)
+PCH_CHIP_TEMP:   +0.0 C  
+PCH_CPU_TEMP:    +0.0 C  
+PCH_MCH_TEMP:    +0.0 C  
+pwm1:              112%  (mode = pwm)
+pwm2:              114%  (mode = pwm)
+pwm3:              128%  (mode = pwm)
+intrusion0:    OK
+intrusion1:    OK
+beep_enable:   disabled
+
+[lvm_pvs]
+  PV         VG   Fmt  Attr PSize    PFree   
+  /dev/sda2  myvg lvm2 a--  <365.76g <265.76g
+[lvm_vgs]
+  VG   #PV #LV #SN Attr   VSize    VFree   
+  myvg   1   1   0 wz--n- <365.76g <265.76g
+[ps]
+  PID  PPID USER      STARTED S PRI %CPU         TIME %MEM        RSZ        VSZ CMD
+    2     0 root       Sep 24 S  19  0.0     00:00:00  0.0          0          0 [kthreadd]
+    3     2 root       Sep 24 S  19  0.0     00:00:00  0.0          0          0  \_ [pool_workqueue_release]
+    4     2 root       Sep 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/R-kvfree_rcu_reclaim]
+    5     2 root       Sep 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/R-rcu_gp]
+    6     2 root       Sep 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/R-sync_wq]
+    7     2 root       Sep 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/R-slub_flushwq]
+    8     2 root       Sep 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/R-netns]
+   13     2 root       Sep 24 I  39  0.0     00:00:00  0.0          0          0  \_ [kworker/R-mm_percpu_wq]
+   14     2 root       S00: cmd 61/10:78:c0:a6:2c/06:00:00:00:00/40 tag 15 ncq dma 794624 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328631] ata4.00: status: { DRDY }
+#[2010713.328632] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328634] ata4.00: cmd 61/c0:80:d0:ac:2c/02:00:00:00:00/40 tag 16 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328639] ata4.00: status: { DRDY }
+#[2010713.328640] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328641] ata4.00: cmd 61/70:88:90:af:2c/05:00:00:00:00/40 tag 17 ncq dma 712704 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328646] ata4.00: status: { DRDY }
+#[2010713.328648] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328649] ata4.00: cmd 61/68:90:00:b5:2c/00:00:00:00:00/40 tag 18 ncq dma 53248 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328654] ata4.00: status: { DRDY }
+#[2010713.328655] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328657] ata4.00: cmd 61/40:98:a8:d9:2e/05:00:00:00:00/40 tag 19 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328661] ata4.00: status: { DRDY }
+#[2010713.328663] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328664] ata4.00: cmd 61/c8:a0:e8:de:2e/02:00:00:00:00/40 tag 20 ncq dma 364544 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328669] ata4.00: status: { DRDY }
+#[2010713.328670] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328672] ata4.00: cmd 61/60:a8:b0:e1:2e/05:00:00:00:00/40 tag 21 ncq dma 704512 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328676] ata4.00: status: { DRDY }
+#[2010713.328678] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328679] ata4.00: cmd 61/c0:c0:28:89:70/02:00:07:00:00/40 tag 24 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328684] ata4.00: status: { DRDY }
+#[2010713.328686] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328687] ata4.00: cmd 61/48:c8:e8:8b:70/03:00:07:00:00/40 tag 25 ncq dma 430080 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328692] ata4.00: status: { DRDY }
+#[2010713.328693] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328694] ata4.00: cmd 61/40:d0:18:e3:72/05:00:07:00:00/40 tag 26 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328699] ata4.00: status: { DRDY }
+#[2010713.328701] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328702] ata4.00: cmd 61/c0:d8:58:e8:72/02:00:07:00:00/40 tag 27 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328707] ata4.00: status: { DRDY }
+#[2010713.328708] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328709] ata4.00: cmd 61/e8:e0:18:eb:72/08:00:07:00:00/40 tag 28 ncq dma 1167360 ou
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328714] ata4.00: status: { DRDY }
+#[2010713.328716] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328717] ata4.00: cmd 61/f8:e8:00:f4:72/03:00:07:00:00/40 tag 29 ncq dma 520192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328722] ata4.00: status: { DRDY }
+#[2010713.328723] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328725] ata4.00: cmd 61/00:f0:a8:0e:72/0a:00:07:00:00/40 tag 30 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328730] ata4.00: status: { DRDY }
+#[2010713.328731] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2010713.328732] ata4.00: cmd 61/18:f8:78:9f:2d/04:00:00:00:00/40 tag 31 ncq dma 536576 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2010713.328737] ata4.00: status: { DRDY }
+#[2011729.102474] ata4.00: exception Emask 0x10 SAct 0x70000 SErr 0x400100 action 0x6 frozen
+#[2011729.102482] ata4.00: irq_stat 0x08000000, interface fatal error
+#[2011729.102484] ata4: SError: { UnrecovData Handshk }
+#[2011729.102488] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011729.102490] ata4.00: cmd 61/40:80:68:59:45/05:00:06:00:00/40 tag 16 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011729.102497] ata4.00: status: { DRDY }
+#[2011729.102499] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011729.102500] ata4.00: cmd 61/40:88:a8:5e:45/05:00:06:00:00/40 tag 17 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011729.102506] ata4.00: status: { DRDY }
+#[2011729.102508] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011729.102509] ata4.00: cmd 61/18:90:e8:63:45/03:00:06:00:00/40 tag 18 ncq dma 405504 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011729.102517] ata4.00: status: { DRDY }
+#[2011874.417562] ata4.00: exception Emask 0x10 SAct 0x707c0e01 SErr 0x400100 action 0x6 frozen
+#[2011874.417572] ata4.00: irq_stat 0x08000000, interface fatal error
+#[2011874.417574] ata4: SError: { UnrecovData Handshk }
+#[2011874.417577] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417579] ata4.00: cmd 61/00:00:a8:8c:48/0a:00:08:00:00/40 tag 0 ncq dma 1310720 ou
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417586] ata4.00: status: { DRDY }
+#[2011874.417588] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417589] ata4.00: cmd 61/10:48:30:b0:49/06:00:08:00:00/40 tag 9 ncq dma 794624 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417595] ata4.00: status: { DRDY }
+#[2011874.417597] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.41       a4.00: cmd 61/f8:50:c8:1e:48/08:00:08:00:00/40 tag 10 ncq dma 1175552 ou
+#                          res 40/00:00:09:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417604] ata4.00: status: { DRDY }
+#[2011874.417605] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417607] ata4.00: cmd 61/30:58:58:51:4a/04:00:08:00:00/40 tag 11 ncq dma 548864 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417612] ata4.00: status: { DRDY }
+#[2011874.417613] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417614] ata4.00: cmd 61/00:90:10:f9:48/0a:00:08:00:00/40 tag 18 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417620] ata4.00: status: { DRDY }
+#[2011874.417621] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417622] ata4.00: cmd 61/00:98:10:03:49/0a:00:08:00:00/40 tag 19 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417627] ata4.00: status: { DRDY }
+#[2011874.417629] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417630] ata4.00: cmd 61/18:a0:10:0d:49/04:00:08:00:00/40 tag 20 ncq dma 536576 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417635] ata4.00: status: { DRDY }
+#[2011874.417636] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417638] ata4.00: cmd 61/b8:a8:a8:96:48/05:00:08:00:00/40 tag 21 ncq dma 749568 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417642] ata4.00: status: { DRDY }
+#[2011874.417644] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417645] ata4.00: cmd 61/80:b0:b0:58:4b/05:00:08:00:00/40 tag 22 ncq dma 720896 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417650] ata4.00: status: { DRDY }
+#[2011874.417652] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417653] ata4.00: cmd 61/00:e0:30:a6:49/0a:00:08:00:00/40 tag 28 ncq dma 1310720 ou
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417658] ata4.00: status: { DRDY }
+#[2011874.417659] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417661] ata4.00: cmd 61/00:e8:58:3d:4a/0a:00:08:00:00/40 tag 29 ncq dma 1310720 ou
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417665] ata4.00: status: { DRDY }
+#[2011874.417667] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2011874.417668] ata4.00: cmd 61/00:f0:58:47:4a/0a:00:08:00:00/40 tag 30 ncq dma 1310720 ou
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2011874.417673] ata4.00: status: { DRDY }
+#[2012086.799121] ata4.00: exception Emask 0x10 SAct 0x81fe0003 SErr 0x400100 action 0x6 frozen
+#[2012086.799132] ata4.00: irq_stat 0x08000000, interface fatal error
+#[2012086.799134] ata4: SError: { UnrecovData Handshk }
+#[2012086.799138] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799140] ata4.00: cmd 61/c0:00:f0:2e:b9/02:00:08:00:00/40 tag 0 ncq dma 360448 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799148] ata4.00: status: { DRDY }
+#[2012086.799150] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799152] ata4.00: cmd 61/20:08:b0:31:b9/02:00:08:00:00/40 tag 1 ncq dma 278528 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799158] ata4.00: status: { DRDY }
+#[2012086.799160] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799161] ata4.00: cmd 61/a0:88:e0:c8:b7/05:00:08:00:00/40 tag 17 ncq dma 737280 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799167] ata4.00: status: { DRDY }
+#[2012086.799169] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799170] ata4.00: cmd 61/68:90:80:ce:b7/03:00:08:00:00/40 tag 18 ncq dma 446464 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799175] ata4.00: status: { DRDY }
+#[2012086.799177] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799179] ata4.00: cmd 61/00:98:e0:7f:b4/09:00:08:00:00/40 tag 19 ncq dma 1179648 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799184] ata4.00: status: { DRDY }
+#[2012086.799186] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799187] ata4.00: cmd 61/68:a0:00:08:b6/08:00:08:00:00/40 tag 20 ncq dma 1101824 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799192] ata4.00: status: { DRDY }
+#[2012086.799194] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799195] ata4.00: cmd 61/38:a8:68:10:b6/00:00:08:00:00/40 tag 21 ncq dma 28672 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799200] ata4.00: status: { DRDY }
+#[2012086.799202] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799203] ata4.00: cmd 61/c8:b0:c0:c4:b8/05:00:08:00:00/40 tag 22 ncq dma 757760 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799208] ata4.00: status: { DRDY }
+#[2012086.799210] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799211] ata4.00: cmd 61/90:b8:88:ca:b8/02:00:08:00:00/40 tag 23 ncq dma 335872 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799216] ata4.00: status: { DRDY }
+#[2012086.799217] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799219] ata4.00: cmd 61/10:c0:90:92:26/00:00:05:00:00/40 tag 24 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799224] ata4.00: status: { DRDY }
+#[2012086.799225] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012086.799227] ata4.00: cmd 61/78:f8:78:29:b9/05:00:08:00:00/40 tag 31 ncq dma 716800 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012086.799231] ata4.00: status: { DRDY }
+#[2012320.852858] ata4.00: exception Emask 0x10 SAct 0xffffffff SErr 0x400100 action 0x6 frozen
+#[2012320.852867] ata4.00: irq_stat 0x08000000, interface fatal error
+#[2012320.852870] ata4: SError: { UnrecovData Handshk }
+#[2012320.852873] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852875] ata4.00: cmd 61/88:00:78:51:a5/00:00:04:00:00/40 tag 0 ncq dma 69632 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852881] ata4.00: status: { DRDY }
+#[2012320.852884] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852885] ata4.00: cmd 61/a0:08:60:3a:a5/01:00:04:00:00/40 tag 1 ncq dma 212992 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852890] ata4.00: status: { DRDY }
+#[2012320.852892] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852894] ata4.00: cmd 61/30:10:00:52:a5/00:00:04:00:00/40 tag 2 ncq dma 24576 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852899] ata4.00: status: { DRDY }
+#[2012320.852900] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852901] ata4.00: cmd 61/30:18:b8:4e:44/00:00:00:00:00/40 tag 3 ncq dma 24576 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852906] ata4.00: status: { DRDY }
+#[2012320.852908] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852909] ata4.00: cmd 61/50:20:a0:84:46/00:00:00:00:00/40 tag 4 ncq dma 40960 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852914] ata4.00: status: { DRDY }
+#[2012320.852916] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852917] ata4.00: cmd 61/d0:28:f8:2b:3d/03:00:06:00:00/40 tag 5 ncq dma 499712 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852922] ata4.00: status: { DRDY }
+#[2012320.852923] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852925] ata4.00: cmd 61/c0:30:28:ff:54/00:00:00:00:00/40 tag 6 ncq dma 98304 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852929] ata4.00: status: { DRDY }
+#[2012320.852931] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852932] ata4.00: cmd 61/e8:38:00:01:55/00:00:00:00:00/40 tag 7 ncq dma 118784 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852937] ata4.00: status: { DRDY }
+#[2012320.852938] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852940] ata4.00: cmd 61/18:40:e8:29:a5/00:00:04:00:00/40 tag 8 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852944] ata4.00: status: { DRDY }
+#[2012320.852946] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852947] ata4.00: cmd 61/20:48:08:3e:a5/00:00:04:00:00/40 tag 9 ncq dma 16384 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852952] ata4.00: status: { DRDY }
+#[2012320.852953] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852955] ata4.00: cmd 61/20:50:28:3e:a5/00:00:04:00:00/40 tag 10 ncq dma 16384 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852960] ata4.00: status: { DRDY }
+#[2012320.852961] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852962] ata4.00: cmd 61/18:58:48:3e:a5/00:00:04:00:00/40 tag 11 ncq dma 12288 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852967] ata4.00: status: { DRDY }
+#[2012320.852969] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852970] ata4.00: cmd 61/20:60:30:52:a5/00:00:04:00:00/40 tag 12 ncq dma 16384 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852975] ata4.00: status: { DRDY }
+#[2012320.852976] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852978] ata4.00: cmd 61/f0:68:f8:48:a5/01:00:04:00:00/40 tag 13 ncq dma 253952 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852982] ata4.00: status: { DRDY }
+#[2012320.852984] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852986] ata4.00: cmd 61/10:70:f0:17:a5/00:00:04:00:00/40 tag 14 ncq dma 8192 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852991] ata4.00: status: { DRDY }
+#[2012320.852992] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.852993] ata4.00: cmd 61/28:78:c0:3f:a5/00:00:04:00:00/40 tag 15 ncq dma 20480 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.852998] ata4.00: status: { DRDY }
+#[2012320.853000] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853001] ata4.00: cmd 61/18:80:e8:3f:a5/00:00:04:00:00/40 tag 16 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853006] ata4.00: status: { DRDY }
+#[2012320.853007] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853009] ata4.00: cmd 61/10:88:f8:2c:a5/00:00:04:00:00/40 tag 17 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853013] ata4.00: status: { DRDY }
+#[2012320.853015] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853016] ata4.00: cmd 61/30:90:c0:3f:a4/00:00:04:00:00/40 tag 18 ncq dma 24576 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853021] ata4.00: status: { DRDY }
+#[2012320.853022] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853024] ata4.00: cmd 61/20:98:f0:3f:a4/00:00:04:00:00/40 tag 19 ncq dma 16384 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853028] ata4.00: status: { DRDY }
+#[2012320.853030] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853031] ata4.00: cmd 61/60:a0:68:52:a5/01:00:04:00:00/40 tag 20 ncq dma 180224 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853036] ata4.00: status: { DRDY }
+#[2012320.853038] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853039] ata4.00: cmd 61/10:a8:e8:4a:a5/00:00:04:00:00/40 tag 21 ncq dma 8192 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853044] ata4.00: status: { DRDY }
+#[2012320.853045] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853047] ata4.00: cmd 61/18:b0:c8:53:a5/00:00:04:00:00/40 tag 22 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853051] ata4.00: status: { DRDY }
+#[2012320.853053] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853054] ata4.00: cmd 61/60:b8:00:54:a5/00:00:04:00:00/40 tag 23 ncq dma 49152 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853059] ata4.00: status: { DRDY }
+#[2012320.853060] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853062] ata4.00: cmd 61/20:c0:e0:53:a5/00:00:04:00:00/40 tag 24 ncq dma 16384 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853066] ata4.00: status: { DRDY }
+#[2012320.853068] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853069] ata4.00: cmd 61/18:c8:60:54:a5/00:00:04:00:00/40 tag 25 ncq dma 12288 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853074] ata4.00: status: { DRDY }
+#[2012320.853075] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853077] ata4.00: cmd 61/20:d0:78:54:a5/00:00:04:00:00/40 tag 26 ncq dma 16384 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853082] ata4.00: status: { DRDY }
+#[2012320.853083] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853085] ata4.00: cmd 61/18:d8:50:52:a5/00:00:04:00:00/40 tag 27 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853089] ata4.00: status: { DRDY }
+#[2012320.853091] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853092] ata4.00: cmd 61/10:e0:98:54:a5/00:00:04:00:00/40 tag 28 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853097] ata4.00: status: { DRDY }
+#[2012320.853098] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853100] ata4.00: cmd 61/18:e8:a8:54:a5/00:00:04:00:00/40 tag 29 ncq dma 12288 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853104] ata4.00: status: { DRDY }
+#[2012320.853106] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853107] ata4.00: cmd 61/18:f0:c0:54:a5/00:00:04:00:00/40 tag 30 ncq dma 12288 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853112] ata4.00: status: { DRDY }
+#[2012320.853113] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2012320.853115] ata4.00: cmd 61/18:f8:d8:54:a5/00:00:04:00:00/40 tag 31 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2012320.853119] ata4.00: status: { DRDY }
+#[2013288.795962] ata4.00: exception Emask 0x10 SAct 0xfbff7fff SErr 0x400100 action 0x6 frozen
+#[2013288.795970] ata4.00: irq_stat 0x08000000, interface fatal error
+#[2013288.795973] ata4: SError: { UnrecovData Handshk }
+#[2013288.795977] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.795979] ata4.00: cmd 61/18:00:e0:63:05/00:00:00:00:00/40 tag 0 ncq dma 12288 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.795985] ata4.00: status: { DRDY }
+#[2013288.795987] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.795988] ata4.00: cmd 61/10:08:a0:2f:04/00:00:00:00:00/40 tag 1 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.795994] ata4.00: status: { DRDY }
+#[2013288.795995] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.795997] ata4.00: cmd 61/10:10:20:32:04/00:00:00:00:00/40 tag 2 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796002] ata4.00: status: { DRDY }
+#[2013288.796003] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796004] ata4.00: cmd 61/10:18:a0:37:04/00:00:00:00:00/40 tag 3 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796009] ata4.00: status: { DRDY }
+#[2013288.796011] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796012] ata4.00: cmd 61/10:20:90:3c:04/00:00:00:00:00/40 tag 4 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796017] ata4.00: status: { DRDY }
+#[2013288.796018] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796019] ata4.00: cmd 61/10:28:a0:41:04/00:00:00:00:00/40 tag 5 ncq dma 8192 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796024] ata4.00: status: { DRDY }
+#[2013288.796026] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796027] ata4.00: cmd 61/10:30:50:44:04/00:00:00:00:00/40 tag 6 ncq dma 8192 out
+#                          res 40/00:00:09:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796032] ata4.00: status: { DRDY }
+#[2013288.796033] ata4.00: failed command: READ FPDMA QUEUED
+#[2013288.796035] ata4.00: cmd 60/f8:38:10:55:00/00:00:01:00:00/40 tag 7 ncq dma 126976 in
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796039] ata4.00: status: { DRDY }
+#[2013288.796041] ata4.00: failed command: READ FPDMA QUEUED
+#[2013288.796042] ata4.00: cmd 60/08:40:08:55:00/00:00:01:00:00/40 tag 8 ncq dma 4096 in
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796047] ata4.00: status: { DRDY }
+#[2013288.796049] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796050] ata4.00: cmd 61/10:48:70:45:04/00:00:00:00:00/40 tag 9 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796055] ata4.00: status: { DRDY }
+#[2013288.796056] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796057] ata4.00: cmd 61/10:50:a0:45:04/00:00:00:00:00/40 tag 10 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796062] ata4.00: status: { DRDY }
+#[2013288.796064] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796065] ata4.00: cmd 61/10:58:b8:45:04/00:00:00:00:00/40 tag 11 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796070] ata4.00: status: { DRDY }
+#[2013288.796072] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796073] ata4.00: cmd 61/18:60:20:ae:05/00:00:00:00:00/40 tag 12 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796078] ata4.00: status: { DRDY }
+#[2013288.796079] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796080] ata4.00: cmd 61/10:68:50:47:04/00:00:00:00:00/40 tag 13 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796085] ata4.00: status: { DRDY }
+#[2013288.796087] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796088] ata4.00: cmd 61/10:70:e0:4d:04/00:00:00:00:00/40 tag 14 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796093] ata4.00: status: { DRDY }
+#[2013288.796094] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796096] ata4.00: cmd 61/10:80:d8:48:04/00:00:00:00:00/40 tag 16 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796100] ata4.00: status: { DRDY }
+#[2013288.796102] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796103] ata4.00: cmd 61/10:88:a0:49:04/00:00:00:00:00/40 tag 17 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796108] ata4.00: status: { DRDY }
+#[2013288.796109] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796111] ata4.00: cmd 61/10:90:e0:4a:04/00:00:00:00:00/40 tag 18 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796115] ata4.00: status: { DRDY }
+#[2013288.796117] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796118] ata4.00: cmd 61/18:98:e8:b1:06/00:00:00:00:00/40 tag 19 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796123] ata4.00: status: { DRDY }
+#[2013288.796124] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796126] ata4.00: cmd 61/10:a0:a8:4c:04/00:00:00:00:00/40 tag 20 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796131] ata4.00: status: { DRDY }
+#[2013288.796132] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796133] ata4.00: cmd 61/10:a8:20:4d:04/00:00:00:00:00/40 tag 21 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796138] ata4.00: status: { DRDY }
+#[2013288.796140] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796141] ata4.00: cmd 61/10:b0:90:4d:04/00:00:00:00:00/40 tag 22 ncq dma 8192 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796146] ata4.00: status: { DRDY }
+#[2013288.796147] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796148] ata4.00: cmd 61/18:b8:88:c5:06/00:00:00:00:00/40 tag 23 ncq dma 12288 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796153] ata4.00: status: { DRDY }
+#[2013288.796155] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796156] ata4.00: cmd 61/10:c0:a8:4f:04/00:00:00:00:00/40 tag 24 ncq dma 8192 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796161] ata4.00: status: { DRDY }
+#[2013288.796162] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796163] ata4.00: cmd 61/20:c8:48:c6:06/00:00:00:00:00/40 tag 25 ncq dma 16384 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796168] ata4.00: status: { DRDY }
+#[2013288.796170] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796171] ata4.00: cmd 61/28:d8:d0:62:05/00:00:00:00:00/40 tag 27 ncq dma 20480 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796176] ata4.00: status: { DRDY }
+#[2013288.796177] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796178] ata4.00: cmd 61/18:e0:68:63:05/00:00:00:00:00/40 tag 28 ncq dma 12288 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796183] ata4.00: status: { DRDY }
+#[2013288.796185] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796186] ata4.00: cmd 61/10:e8:70:34:04/00:00:00:00:00/40 tag 29 ncq dma 8192 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796191] ata4.00: status: { DRDY }
+#[2013288.796192] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796193] ata4.00: cmd 61/10:f0:80:37:04/00:00:00:00:00/40 tag 30 ncq dma 8192 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796198] ata4.00: status: { DRDY }
+#[2013288.796199] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013288.796201] ata4.00: cmd 61/10:f8:d0:45:04/00:00:00:00:00/40 tag 31 ncq dma 8192 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013288.796205] ata4.00: status: { DRDY }
+#[2013289.284903] I/O error, dev sda, sector 16798992 op 0x0:(READ) flags 0x80700 phys_seg 31 prio class 0
+#[2013290.682957] ata4.00: exception Emask 0x10 SAct 0xffffe7ff SErr 0x400100 action 0x6 frozen
+#[2013290.682966] ata4.00: irq_stat 0x08000000, interface fatal error
+#[2013290.682969] ata4: SError: { UnrecovData Handshk }
+#[2013290.682972] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.682974] ata4.00: cmd 61/60:00:a0:1a:10/01:00:00:00:00/40 tag 0 ncq dma 180224 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.682980] ata4.00: status: { DRDY }
+#[2013290.682983] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.682984] ata4.00: cmd 61/60:08:28:02:11/01:00:00:00:00/40 tag 1 ncq dma 180224 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.682990] ata4.00: status: { DRDY }
+#[2013290.682991] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.682992] ata4.00: cmd 61/08:10:30:59:4f/00:00:06:00:00/40 tag 2 ncq dma 4096 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.682998] ata4.00: status: { DRDY }
+#[2013290.682999] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683000] ata4.00: cmd 61/c0:18:00:0c:11/03:00:00:00:00/40 tag 3 ncq dma 491520 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683006] ata4.00: status: { DRDY }
+#[2013290.683007] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683009] ata4.00: cmd 61/70:20:58:e8:c1/03:00:02:00:00/40 tag 4 ncq dma 450560 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683013] ata4.00: status: { DRDY }
+#[2013290.683015] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683016] ata4.00: cmd 61/e8:28:20:db:0b/01:00:00:00:00/40 tag 5 ncq dma 249856 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683021] ata4.00: status: { DRDY }
+#[2013290.683023] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683024] ata4.00: cmd 61/b8:30:88:cd:0b/01:00:00:00:00/40 tag 6 ncq dma 225280 out
+#                          res 40/00:00:09:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683029] ata4.00: status: { DRDY }
+#[2013290.683030] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683031] ata4.00: cmd 61/b8:38:90:e8:0b/01:00:00:00:00/40 tag 7 ncq dma 225280 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683036] ata4.00: status: { DRDY }
+#[2013290.683038] ata4.00: failed command: READ FPDMA QUEUED
+#[2013290.683039] ata4.00: cmd 60/18:40:08:57:00/00:00:01:00:00/40 tag 8 ncq dma 12288 in
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683044] ata4.00: status: { DRDY }
+#[2013290.683046] ata4.00: failed command: READ FPDMA QUEUED
+#[2013290.683047] ata4.00: cmd 60/08:48:28:57:00/00:00:01:00:00/40 tag 9 ncq dma 4096 in
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683051] ata4.00: status: { DRDY }
+#[2013290.683053] ata4.00: failed command: READ FPDMA QUEUED
+#[2013290.683054] ata4.00: cmd 60/08:50:38:57:00/00:00:01:00:00/40 tag 10 ncq dma 4096 in
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683059] ata4.00: status: { DRDY }
+#[2013290.683061] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683062] ata4.00: cmd 61/18:68:70:c6:10/03:00:00:00:00/40 tag 13 ncq dma 405504 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683067] ata4.00: status: { DRDY }
+#[2013290.683068] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683070] ata4.00: cmd 61/a0:70:10:c2:10/02:00:00:00:00/40 tag 14 ncq dma 344064 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683075] ata4.00: status: { DRDY }
+#[2013290.683076] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683077] ata4.00: cmd 61/98:78:f0:b7:10/02:00:00:00:00/40 tag 15 ncq dma 339968 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683082] ata4.00: status: { DRDY }
+#[2013290.683084] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683085] ata4.00: cmd 61/28:80:d8:3c:10/02:00:00:00:00/40 tag 16 ncq dma 282624 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683090] ata4.00: status: { DRDY }
+#[2013290.683091] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683093] ata4.00: cmd 61/10:88:a0:d9:10/02:00:00:00:00/40 tag 17 ncq dma 270336 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683097] ata4.00: status: { DRDY }
+#[2013290.683099] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683100] ata4.00: cmd 61/00:90:00:08:10/02:00:00:00:00/40 tag 18 ncq dma 262144 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683105] ata4.00: status: { DRDY }
+#[2013290.683107] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683108] ata4.00: cmd 61/00:98:00:38:10/02:00:00:00:00/40 tag 19 ncq dma 262144 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683113] ata4.00: status: { DRDY }
+#[2013290.683114] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683116] ata4.00: cmd 61/f8:a0:60:e2:10/01:00:00:00:00/40 tag 20 ncq dma 258048 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290.683121] ata4.00: status: { DRDY }
+#[2013290.683122] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2013290.683123] ata4.00: cmd 61/f0:a8:10:f3:10/01:00:00:00:00/40 tag 21 ncq dma 253952 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2013290./18:c0:b8:6e:04/00:00:00:00:00/40 tag 24 ncq dma 12288 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010564] ata4.00: status: { DRDY }
+#[1912143.010566] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010567] ata4.00: cmd 61/18:c8:78:74:04/00:00:00:00:00/40 tag 25 ncq dma 12288 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010572] ata4.00: status: { DRDY }
+#[1912143.010574] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010575] ata4.00: cmd 61/18:d0:a8:34:04/00:00:00:00:00/40 tag 26 ncq dma 12288 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010580] ata4.00: status: { DRDY }
+#[1912143.010582] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010583] ata4.00: cmd 61/18:d8:50:45:04/00:00:00:00:00/40 tag 27 ncq dma 12288 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010588] ata4.00: status: { DRDY }
+#[1912143.010590] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010591] ata4.00: cmd 61/18:e0:a8:46:04/00:00:00:00:00/40 tag 28 ncq dma 12288 out
+#                          res 40/00:00:09:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010596] ata4.00: status: { DRDY }
+#[1912143.010598] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010599] ata4.00: cmd 61/18:e8:10:4a:04/00:00:00:00:00/40 tag 29 ncq dma 12288 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010604] ata4.00: status: { DRDY }
+#[1912143.010606] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010607] ata4.00: cmd 61/18:f0:70:4e:04/00:00:00:00:00/40 tag 30 ncq dma 12288 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010613] ata4.00: status: { DRDY }
+#[1912143.010614] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1912143.010616] ata4.00: cmd 61/18:f8:60:6e:04/00:00:00:00:00/40 tag 31 ncq dma 12288 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1912143.010621] ata4.00: status: { DRDY }
+#[1916400.409175] ata4.00: exception Emask 0x10 SAct 0xbe3fffff SErr 0x400100 action 0x6 frozen
+#[1916400.409184] ata4.00: irq_stat 0x08000000, interface fatal error
+#[1916400.409186] ata4: SError: { UnrecovData Handshk }
+#[1916400.409189] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409191] ata4.00: cmd 61/98:00:60:50:fd/05:00:01:00:00/40 tag 0 ncq dma 733184 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409197] ata4.00: status: { DRDY }
+#[1916400.409200] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409201] ata4.00: cmd 61/e0:08:f8:55:fd/03:00:01:00:00/40 tag 1 ncq dma 507904 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409207] ata4.00: status: { DRDY }
+#[1916400.409208] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409210] ata4.00: cmd 61/40:10:20:bd:ff/05:00:01:00:00/40 tag 2 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409215] ata4.00: status: { DRDY }
+#[1916400.409216] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409218] ata4.00: cmd 61/c0:18:60:c2:ff/02:00:01:00:00/40 tag 3 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409223] ata4.00: status: { DRDY }
+#[1916400.409224] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409225] ata4.00: cmd 61/40:20:20:c5:ff/05:00:01:00:00/40 tag 4 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409230] ata4.00: status: { DRDY }
+#[1916400.409232] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409233] ata4.00: cmd 61/10:28:60:ca:ff/04:00:01:00:00/40 tag 5 ncq dma 532480 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409238] ata4.00: status: { DRDY }
+#[1916400.409240] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409241] ata4.00: cmd 61/40:30:b8:b4:fc/05:00:01:00:00/40 tag 6 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409246] ata4.00: status: { DRDY }
+#[1916400.409247] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409248] ata4.00: cmd 61/e0:38:f8:b9:fc/04:00:01:00:00/40 tag 7 ncq dma 638976 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409253] ata4.00: status: { DRDY }
+#[1916400.409255] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409256] ata4.00: cmd 61/40:40:90:2a:fd/05:00:01:00:00/40 tag 8 ncq dma 688128 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409261] ata4.00: status: { DRDY }
+#[1916400.409262] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409264] ata4.00: cmd 61/c0:48:d0:2f:fd/02:00:01:00:00/40 tag 9 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409268] ata4.00: status: { DRDY }
+#[1916400.409270] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409271] ata4.00: cmd 61/40:50:90:32:fd/05:00:01:00:00/40 tag 10 ncq dma 688128 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409276] ata4.00: status: { DRDY }
+#[1916400.409277] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409279] ata4.00: cmd 61/30:58:d0:37:fd/03:00:01:00:00/40 tag 11 ncq dma 417792 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409284] ata4.00: status: { DRDY }
+#[1916400.409285] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409286] ata4.00: cmd 61/40:60:e0:d7:fe/05:00:01:00:00/40 tag 12 ncq dma 688128 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409291] ata4.00: status: { DRDY }
+#[1916400.409292] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409294] ata4.00: cmd 61/c0:68:20:dd:fe/02:00:01:00:00/40 tag 13 ncq dma 360448 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409298] ata4.00: status: { DRDY }
+#[1916400.409300] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409301] ata4.00: cmd 61/40:70:e0:df:fe/05:00:01:00:00/40 tag 14 ncq dma 688128 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409306] ata4.00: status: { DRDY }
+#[1916400.409307] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409309] ata4.00: cmd 61/b8:78:20:e5:fe/02:00:01:00:00/40 tag 15 ncq dma 356352 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409313] ata4.00: status: { DRDY }
+#[1916400.409315] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409316] ata4.00: cmd 61/40:80:00:e8:fe/05:00:01:00:00/40 tag 16 ncq dma 688128 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409321] ata4.00: status: { DRDY }
+#[1916400.409322] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409324] ata4.00: cmd 61/c0:88:40:ed:fe/02:00:01:00:00/40 tag 17 ncq dma 360448 out
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409328] ata4.00: status: { DRDY }
+#[1916400.409330] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409331] ata4.00: cmd 61/40:90:00:f0:fe/05:00:01:00:00/40 tag 18 ncq dma 688128 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409336] ata4.00: status: { DRDY }
+#[1916400.409337] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409339] ata4.00: cmd 61/b8:98:40:f5:fe/02:00:01:00:00/40 tag 19 ncq dma 356352 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409343] ata4.00: status: { DRDY }
+#[1916400.409345] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409346] ata4.00: cmd 61/40:a0:60:ac:fd/05:00:01:00:00/40 tag 20 ncq dma 688128 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409351] ata4.00: status: { DRDY }
+#[1916400.409352] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409354] ata4.00: cmd 61/d0:a8:a0:b1:fd/03:00:01:00:00/40 tag 21 ncq dma 499712 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409358] ata4.00: status: { DRDY }
+#[1916400.409360] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409361] ata4.00: cmd 61/c0:c8:88:ef:fd/02:00:01:00:00/40 tag 25 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409366] ata4.00: status: { DRDY }
+#[1916400.409367] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409369] ata4.00: cmd 61/40:d0:48:f2:fd/05:00:01:00:00/40 tag 26 ncq dma 688128 out
+#                client trash01.linux linux
+[date]
+Wed Oct 22 11:30:56 CEST 2025
+[uname]
+Linux trash01 6.12.31-gentoo x86_64
+[osversion]
+Gentoo 2.18
+LSB Version:	n/a
+Distributor ID:	Gentoo
+Description:	Gentoo Linux
+Release:	2.18
+Codename:	n/a
+[uptime]
+ 11:30:56 up 28 days,  2:10,  1 user,  load average: 0.33, 0.45, 0.32
+[who]
+root     pts/0        Oct 22 08:16 (192.168.1.100)
+[df]
+Filesystem              1024-blocks     Used Available Capacity Mounted on
+/dev/root                 102626232 47872356  49494612      50% /
+devtmpfs                      10240        0     10240       0% /dev
+tmpfs                       1612792     1712   1611080       1% /run
+shm                         4031980       60   4031920       1% /dev/shm
+/dev/mapper/myvg-docker   102626232  3673052  93693916       4% /var/lib/docker
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/nrg/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/amaz/tmp
+none                        4031980        0   4031980       0% /var/lib/lava/dispatcher/trash01/tmp
+overlay                   102626232  3673052  93693916       4% /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged
+[inode]
+Filesystem               Inodes   IUsed   IFree IUse% Mounted on
+/dev/root               6553600 2355147 4198453   36% /
+devtmpfs                1007445    1619 1005826    1% /dev
+tmpfs                    819200    1398  817802    1% /run
+shm                     1007995      10 1007985    1% /dev/shm
+/dev/mapper/myvg-docker 6553600  157938 6395662    3% /var/lib/docker
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/nrg/tmp
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/amaz/tmp
+none                    1007995       1 1007994    1% /var/lib/lava/dispatcher/trash01/tmp
+overlay                 6553600  157938 6395662    3% /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged
+[mount]
+/dev/sda1 on / type ext4 (rw,noatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,noexec,relatime,size=10240k,nr_inodes=1007445,mode=755)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,size=1612792k,nr_inodes=819200,mode=755)
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime)
+/dev/mapper/myvg-docker on /var/lib/docker type ext4 (rw,relatime)
+none on /var/lib/lava/dispatcher/nrg/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/amaz/tmp type tmpfs (rw,relatime)
+none on /var/lib/lava/dispatcher/trash01/tmp type tmpfs (rw,relatime)
+rpc_pipefs on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfsd on /proc/fs/nfsd type nfsd (rw,nosuid,nodev,noexec,relatime)
+overlay on /var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/RDHGHP5VHHXWUJ535X6NEKU4GC:/var/lib/docker/overlay2/l/5IQHHUUKXDWHUIUII2RAJJPJKC:/var/lib/docker/overlay2/l/ZHEE4E6N4EZ7BW2EHM5DDDRJSI:/var/lib/docker/overlay2/l/PBKN233IMBJAQRRN7KWNT2YAFY:/var/lib/docker/overlay2/l/BZCQEVCCKVTM42F7JFYG3VN5U4:/var/lib/docker/overlay2/l/5RZTOMKDSI7B3US434IS5A2MUC:/var/lib/docker/overlay2/l/7MZRFUYAF5GMX3S4C4UDFBUT2L:/var/lib/docker/overlay2/l/YKAX2V7XZSIBHUBWRNMW6BD6SU:/var/lib/docker/overlay2/l/3JM74EFBY6JR4YWBAKE5J55RML:/var/lib/docker/overlay2/l/DMA6MWRSZUA7SH4TDCAMPOU5GW:/var/lib/docker/overlay2/l/3W3M2HWGFYRFIM6LS6PWX2XRJR:/var/lib/docker/overlay2/l/O5AAKB7ELQU4AUMLRJZ7UNAX7T:/var/lib/docker/overlay2/l/LLGM3HQEPMDNI27KN4DMXOH3AM,upperdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/diff,workdir=/var/lib/docker/overlay2/8762d89ed3a85f60ca2f86061400ed9db55311b0a5482f76896ca870ab938b1d/work)
+nsfs on /run/docker/netns/3142edec3d4a type nsfs (rw)
+[free]
+               total        used        free      shared  buff/cache   available
+Mem:         8063960     1079160     1484620      144500     5798972     6984800
+Swap:              0           0           0
+[ifconfig]
+br-628e27766cb2: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.24.0.1  netmask 255.255.0.0  broadcast 172.24.255.255
+        ether 9a:e9:86:6e:b2:94  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-a82a28732686: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.18.0.1  netmask 255.255.0.0  broadcast 172.18.255.255
+        ether 9e:0e:11:c7:1a:62  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f6d073ab6503: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.19.0.1  netmask 255.255.0.0  broadcast 172.19.255.255
+        ether ca:47:f4:7d:4d:87  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+br-f95f70130408: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.20.0.1  netmask 255.255.0.0  broadcast 172.20.255.255
+        ether b2:5c:6b:cf:21:9b  txqueuelen 0  (Ethernet)
+        RX packets 40187  bytes 10123371 (9.6 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 28424  bytes 2080881 (1.9 MiB)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+        ether ba:f2:42:46:f1:22  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+enp3s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.40  netmask 255.255.255.0  broadcast 192.168.1.255
+        ether bc:5f:f4:37:37:36  txqueuelen 1000  (Ethernet)
+        RX packets 140804100  bytes 79502538920 (74.0 GiB)
+        RX errors 0  dropped 8  overruns 0  frame 0
+        TX packets 126712401  bytes 155789506338 (145.0 GiB)
+        TX errors 0  dropped 3 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 93049845  bytes 101668190423 (94.6 GiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 93049845  bytes 101668190423 (94.6 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+qemubr0: flags=4355<UP,BROADCAST,PROMISC,MULTICAST>  mtu 1500
+        inet 192.168.66.1  netmask 255.255.255.0  broadcast 192.168.66.255
+        ether 6a:ce:62:34:4c:84  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 2 overruns 0  carrier 0  collisions 0
+
+veth3b26849: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 1e:19:da:a2:cf:19  txqueuelen 0  (Ethernet)
+        RX packets 40187  bytes 10685989 (10.1 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 28424  bytes 2080881 (1.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan_iot: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.35.1  netmask 255.255.255.0  broadcast 0.0.0.0
+        ether 02:22:5f:c4:ae:f1  txqueuelen 1000  (Ethernet)
+        RX packets 50932  bytes 13734484 (13.0 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 57258  bytes 12513137 (11.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlp1s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        ether 02:22:5f:c4:ae:f0  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 39  bytes 8040 (7.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[ss]
+Netid State      Recv-Q Send-Q Local Address:Port   Peer Address:Port Process                                                        res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409373] ata4.00: status: { DRDY }
+#[1916400.409375] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409376] ata4.00: cmd 61/c0:d8:88:f7:fd/02:00:01:00:00/40 tag 27 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409381] ata4.00: status: { DRDY }
+#[1916400.409382] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409384] ata4.00: cmd 61/18:e0:48:fa:fd/03:00:01:00:00/40 tag 28 ncq dma 405504 out
+#                          res 40/00:00:06:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409388] ata4.00: status: { DRDY }
+#[1916400.409390] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409391] ata4.00: cmd 61/40:e8:60:48:fd/05:00:01:00:00/40 tag 29 ncq dma 688128 out
+#                          res 40/00:00:09:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409396] ata4.00: status: { DRDY }
+#[1916400.409398] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1916400.409399] ata4.00: cmd 61/c0:f8:a0:4d:fd/02:00:01:00:00/40 tag 31 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[1916400.409404] ata4.00: status: { DRDY }
+#[1924527.076563] ata4.00: exception Emask 0x10 SAct 0x607ffffe SErr 0x400100 action 0x6 frozen
+#[1924527.076570] ata4.00: irq_stat 0x08000000, interface fatal error
+#[1924527.076572] ata4: SError: { UnrecovData Handshk }
+#[1924527.076576] ata4.00: failed command: WRITE FPDMA QUEUED
+#[1924527.076578] ata4.00: cmd 61/28:08:28:fd:1e/02:00:08:00:00/40 tag 1 ncq dma 282624 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:TE FPDMA QUEUED
+#[2419647.342183] ata4.00: cmd 61/c0:58:a8:c3:4d/02:00:08:00:00/40 tag 11 ncq dma 360448 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342188] ata4.00: status: { DRDY }
+#[2419647.342190] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342191] ata4.00: cmd 61/b0:60:68:c6:4d/02:00:08:00:00/40 tag 12 ncq dma 352256 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342196] ata4.00: status: { DRDY }
+#[2419647.342197] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342199] ata4.00: cmd 61/e8:68:a0:05:4e/07:00:08:00:00/40 tag 13 ncq dma 1036288 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342203] ata4.00: status: { DRDY }
+#[2419647.342205] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342206] ata4.00: cmd 61/40:70:88:0d:4e/02:00:08:00:00/40 tag 14 ncq dma 294912 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342211] ata4.00: status: { DRDY }
+#[2419647.342213] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342214] ata4.00: cmd 61/a8:78:98:ec:4e/09:00:08:00:00/40 tag 15 ncq dma 1265664 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342219] ata4.00: status: { DRDY }
+#[2419647.342220] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342221] ata4.00: cmd 61/40:80:38:1f:4c/08:00:08:00:00/40 tag 16 ncq dma 1081344 ou
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342226] ata4.00: status: { DRDY }
+#[2419647.342228] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342229] ata4.00: cmd 61/00:88:40:4f:4d/0a:00:08:00:00/40 tag 17 ncq dma 1310720 ou
+#                          res 40/00:ff:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342234] ata4.00: status: { DRDY }
+#[2419647.342235] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342236] ata4.00: cmd 61/50:90:40:59:4d/07:00:08:00:00/40 tag 18 ncq dma 958464 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342241] ata4.00: status: { DRDY }
+#[2419647.342243] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342244] ata4.00: cmd 61/08:98:98:45:2e/00:00:07:00:00/40 tag 19 ncq dma 4096 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342249] ata4.00: status: { DRDY }
+#[2419647.342250] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342251] ata4.00: cmd 61/08:a0:c8:af:4f/05:00:08:00:00/40 tag 20 ncq dma 659456 out
+#                          res 40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342256] ata4.00: status: { DRDY }
+#[2419647.342258] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342259] ata4.00: cmd 61/00:a8:88:e8:4f/0a:00:08:00:00/40 tag 21 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342264] ata4.00: status: { DRDY }
+#[2419647.342265] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342266] ata4.00: cmd 61/c0:b0:88:f2:4f/03:00:08:00:00/40 tag 22 ncq dma 491520 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342271] ata4.00: status: { DRDY }
+#[2419647.342273] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342274] ata4.00: cmd 61/08:b8:58:0d:4d/00:00:06:00:00/40 tag 23 ncq dma 4096 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342279] ata4.00: status: { DRDY }
+#[2419647.342280] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342282] ata4.00: cmd 61/08:c0:a0:45:2e/00:00:07:00:00/40 tag 24 ncq dma 4096 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342286] ata4.00: status: { DRDY }
+#[2419647.342288] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342289] ata4.00: cmd 61/78:c8:b0:15:4c/05:00:08:00:00/40 tag 25 ncq dma 716800 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342294] ata4.00: status: { DRDY }
+#[2419647.342295] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342297] ata4.00: cmd 61/f0:d0:00:98:4d/08:00:08:00:00/40 tag 26 ncq dma 1171456 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342301] ata4.00: status: { DRDY }
+#[2419647.342303] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342304] ata4.00: cmd 61/88:d8:10:85:4e/09:00:08:00:00/40 tag 27 ncq dma 1249280 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342309] ata4.00: status: { DRDY }
+#[2419647.342311] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342312] ata4.00: cmd 61/88:e0:80:7a:d5/00:00:09:00:00/40 tag 28 ncq dma 69632 out
+#                          res 40/00:00:00:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342317] ata4.00: status: { DRDY }
+#[2419647.342318] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342319] ata4.00: cmd 61/08:e8:a8:45:2e/00:00:07:00:00/40 tag 29 ncq dma 4096 out
+#                          res 40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342324] ata4.00: status: { DRDY }
+#[2419647.342326] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342327] ata4.00: cmd 61/b8:f0:98:8e:4e/03:00:08:00:00/40 tag 30 ncq dma 487424 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342332] ata4.00: status: { DRDY }
+#[2419647.342333] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2419647.342334] ata4.00: cmd 61/00:f8:a8:f8:4f/0a:00:08:00:00/40 tag 31 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2419647.342339] ata4.00: status: { DRDY }
+##warn
+##notice
+#[2166263.665035] Loading firmware: rt2860.bin
+[lsmod]
+Module Size by
+ccm 20480 
+8021q 32768 
+veth 32768 
+iptable_raw 12288 
+xt_addrtype 12288 
+udp_diag 12288 
+overlay 155648 
+xfrm_user 49152 
+xfrm_algo 16384 xfrm_user
+bridge 204800 
+stp 12288 bridge
+llc 12288 bridge,stp
+rt2800pci 12288 
+eeprom_93cx6 12288 rt2800pci
+rt2x00pci 12288 rt2800pci
+rt2800mmio 20480 rt2800pci
+rt2x00mmio 12288 rt2800mmio,rt2800pci
+rt2800lib 159744 rt2800mmio,rt2800pci
+crc_ccitt 12288 rt2800lib
+rt2x00lib 53248 rt2x00mmio,rt2x00pci,rt2800mmio,rt2800pci,rt2800lib
+mac80211 634880 rt2x00pci,rt2x00lib,rt2800pci,rt2800lib
+x86_pkg_temp_thermal 12288 
+libarc4 12288 mac80211
+kvm_intel 217088 
+cfg80211 446464 rt2x00lib,mac80211
+hid_generic 12288 
+kvm 610304 kvm_intel
+usbhid 32768 
+rfkill 32768 rt2x00lib,cfg80211
+irqbypass 12288 kvm
+pl2303 16384 
+hid 200704 usbhid,hid_generic
+ch348 12288 
+ftdi_sio 53248 
+sha1_ssse3 32768 
+input_leds 12288 
+rapl 16384 
+lpc_ich 28672 
+mei_me 28672 
+ch341 16384 
+led_class 12288 input_leds,rt2x00lib
+intel_cstate 16384 
+pcspkr 12288 
+intel_uncore 204800 
+mei 98304 mei_me
+mfd_core 12288 lpc_ich
+usbserial 36864 pl2303,ftdi_sio,ch341,ch348
+[lspci]
+00:00.0 Host bridge: Intel Corporation 2nd Generation Core Processor Family DRAM Controller (rev 09)
+	Subsystem: ASRock Incorporation Device 0100
+	Flags: bus master, fast devsel, latency 0
+	Capabilities: [e0] Vendor Specific Information: Intel Capabilities v1
+		CapA: Peg60Dis+ Peg12Dis+ Peg11Dis+ Peg10Dis- PeLWUDis- DmiWidth=x4
+		      EccDis+ ForceEccEn- VTdDis+ DmiG2Dis- PegG2Dis- DDRMaxSize=Unlimited
+		      1NDis- CDDis+ DDPCDis- X2APICEn- PDCDis- IGDis- CDID=0 CRID=9
+		      DDROCCAP- OCEn+ DDRWrtVrefEn+ DDR3LEn+
+		CapB: ImguDis- OCbySSKUCap- OCbySSKUEn- SMTCap- CacheSzCap 0x1
+		      SoftBinCap- DDR3MaxFreqWithRef100=Disabled PegG3Dis-
+		      PkgTyp- AddGfxEn- AddGfxCap- PegX16Dis- DmiG3Dis- GmmDis-
+		      DDR3MaxFreq=2666MHz LPDDR3En-
+	Kernel driver in use: snb_uncore
+
+00:01.0 PCI bridge: Intel Corporation Xeon E3-1200/2nd Generation Core Processor Family PCI Express Root Port (rev 09) (prog-if 00 [Normal decode])
+	Subsystem: ASRock Incorporation Device 0101
+	Flags: bus master, fast devsel, latency 0, IRQ 24
+	Bus: primary=00, secondary=01, subordinate=01, sec-latency=0
+	I/O behind bridge: [disabled] [16-bit]
+	Memory behind bridge: f7c00000-f7cfffff [size=1M] [32-bit]
+	Prefetchable memory behind bridge: [disabled] [64-bit]
+	Capabilities: [88] Subsystem: ASRock Incorporation Device 0101
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [a0] Express Root Port (Slot+), IntMsgNum 0
+	Capabilities: [100] Virtual Channel
+	Capabilities: [140] Root Complex Link
+	Kernel driver in use: pcieport
+
+00:02.0 VGA compatible controller: Intel Corporation 2nd Generation Core Processor Family Integrated Graphics Controller (rev 09) (prog-if 00 [VGA controller])
+	Subsystem: ASRock Incorporation Device 0102
+	Flags: bus master, fast devsel, latency 0, IRQ 27
+	Memory at f7800000 (64-bit, non-prefetchable) [size=4M]
+	Memory at e0000000 (64-bit, prefetchable) [size=256M]
+	I/O ports at f000 [size=64]
+	Expansion ROM at 000c0000 [virtual] [disabled] [size=128K]
+	Capabilities: [90] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [d0] Power Management version 2
+	Capabilities: [a4] PCI Advanced Features
+	Kernel driver in use: i915
+
+00:14.0 USB controller: Intel Corporation 7 Series/C210 Series Chipset Family USB xHCI Host Controller (rev 04) (prog-if 30 [XHCI])
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: bus master, medium devsel, latency 0, IRQ 30
+	Memory at f7d00000 (64-bit, non-prefetchable) [size=64K]
+	Capabilities: [70] Power Management version 2
+	Capabilities: [80] MSI: Enable+ Count=1/8 Maskable- 64bit+
+	Kernel driver in use: xhci_hcd
+
+00:16.0 Communication controller: Intel Corporation 7 Series/C216 Chipset Family MEI Controller #1 (rev 04)
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: bus master, fast devsel, latency 0, IRQ 31
+	Memory at f7d17000 (64-bit, non-prefetchable) [size=16]
+	Capabilities: [50] Power Management version 3
+	Capabilities: [8c] MSI: Enable+ Count=1/1 Maskable- 64bit+
+	Kernel driver in use: mei_me
+	Kernel modules: mei_me
+
+00:1a.0 USB controller: Intel Corporation 7 Series/C216 Chipset Family USB Enhanced Host Controller #2 (rev 04) (prog-if 20 [EHCI])
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: bus master, medium devsel, latency 0, IRQ 16
+	Memory at f7d14000 (32-bit, non-prefetchable) [size=1K]
+	Capabilities: [50] Power Management version 2
+	Capabilities: [58] Debug port: BAR=1 offset=00a0
+	Capabilities: [98] PCI Advanced Features
+	Kernel driver in use: ehci-pci
+
+00:1c.0 PCI bridge: Intel Corporation 7 Series/C216 Chipset Family PCI Express Root Port 1 (rev c4) (prog-if 00 [Normal decode])
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: bus master, fast devsel, latency 0, IRQ 25
+	Bus: primary=00, secondary=02, subordinate=02, sec-latency=0
+	I/O behind bridge: 2000-2fff [size=4K] [16-bit]
+	Memory behind bridge: dfb00000-dfcfffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: dfd00000-dfefffff [size=2M] [32-bit]
+	Capabilities: [40] Express Root Port (Slot+), IntMsgNum 0
+	Capabilities: [80] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [90] Subsystem: ASRock Incorporation Motherboard
+	Capabilities: [a0] Power Management version 2
+	Kernel driver in use: pcieport
+
+00:1c.3 PCI bridge: Intel Corporation 7 Series/C216 Chipset Family PCI Express Root Port 4 (rev c4) (prog-if 00 [Normal decode])
+	Subsystem: ASRock Incorporation Device 1e16
+	Flags: bus master, fast devsel, latency 0, IRQ 26
+	Bus: primary=00, secondary=03, subordinate=03, sec-latency=0
+	I/O behind bridge: e000-efff [size=4K] [16-bit]
+	Memory behind bridge: [disabled] [32-bit]
+	Prefetchable memory behind bridge: f0000000-f00fffff [size=1M] [32-bit]
+	Capabilities: [40] Express Root Port (Slot+), IntMsgNum 0
+	Capabilities: [80] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [90] Subsystem: ASRock Incorporation Device 1e16
+	Capabilities: [a0] Power Management version 2
+	Kernel driver in use: pcieport
+
+00:1d.0 USB controller: Intel Corporation 7 Series/C216 Chipset Family USB Enhanced Host Controller #1 (rev 04) (prog-if 20 [EHCI])
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: bus master, medium devsel, latency 0, IRQ 23
+	Memory at f7d13000 (32-bit, non-prefetchable) [size=1K]
+	Capabilities: [50] Power Management version 2
+	Capabilities: [58] Debug port: BAR=1 offset=00a0
+	Capabilities: [98] PCI Advanced Features
+	Kernel driver in use: ehci-pci
+
+00:1e.0 PCI bridge: Intel Corporation 82801 PCI Bridge (rev a4) (prog-if 01 [Subtractive decode])
+	Subsystem: ASRock Incorporation Device 244e
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=04, subordinate=04, sec-latency=32
+	I/O behind bridge: [disabled] [16-bit]
+	Memory behind bridge: [disabled] [32-bit]
+	Prefetchable memory behind bridge: [disabled] [64-bit]
+	Capabilities: [50] Subsystem: ASRock Incorporation Device 244e
+
+00:1f.0 ISA bridge: Intel Corporation B75 Express Chipset LPC Controller (rev 04)
+	Subsystem: ASRock Incorporation Device 1e49
+	Flags: bus master, medium devsel, latency 0
+	Capabilities: [e0] Vendor Specific Information: Intel Feature Detection
+	Kernel driver in use: lpc_ich
+	Kernel modules: lpc_ich
+
+00:1f.2 SATA controller: Intel Corporati                                                                                                                                                                                                                                                           
+udp   UNCONN     0      0            0.0.0.0:4500        0.0.0.0:*     users:(("charon",pid=7502,fd=13))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:57785       0.0.0.0:*     users:(("rpc.mountd",pid=24393,fd=8))                                                                                                                                                                                                                                                                          
+udp   UNCONN     0      0            0.0.0.0:500         0.0.0.0:*     users:(("charon",pid=7502,fd=12))                                                                                                                                                                                                                                                                              
+udp   UNCONN     0      0            0.0.0.0:49810       0.0.0.0:*     users:(("python3",pid=18901,fd=3))                                                                                                                                                                                                                                                                             
+udp   UNCONN     0      0          127.0.0.1:663         0.0.0.0:*     users:(("rpc.statd",pid=24231,fd=5))                                                                                                                                                                                                                                                                           
+udp   UNCONN     0      0            0.0.0.0:37528       0.0.0.0:*     users:(("python3",pid=32741,fd=3))                                                                                                                                                                                           on 7 Series/C210 Series Chipset Family 6-port SATA Controller [AHCI mode] (rev 04) (prog-if 01 [AHCI 1.0])
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: bus master, 66MHz, medium devsel, latency 0, IRQ 28
+	I/O ports at f0b0 [size=8]
+	I/O ports at f0a0 [size=4]
+	I/O ports at f090 [size=8]
+	I/O ports at f080 [size=4]
+	I/O ports at f060 [size=32]
+	Memory at f7d12000 (32-bit, non-prefetchable) [size=2K]
+	Capabilities: [80] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [70] Power Management version 3
+	Capabilities: [a8] SATA HBA v1.0
+	Capabilities: [b0] PCI Advanced Features
+	Kernel driver in use: ahci
+
+00:1f.3 SMBus: Intel Corporation 7 Series/C216 Chipset Family SMBus Controller (rev 04)
+	Subsystem: ASRock Incorporation Motherboard
+	Flags: medium devsel, IRQ 18
+	Memory at f7d11000 (64-bit, non-prefetchable) [size=256]
+	I/O ports at f040 [size=32]
+	Kernel driver in use: i801_smbus
+
+01:00.0 Network controller: Ralink corp. RT2790 Wireless 802.11n 1T/2R PCIe
+	Subsystem: Lite-On Communications Inc HP WN7600R
+	Flags: bus master, fast devsel, latency 0, IRQ 16
+	Memory at f7c00000 (32-bit, non-prefetchable) [size=64K]
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/32 Maskable- 64bit+
+	Capabilities: [70] Express Endpoint, IntMsgNum 0
+	Capabilities: [100] Advanced Error Reporting
+	Kernel driver in use: rt2800pci
+	Kernel modules: rt2800pci
+
+03:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8211/8411 PCI Express Gigabit Ethernet Controller (rev 06)
+	Subsystem: ASRock Incorporation Motherboard (one of many)
+	Flags: bus master, fast devsel, latency 0, IRQ 19
+	I/O ports at e000 [size=256]
+	Memory at f0004000 (64-bit, prefetchable) [size=4K]
+	Memory at f0000000 (64-bit, prefetchable) [size=16K]
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [70] Express Endpoint, IntMsgNum 1
+	Capabilities: [b0] MSI-X: Enable+ Count=4 Masked-
+	Capabilities: [d0] Vital Product Data
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [140] Virtual Channel
+	Capabilities: [160] Device Serial Number 01-00-00-00-68-4c-e0-00
+	Kernel driver in use: r8169
+
+[cpumicrocode]
+0x2f
+[smart]
+SMARTHEADER:device=/dev/sda
+smartctl 7.5 2025-04-30 r5714 [Àx86_64-linux-6.12.31-gentoo] (local build)
+Copyright (C) 2002-25, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Model Family:     Western Digital Caviar Blue (SATA)
+Device Model:     WDC WD5000AAKS-00YGA0
+Serial Number:    WD-WCAS83677705
+LU WWN Device Id: 5 0014ee 200d55252
+Firmware Version: 12.01C02
+User Capacity:    500,107,862,016 bytes [500 GB]
+Sector Size:      512 bytes logical/physical
+Device is:        In smartctl database 7.5/5894
+ATA Version is:   ATA8-ACS (minor revision not indicated)
+SATA Version is:  SATA 2.5, 3.0 Gb/s
+Local Time is:    Wed Oct 22 11:30:56 2025 CEST
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+
+=== START OF READ SMART DATA SECTION ===
+SMART overall-health self-assessment test result: PASSED
+
+General SMART Values:
+Offline data collection status:  (0x85)	Offline data collection activity
+					was aborted by an interrupting command from host.
+					Auto Offline Data Collection: Enabled.
+Self-test execution status:      (   0)	The previous self-test routine completed
+					without error or no self-test has ever 
+					been run.
+Total time to complete Offline 
+data collection: 		(13200) seconds.
+Offline data collection
+capabilities: 			 (0x7b) SMART execute Offline immediate.
+					Auto Offline data collection on/off support.
+					Suspend Offline collection upon new
+					command.
+					Offline surface scan supported.
+					Self-test supported.
+					Conveyance Self-test supported.
+					Selective Self-test supported.
+SMART capabilities:            (0x0003)	Saves SMART data before entering
+					power-saving mode.
+					Supports SMART auto save timer.
+Error logging capability:        (0x01)	Error logging supported.
+					General Purpose Logging supported.
+Short self-test routine 
+recommended polling time: 	 (   2) minutes.
+Extended self-test routine
+recommended polling time: 	 ( 154) minutes.
+Conveyance self-test routine
+recommended polling time: 	 (   5) minutes.
+SCT capabilities: 	       (0x303f)	SCT Status supported.
+					SCT Error Recovery Control supported.
+					SCT Feature Control supported.
+					SCT Data Table supported.
+
+SMART Attributes Data Structure revision number: 16
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x000f   200   200   051    Pre-fail  Always       -       24
+  3 Spin_Up_Time            0x0003   227   025   021    Pre-fail  Always       -       3616
+  4 Start_Stop_Count        0x0032   098   098   000    Old_age   Always       -       2234
+  5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always       -       0
+  7 Seek_Error_Rate         0x000e   200   200   051    Old_age   Always       -       0
+  9 Power_On_Hours          0x0032   001   001   000    Old_age   Always       -       96968
+ 10 Spin_Retry_Count        0x0012   100   100   051    Old_age   Always       -       0
+ 11 Calibration_Retry_Count 0x0012   100   100   051    Old_age   Always       -       0
+ 12 Power_Cycle_Count       0x0032   098   098   000    Old_age   Always       -       2062
+192 Power-Off_Retract_Count 0x0032   198   198   000    Old_age   Always       -       1987
+193 Load_Cycle_Count        0x0032   200   200   000    Old_age   Always       -       2238
+194 Temperature_Celsius     0x0022   118   096   000    Old_age   Always       -       32
+196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always       -       0
+197 Current_Pending_Sector  0x0012   200   200   000    Old_age   Always       -       0
+198 Offline_Uncorrectable   0x0010   200   200   000    Old_age   Offline      -       0
+199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age   Always       -       194
+200 Multi_Zone_Error_Rate   0x0008   200   200   051    Old_age   Offline      -       0
+
+SMART Error Log Version: 1
+ATA Error Count: 36 (device log contains only the most recent five errors)
+	CR = Command Register [HEX]
+	FR = Features Register [HEX]
+	SC = Sector Count Register [HEX]
+	SN = Sector Number Register [HEX]
+	CL = Cylinder Low Register [HEX]
+	CH = Cylinder High Register [HEX]
+	DH = Device/Head Register [HEX]
+	DC = Device Command Register [HEX]
+	ER = Error register [HEX]
+	ST = Status register [HEX]
+Powered_Up_Time is measured from power on, and printed as
+DDd+hh:mm:SS.sss where DD=days, hh=hours, mm=minutes,
+SS=sec, and sss=millisec. It "wraps" after 49.710 days.
+
+Error 36 occurred at disk power-on lifetime: 50290 hours (2095 days + 10 hours)
+  When the command that caused the error occurred, the device was active or idle.
+
+  After command completion occurred, registers were:
+  ER ST SC SN CL CH DH
+  -- -- -- -- -- -- --
+  40 51 00 2b 44 45 40  Error: UNC at LBA = 0x0045442b = 4539435
+
+  Commands leading to the command that caused the error were:
+  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
+  -- -- -- -- -- -- -- --  ----------------  --------------------
+  60 08 d0 28 44 45 06 08      00:04:30.749  READ FPDMA QUEUED
+  ef 10 02 00 00 00 00 08      00:04:30.748  SET FEATURES [Enable SATA feature]
+  27 00 00 00 00 00 00 08      00:04:30.748  READ NATIVE MAX ADDRESS EXT [OBS-ACS-3]
+  ec 00 00 00 00 00 00 08      00:04:30.748  IDENTIFY DEVICE
+  ef 03 46 00 00 00 00 08      00:04:30.748  SET FEATURES [Set transfer mode]
+
+Error 35 occurred at disk power-on lifetime: 50290 hours (2095 days + 10 hours)
+  When the command that caused the error occurred, the device was active or idle.
+
+  After command completion occurred, registers were:
+  ER ST SC SN CL CH DH
+  -- -- -- -- -- -- --
+  40 51 00 2b 44 45 40  Error: UNC at LBA = 0x0045442b = 4539435
+
+  Commands leading to the command that caused the error were:
+  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
+  -- -- -- -- -- -- -- --  ----------------  --------------------
+  60 08 50 28 44 45 06 08      00:04:27.698  READ FPDMA QUEUED
+  60 08 48 00 44 45 06 08      00:04:27.698  READ FPDMA QUEUED
+  60 08 40 f8 43 45 06 08      00:04:27.684  READ FPDMA QUEUED
+  ef 10 02 00 00 00 00 08      00:04:27.684  SET FEATURES [Enable SATA feature]
+  27 00 00 00 00 00 00 08      00:04:27.684  READ NATIVE MAX ADDRESS EXT [OBS-ACS-3]
+
+Error 34 occurred at disk power-on lifetime: 50290 hours (2095 days + 10 hours)
+  When the command that caused the error occurred, the device was active or idle.
+
+  After command completion occurred, registers were:
+  ER ST SC SN CL CH DH
+  -- -- -- -- -- -- --
+  40 51 00 2b 44 45 40  Error: UNC at LBA = 0x0045442b = 4539435
+
+  Commands leading to the command that caused the error were:
+  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
+  -- -- -- -- -- -- -- --  ----------------  --------------------
+  60 00 b8 f8 43 45 06 08      00:04:24.638  READ FPDMA QUEUED
+  60 c0 b0 38 43 45 06 08      00:04:24.636  READ FPDMA QUEUED
+  60 20 a8 18 43 45 06 08      00:04:24.636  READ FPDMA QUEUED
+  60 08 a0 10 43 45 06 08      00:04:24.636  READ FPDMA QUEUED
+  60 00 98 e8 41 45 06 08      00:04:24.634  READ FPDMA QUEUED
+
+Error 33 occurred at disk power-on lifetime: 50290 hours (2095 days + 10 hours)
+  When the command that caused the error occurred, the device was active or idle.
+
+  After command completion occurred, registers were:
+  ER ST SC SN CL CH DH
+  -- -- -- -- -- -- --
+  40 51 00 2b 44 45 40  Error: UNC at LBA = 0x0045442b = 4539435
+
+  Commands leading to the command that caused the error were:
+  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
+  -- -- -- -- -- -- -- --  ----------------  --------------------
+  60 08 50 18 45 45 06 08      00:01:39.379  READ FPDMA QUEUED
+  60 08 48 10 45 45 06 08      00:01:39.379  READ FPDMA QUEUED
+  60 08 40 08 45 45 06 08      00:01:39.379  READ FPDMA QUEUED
+  60 08 38 00 45 45 06 08      00:01:39.379  READ FPDMA QUEUED
+  60 08 30 f8 44 45 06 08      00:01:39.379  READ FPDMA QUEUED
+
+Error 32 occurred at disk power-on lifetime: 50                                                                                  
+udp   UNCONN     0      0            0.0.0.0:50203       0.0.0.0:*     users:(("python3",pid=29106,fd=3))                                                                                                                  290 hours (2095 days + 10 hours)
+  When the command that caused the error occurred, the device was active or idle.
+
+  After command completion occurred, registers were:
+  ER ST SC SN CL CH DH
+  -- -- -- -- -- -- --
+  40 51 00 2b 44 45 40  Error: UNC at LBA = 0x0045442b = 4539435
+
+  Commands leading to the command that caused the error were:
+  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
+  -- -- -- -- -- -- -- --  ----------------  --------------------
+  60 08 f8 20 45 45 06 08      12:02:30.125  READ FPDMA QUEUED
+  60 08 f0 18 45 45 06 08      12:02:30.116  READ FPDMA QUEUED
+  60 08 e8 10 45 45 06 08      12:02:30.107  READ FPDMA QUEUED
+  60 08 e0 08 45 45 06 08      12:02:30.099  READ FPDMA QUEUED
+  60 08 d8 00 45 45 06 08      12:02:30.091  READ FPDMA QUEUED
+
+SMART Self-test log structure revision number 1
+Num  Test_Description    Status                  Remaining  LifeTime(hours)  LBA_of_first_error
+# 1  Short offline       Completed without error       00%     30758         -
+# 2  Extended offline    Completed without error       00%     28851         -
+# 3  Extended offline    Completed without error       00%     26633         -
+# 4  Extended offline    Completed without error       00%     24784         -
+# 5  Extended offline    Completed without error       00%     23633         -
+# 6  Extended offline    Completed without error       00%     22337         -
+# 7  Extended offline    Interrupted (host reset)      80%     22249         -
+# 8  Extended offline    Interrupted (host reset)      50%     22079         -
+# 9  Extended offline    Completed without error       00%     20107         -
+#10  Extended offline    Completed without error       00%     17808         -
+#11  Extended offline    Completed without error       00%     16490         -
+#12  Extended offline    Interrupted (host reset)      30%     15822         -
+#13  Extended offline    Completed without error       00%     14721         -
+#14  Extended offline    Completed without error       00%     13587         -
+#15  Extended offline    Completed without error       00%     12958         -
+#16  Extended offline    Interrupted (host reset)      40%     11805         -
+#17  Extended offline    Completed without error       00%     10355         -
+#18  Extended offline    Completed without error       00%      9234         -
+#19  Short offline       Completed without error                                                                                                                                                                                
+udp   UNCONN     0      0            0.0.0.0:56824       0.0.0.0:*     u  00%      7264         -
+#20  Extended offline    Completed without error       00%      7201         -
+#21  Extended offline    Interrupted (host reset)      10%      5687         -
+
+SMART Selective self-test log data structure revision number 1
+ SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
+    1        0        0  Not_testing
+    2        0        0  Not_testing
+    3        0        0  Not_testing
+    4        0        0  Not_testing
+    5        0        0  Not_testing
+Selective self-test flags (0x0):
+  After scanning selected spans, do NOT read-scan remainder of disk.
+If Selective self-test is pending on power-up, resume after 0 minute delay.
+
+The above only provides legacy SMART infcq dma 978944 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2005921.444449] ata4.00: status: { DRDY }
+#[2005921.444451] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2005921.444452] ata4.00: cmd 61/c0:10:58:a3:35/02:00:0b:00:00/40 tag 2 ncq dma 360448 out
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2005921.444458] ata4.00: status: { DRDY }
+#[2005921.444459] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2005921.444461] ata4.00: cmd 61/68:18:18:a6:35/03:00:0b:00:00/40 tag 3 ncq dma 446464 out
+#                          res 40/00:00:e0:4fsers:(("rpc.mountd",pid=24393,fd=5))                                                                                                       26091,fd=3))                                                                                                                                                                                                                         :c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[2005921.444466] ata4.00: status: { DRDY }
+#[2005921.444467] ata4.00: failed command: WRITE FPDMA QUEUED
+#[2005921.444468] ata4.00: cmd 61/00:20:c0:aa:35/0a:00:0b:00:00/40 tag 4 ncq dma 1310720 ou
+#                          res 40/00:00:e0:4f:c2/00:00:00:00:00/00 Emask 0x10 (ATA bus error)
+#[200                                   5921.444473] ata4.00: status: { DRDY }
+#[200              5921.444475] ata4.   
+udp  00: failed command: WR UNCONN   
