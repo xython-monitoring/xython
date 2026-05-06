@@ -979,9 +979,9 @@ class xythonsrv:
         hlist.append('</TR><TR><TD COLSPAN={len(results)}><HR WIDTH="100%%"></TD></TR>\n')
 
         if pagename == 'nongreen':
-            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen") ORDER by hostname, column')
+            self.sqc.execute('SELECT hostname,column,ts,color,ackend,ackcause FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM columns WHERE color != "green" and color != "blue" and color != "clear") AND column IN (SELECT DISTINCT column FROM columns where color != "green" AND color != "blue" AND color != "clear") AND hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == "nongreen") ORDER by hostname, column')
         else:
-            self.sqc.execute('SELECT hostname,column,ts,color FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == ? AND groupname == ?) ORDER BY hostname,column', (pagename, str(group)))
+            self.sqc.execute('SELECT hostname,column,ts,color,ackend,ackcause FROM columns WHERE hostname IN (SELECT DISTINCT hostname FROM pages WHERE pagename == ? AND groupname == ?) ORDER BY hostname,column', (pagename, str(group)))
         results = self.sqc.fetchall()
         chost = None
         ci = 0
@@ -1008,11 +1008,7 @@ class xythonsrv:
             if lcolor in ["red", "yellow"]:
                 color = setcolor(lcolor, color)
             dhm = xydhm(lts, now)
-            acki = self.xython_is_ack(hostname, Cname)
-            if acki is None or lcolor == 'green':
-                isack = False
-            else:
-                isack = True
+            isack = result[4] is not None and lcolor != 'green'
             while Cname != cols[ci]:
                 hlist.append('<TD ALIGN=CENTER>-</TD>\n')
                 ci += 1
