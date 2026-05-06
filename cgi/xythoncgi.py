@@ -112,8 +112,16 @@ try:
     else:
         buf = "GETSTATUS %s %s %s\n" % (hostname, svc, timebuf)
     sock.send(buf.encode("UTF8"))
-    buf = sock.recv(640000)
-    print(buf.decode("UTF8"))
+    sock.shutdown(socket.SHUT_WR)
+    chunks = []
+    while True:
+        chunk = sock.recv(65536)
+        if not chunk:
+            break
+        chunks.append(chunk)
+    print(b"".join(chunks).decode("UTF8"))
+    #buf = sock.recv(640000)
+    #print(buf.decode("UTF8"))
     sock.close()
 except FileNotFoundError as e:
     print(f"FAIL to connect to xythond, {str(e)}")
