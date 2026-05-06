@@ -409,8 +409,9 @@ class xythonsrv:
         now = time.time()
         if ts_expire is None:
             ts_expire = now + expire
-        req = f'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES ("{hostname}", "{cname}", {ts}, {ts_expire}, "{color}")'
-        self.sqc.execute(req)
+        self.sqc.execute(
+            'INSERT OR REPLACE INTO columns(hostname, column, ts, expire, color) VALUES (?, ?, ?, ?, ?)',
+            (hostname, cname, ts, ts_expire, color))
 
     def enable_debug(self):
         self.lldebug = True
@@ -550,10 +551,8 @@ class xythonsrv:
         for col in dirFiles:
             self.debug(f"DEBUG: will remove {col}")
             self.drop_column(hostname, col)
-        req = f'DELETE FROM columns WHERE hostname = "{hostname}"'
-        res = self.sqc.execute(req)
-        req = f'SELECT * FROM columns WHERE hostname = "{hostname}"'
-        res = self.sqc.execute(req)
+        self.sqc.execute('DELETE FROM columns WHERE hostname = ?', (hostname,))
+        self.sqc.execute('SELECT * FROM columns WHERE hostname = ?', (hostname,))
         results = self.sqc.fetchall()
         for res in results:
             self.debug(f"DEBUG: DROP REMAIN {res}")
@@ -1160,8 +1159,7 @@ class xythonsrv:
         H = self.find_host(hostname)
         if H is None:
             return
-        req = f'SELECT * FROM columns WHERE hostname == "{hostname}"'
-        self.sqc.execute(req)
+        self.sqc.execute('SELECT * FROM columns WHERE hostname == ?', (hostname,))
         results = self.sqc.fetchall()
         for sqr in results:
             print(f'{sqr[1]} {sqr[4]} TS={sqr[2]}')
