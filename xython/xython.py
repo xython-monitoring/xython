@@ -371,6 +371,9 @@ class xythonsrv:
         self.CLIENT_MSGMAX = 500 * 1000
         self.xversion = version("xython")
         self._file_cache = {}
+        self._re_xyvar1 = re.compile(r"&XY[A-Z]+")
+        self._re_xyvar2 = re.compile(r"\$XY[A-Z]+")
+        self._re_colors = re.compile("|".join(re.escape(f"&{c}") for c in COLORS))
 
     def stat(self, name, value):
         if name not in self.stats:
@@ -853,12 +856,10 @@ class xythonsrv:
         fixed_re = re.compile("|".join(re.escape(k) for k in fixed))
         html = fixed_re.sub(lambda m: fixed[m.group(0)], html)
         # replace remaining &XY* / $XY* variables in two passes
-        matcher1 = re.compile(r"&XY[A-Z]+")
-        matcher2 = re.compile(r"\$XY[A-Z]+")
         for _ in range(2):
-            for xvar in set(matcher1.findall(html)):
+            for xvar in set(self._re_xyvar1.findall(html)):
                 html = re.sub(re.escape(xvar), self.xymon_getvar(xvar[1:]), html)
-            for xvar in set(matcher2.findall(html)):
+            for xvar in set(self._re_xyvar2.findall(html)):
                 html = re.sub(r"\$" + re.escape(xvar[1:]), self.xymon_getvar(xvar[1:]), html)
         self.stat('HTML_FINALIZE', time.time() - ts_start)
         return html
@@ -1091,8 +1092,8 @@ class xythonsrv:
             hlist.append('<TR><TD ALIGN=LEFT><H3>%s</H3>' % rdata["first"])
             hlist.append('<PRE>')
             data = ''.join(rdata["data"])
-            for gifc in COLORS:
-                data = re.sub("&%s" % gifc, '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % gifc, data)
+            data = self._re_colors.sub(
+                lambda m: '<IMG SRC="$XYMONSERVERWWWURL/gifs/%s.gif">' % m.group(0)[1:], data)
             hlist.append(data)
             hlist.append('</PRE>\n</TD></TR></TABLE>')
             hlist.append('<br><br>\n')
