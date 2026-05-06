@@ -15,6 +15,13 @@ import sys
 print("Content-type: text/html\n")
 
 POST = {}
+stdin = sys.stdin.read()
+args = stdin.split('&')
+for arg in args:
+    t = arg.split('=')
+    if len(t)>1:
+        k, v = arg.split('=')
+        POST[k] = v
 if "QUERY_STRING" in os.environ:
     QUERY_STRING = os.environ["QUERY_STRING"]
     args = QUERY_STRING.split('&')
