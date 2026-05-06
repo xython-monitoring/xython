@@ -50,13 +50,13 @@ The goal is to have the minimum in non-core modules and only modules availlable 
 
 ##### using the APT repository
 
-xython has repository for Debian bullseye and bookworm, Ubuntu jammy(22.04) and noble(24.04)
+xython has repository for Debian bookworm and trixie, Ubuntu jammy(22.04) and noble(24.04)
 
 First you need to add xython repository
 Add in /etc/apt/sources.list.d/xython.list
 > deb `https://www.xython.fr/mirror/bookworm` /
 
-For bullseye/jammy/noble/trixie simply replace bookworm by their name in the URL.
+For jammy/noble/trixie simply replace bookworm by their name in the URL.
 
 And add the GPG key from <https://www.xython.fr/pgp-key.public> with:
 > apt-get install gnupg
@@ -114,15 +114,15 @@ TODO test openWRT
 
 ##### RPM distro
 
-For RPM packaging, I target rockylinux 8 and 9. (Please ask for more if needed)
+For RPM packaging, I target rockylinux 9 and 10. (Please ask for more if needed)
 
-For xython server, python3-celery is missing in rockylinux9 and also in EPEL:9, so the situation was blocked.
+For xython server, python3-celery is missing in rockylinux9/10 and also in EPEL:9/10, so the situation was blocked.
 We need to wait on <https://bugzilla.redhat.com/show_bug.cgi?id=2032543>
 But I have packaged missing ones in the xython repository.
 
 > Add <https://www.xython.fr/mirror/xython.repo> in /etc/yum.repos.d/
 
-You need to edit it and replace __OSNAME__ by either rockylinux8 or rockylinux9
+You need to edit it and replace __OSNAME__ by either rockylinux9 or rockylinux10
 
 One package needed is present in EPEL repository
 > yum install epel-release
