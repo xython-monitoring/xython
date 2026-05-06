@@ -828,46 +828,38 @@ class xythonsrv:
     def html_finalize(self, color, hlist, pagename):
         ts_start = time.time()
         html = '\n'.join(hlist)
-        body_header = ''.join(self._read_cached(self.etcdir + "/xymonmenu.cfg"))
-        html = re.sub("&XYMONBODYHEADER", body_header, html)
-        html = re.sub("&XYMONBODYFOOTER", "", html)
-        html = re.sub("&XYMONDREL", f'{self.xversion}', html)
-        html = re.sub("&XYMWEBREFRESH", "60", html)
-        html = re.sub("&XYMWEBBACKGROUND", color, html)
-        html = re.sub("&XYMWEBDATE", xytime(time.time()), html)
-        html = re.sub("&HTMLCONTENTTYPE", self.xymon_getvar("HTMLCONTENTTYPE"), html)
         now = time.time()
-        html = re.sub("&EVENTLASTYEARBEGIN", event_lastyear(now), html)
-        html = re.sub("&EVENTLASTMONTHBEGIN", event_lastmonth(now), html)
-        html = re.sub("&EVENTLASTWEEKBEGIN", event_lastweek(now), html)
-        html = re.sub("&EVENTCURRYEARBEGIN", event_thisyear(now), html)
-        html = re.sub("&EVENTCURRMONTHBEGIN", event_thismonth(now), html)
-        html = re.sub("&EVENTCURRWEEKBEGIN", event_thisweek(now), html)
-        html = re.sub("&EVENTYESTERDAY", event_yesterday(now), html)
-        html = re.sub("&EVENTTODAY", event_today(now), html)
-        html = re.sub("&EVENTNOW", xyevent(time.time()), html)
+        body_header = ''.join(self._read_cached(self.etcdir + "/xymonmenu.cfg"))
+        fixed = {
+            "&XYMONBODYHEADER": body_header,
+            "&XYMONBODYFOOTER": "",
+            "&XYMONDREL": str(self.xversion),
+            "&XYMWEBREFRESH": "60",
+            "&XYMWEBBACKGROUND": color,
+            "&XYMWEBDATE": xytime(now),
+            "&HTMLCONTENTTYPE": self.xymon_getvar("HTMLCONTENTTYPE"),
+            "&EVENTLASTYEARBEGIN": event_lastyear(now),
+            "&EVENTLASTMONTHBEGIN": event_lastmonth(now),
+            "&EVENTLASTWEEKBEGIN": event_lastweek(now),
+            "&EVENTCURRYEARBEGIN": event_thisyear(now),
+            "&EVENTCURRMONTHBEGIN": event_thismonth(now),
+            "&EVENTCURRWEEKBEGIN": event_thisweek(now),
+            "&EVENTYESTERDAY": event_yesterday(now),
+            "&EVENTTODAY": event_today(now),
+            "&EVENTNOW": xyevent(now),
+        }
         if pagename == 'topchanges':
-            html = re.sub("&SCRIPT_NAME", "topchanges.py", html)
-        # find remaining variables
-        ireplace = 0
-        matcher1 = re.compile(r"\&XY[A-Z][A-Z]*")
-        matcher2 = re.compile(r"\$XY[A-Z][A-Z]*")
-        while ireplace < 2:
-            toreplace = re.findall(matcher1, html)
-            toreplaceu = {}
-            for x in toreplace:
-                toreplaceu[x] = ""
-            for xvar in toreplaceu:
-                xvarbase = xvar.replace("&", "")
-                html = re.sub(xvar, self.xymon_getvar(xvarbase), html)
-            toreplace = re.findall(matcher2, html)
-            toreplaceu = {}
-            for x in toreplace:
-                toreplaceu[x] = ""
-            for xvar in toreplaceu:
-                xvarbase = xvar.replace("$", "")
-                html = re.sub(r"\$%s" % xvarbase, self.xymon_getvar(xvarbase), html)
-            ireplace += 1
+            fixed["&SCRIPT_NAME"] = "topchanges.py"
+        fixed_re = re.compile("|".join(re.escape(k) for k in fixed))
+        html = fixed_re.sub(lambda m: fixed[m.group(0)], html)
+        # replace remaining &XY* / $XY* variables in two passes
+        matcher1 = re.compile(r"&XY[A-Z]+")
+        matcher2 = re.compile(r"\$XY[A-Z]+")
+        for _ in range(2):
+            for xvar in set(matcher1.findall(html)):
+                html = re.sub(re.escape(xvar), self.xymon_getvar(xvar[1:]), html)
+            for xvar in set(matcher2.findall(html)):
+                html = re.sub(r"\$" + re.escape(xvar[1:]), self.xymon_getvar(xvar[1:]), html)
         self.stat('HTML_FINALIZE', time.time() - ts_start)
         return html
 
