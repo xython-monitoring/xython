@@ -531,8 +531,14 @@ class xythonsrv:
             return False
         column = None
         hostname = sbuf[1]
+        if not is_valid_hostname(hostname):
+            self.error(f"ERROR: drop invalid hostname {hostname}")
+            return False
         if len(sbuf) == 3:
             column = sbuf[2].rstrip()
+            if not is_valid_column(column):
+                self.error(f"ERROR: drop invalid column {column}")
+                return False
         H = self.find_host(hostname)
         if H is None:
             self.log(self.daemon_name, f"WARNING: drop unknow hostname {hostname}")
@@ -4268,6 +4274,12 @@ class xythonsrv:
         column = hc[-1]
         del (hc[-1])
         hostname = ".".join(hc)
+        if not is_valid_hostname(hostname):
+            self.error(f"ERROR: parse_status: invalid hostname {hostname}")
+            return False
+        if not is_valid_column(column):
+            self.error(f"ERROR: parse_status: invalid column {column}")
+            return False
         if color not in COLORS:
             self.error(f"ERROR: invalid color {color}")
             return False
@@ -5214,6 +5226,10 @@ class xythonsrv:
                 return ret
             hostname = sbuf[1]
             service = sbuf[2].rstrip()
+            if not is_valid_hostname(hostname):
+                ret["send"] = f"ERROR: hostname has invalid name {hostname}\n"
+                ret["done"] = 1
+                return ret
             if not is_valid_column(service):
                 ret["send"] = f"ERROR: service has invalid name {service}\n"
                 ret["done"] = 1
@@ -5258,6 +5274,14 @@ class xythonsrv:
             self.debug(sbuf)
             if len(sbuf) < 4:
                 ret["send"] = 'Status: 400 Bad Request\n\nERROR: not enough arguments'
+                ret["done"] = 1
+                return ret
+            if not is_valid_hostname(sbuf[1]):
+                ret["send"] = f'Status: 400 Bad Request\n\nERROR: invalid hostname {sbuf[1]}'
+                ret["done"] = 1
+                return ret
+            if not is_valid_column(sbuf[2]):
+                ret["send"] = f'Status: 400 Bad Request\n\nERROR: invalid service {sbuf[2]}'
                 ret["done"] = 1
                 return ret
             r = self.gen_cgi_rrd(sbuf[1], sbuf[2], sbuf[3])
