@@ -230,7 +230,7 @@ def is_valid_hostname(hostname):
 def is_valid_column(column):
     if column is None:
         return False
-    return re.match("^[a-zA-Z0-9_-]*$", column)
+    return re.match("^[a-zA-Z0-9_-]+$", column)
 
 
 def is_valid_color(color):

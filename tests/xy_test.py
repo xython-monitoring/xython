@@ -206,6 +206,7 @@ def test_validator():
     assert not is_valid_column("test*")
     assert not is_valid_column("teséàçö")
     assert not is_valid_column(None)
+    assert not is_valid_column("")
     assert not is_valid_color("teséàçö")
     assert is_valid_color("green")
     assert not is_valid_color(None)
@@ -1171,6 +1172,39 @@ def test_full():
     r = X.handle_net_message('GETSTATUS test1 coltest', '127.0.0.1')
     print(r)
     assert 'HTML' in r["send"]
+
+    # Hostname/column validation in protocol handlers (security fixes for
+    # path-traversal via GETSTATUS/GETRRD and unauthenticated DROP).
+    r = X.handle_net_message('GETSTATUS ../../../etc/passwd coltest', '127.0.0.1')
+    assert 'invalid' in r["send"].lower()
+    r = X.handle_net_message('GETSTATUS test1/foo coltest', '127.0.0.1')
+    assert 'invalid' in r["send"].lower()
+    r = X.handle_net_message('GETSTATUS test1 bad/col', '127.0.0.1')
+    assert 'invalid' in r["send"].lower()
+    r = X.handle_net_message('GETSTATUS test1 ', '127.0.0.1')
+    assert 'invalid' in r["send"].lower()
+
+    r = X.handle_net_message('GETRRD ../../etc trends view', '127.0.0.1')
+    assert 'invalid' in r["send"].lower() or 'Bad Request' in r["send"]
+    r = X.handle_net_message('GETRRD test1 bad/svc view', '127.0.0.1')
+    assert 'invalid' in r["send"].lower() or 'Bad Request' in r["send"]
+    r = X.handle_net_message('GETRRD test1', '127.0.0.1')
+    assert 'not enough' in r["send"]
+
+    # handle_drop must reject malformed hostnames before touching the FS.
+    assert X.handle_drop('DROP ../etc') is False
+    assert X.handle_drop('DROP test1 bad/col') is False
+
+    # parse_status must reject status messages with invalid column / hostname
+    # so they cannot create directories outside the expected tree.
+    X.sqc.execute('SELECT count(*) FROM columns WHERE column LIKE "bad%"')
+    assert X.sqc.fetchone()[0] == 0
+    X.handle_net_message("status test1.bad/col red\nbody\n", "127.0.0.1")
+    X.handle_net_message("status ../etc.coltest red\nbody\n", "127.0.0.1")
+    X.sqc.execute('SELECT count(*) FROM columns WHERE column LIKE "bad%" OR hostname LIKE "../%"')
+    assert X.sqc.fetchone()[0] == 0
+    # ensure no nested directory was created
+    assert not os.path.exists(f"{X.xt_histlogs}/test1/bad")
 
     # TODO
     lstat = os.stat(X.xt_logdir + '/logging.log')
