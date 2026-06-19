@@ -11,6 +11,7 @@ import os
 import re
 import socket
 import sys
+import urllib.parse
 
 XYTHON_SOCK = '/run/xython/xython.sock'
 
@@ -29,21 +30,9 @@ if os.environ['REQUEST_METHOD'] != 'GET':
     sys.exit(0)
 
 POST = {}
-#stdin = sys.stdin.read()
-# args = stdin.split('&')
-# for arg in args:
-#    t = arg.split('=')
-#    if len(t)>1:
-#        k, v = arg.split('=')
-#        POST[k] = v
 if "QUERY_STRING" in os.environ:
-    QUERY_STRING = os.environ["QUERY_STRING"]
-    args = QUERY_STRING.split('&')
-    for arg in args:
-        t = arg.split('=')
-        if len(t)>1:
-            k, v = arg.split('=')
-            POST[k] = v
+    parsed = urllib.parse.parse_qs(os.environ["QUERY_STRING"], keep_blank_values=True)
+    POST = {k: v[-1] for k, v in parsed.items()}
 else:
     print("ERROR: not runned as CGI")
     sys.exit(1)
@@ -56,9 +45,6 @@ FROMTIME = POST["FROMTIME"]
 if FROMTIME == "":
     starttime = 0
 else:
-    FROMTIME = FROMTIME.replace('%2F', '/')
-    FROMTIME = FROMTIME.replace('%40', '@')
-    FROMTIME = FROMTIME.replace('%3A', ':')
     try:
         date = datetime.strptime(FROMTIME, "%Y/%m/%d@%H:%M:%S")
     except ValueError:
@@ -74,9 +60,6 @@ TOTIME = POST["TOTIME"]
 if TOTIME == "":
     endtime = 4000000000
 else:
-    TOTIME = TOTIME.replace('%2F', '/')
-    TOTIME = TOTIME.replace('%40', '@')
-    TOTIME = TOTIME.replace('%3A', ':')
     try:
         date = datetime.strptime(TOTIME, "%Y/%m/%d@%H:%M:%S")
     except ValueError:

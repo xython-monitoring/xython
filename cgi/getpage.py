@@ -10,20 +10,15 @@
 import asyncio
 import os
 import sys
+import urllib.parse
 
 
 print("Content-type: text/html\n")
 
-# arguments = cgi.FieldStorage()
 POST = {}
 if "QUERY_STRING" in os.environ:
-    QUERY_STRING = os.environ["QUERY_STRING"]
-    args = QUERY_STRING.split('&')
-    for arg in args:
-        t = arg.split('=')
-        if len(t) > 1:
-            k, v = arg.split('=')
-            POST[k] = v
+    parsed = urllib.parse.parse_qs(os.environ["QUERY_STRING"], keep_blank_values=True)
+    POST = {k: v[-1] for k, v in parsed.items()}
 else:
     print("ERROR: not runned as CGI")
     sys.exit(1)
