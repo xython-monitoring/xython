@@ -1966,6 +1966,11 @@ class xythonsrv:
     def get_histlogs(self, hostname, column, ts):
         if hostname is None or column is None or ts is None:
             return None
+        # defense in depth: hostname/column are used to build a filesystem
+        # path, reject anything that could traverse out of the histlogs tree
+        if not is_valid_hostname(hostname) or not is_valid_column(column):
+            self.error(f"ERROR: get_histlogs: invalid hostname/column {hostname}:{column}")
+            return None
         try:
             if self.xythonmode == 0 or (self.xythonmode == 1 and int(self.uptime_start) > int(ts)):
                 fhist = f"{self.histlogs}/{hostname}/{column}/{xytime_(int(ts))}"

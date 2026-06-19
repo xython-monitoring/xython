@@ -485,3 +485,12 @@ def test_xythoncgi():
     assert ret["recv"] == b'GETSTATUS toto test\n'
     assert ret["out"] == b'Content-type: text/html\n\nSENDSTRING\n'
 
+    # path traversal: a hostname trying to escape the histlogs tree must be
+    # rejected by the CGI before any data is sent to the daemon
+    envi["QUERY_STRING"] = 'HOST=../../etc&SERVICE=test'
+    ret = run_cgi(cgibin, UNIXSOCK, envi, False)
+    print(f"RET={ret}")
+    assert "out" in ret
+    assert "recv" not in ret
+    assert ret["out"] == b'Content-type: text/html\n\nERROR: invalid hostname\n'
+
