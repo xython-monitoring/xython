@@ -5455,6 +5455,8 @@ class xythonsrv:
             (hostname text, column text, ts date, expire date, color text, ackend date, ackcause text, UNIQUE(hostname, column))''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS history
             (hostname text, column text, ts date, duration int, color text, ocolor text)''')
+        self.sqc.execute('CREATE INDEX IF NOT EXISTS idx_history_host_col_ts ON history(hostname, column, ts DESC)')
+        self.sqc.execute('CREATE INDEX IF NOT EXISTS idx_history_ts ON history(ts DESC)')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
             (hostname text, column text, next date, UNIQUE(hostname, column))''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS pages
