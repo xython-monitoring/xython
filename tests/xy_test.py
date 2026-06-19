@@ -2541,6 +2541,12 @@ def test_smart():
     assert "FAIL" in ret
     assert "Reallocated_Sector_Ct" in ret["FAIL"]
 
+    with open("tests/smart/trash01") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    print(ret)
+    assert ret["color"] == 'green'
+
     setup_clean(X)
 
 def test_time():
