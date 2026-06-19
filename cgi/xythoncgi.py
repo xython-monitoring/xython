@@ -8,12 +8,24 @@
 
 
 import os
+import re
 import socket
 import sys
 import urllib.parse
 
 
 print("Content-type: text/html\n")
+
+
+def is_valid_hostname(hostname):
+    # mirror of xython.common.is_valid_hostname: reject path separators,
+    # whitespace and leading/trailing dots so hostname cannot traverse
+    # the histlogs filesystem tree on the daemon side
+    if not hostname:
+        return False
+    if hostname[0] == '.' or hostname[-1] == '.':
+        return False
+    return re.match(r"^[a-zA-Z0-9_.-]+\Z", hostname) is not None
 
 POST = {}
 if "QUERY_STRING" in os.environ:
@@ -31,6 +43,9 @@ if "hostname" in POST:
     hostname = POST["hostname"]
 if hostname is None:
     print('ERROR: no hostname')
+    sys.exit(0)
+if not is_valid_hostname(hostname):
+    print('ERROR: invalid hostname')
     sys.exit(0)
 
 svc = None
