@@ -115,6 +115,7 @@ def test_xytime():
 
     assert xyts_('Wed_Mar_15_10:16:16_2023', 'CET') == 1678871776
     assert xyts_('Wed_Mar_15_10:16:16_2023', 'Europe/Paris') == 1678871776
+    assert not xyts_('Sun_May_17_17:05:28_2026n', 'Europe/Paris')
 
     assert xytime(1328630692) == 'Tue Feb 7 17:04:52 2012'
     assert xytime_(1328630692) == 'Tue_Feb_7_17:04:52_2012'

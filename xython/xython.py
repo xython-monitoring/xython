@@ -5235,7 +5235,12 @@ class xythonsrv:
                 ret["done"] = 1
                 return ret
             if len(sbuf) > 3:
-                ts = xyts_(sbuf[3], self.tz)
+                sts = sbuf[3].rstrip()
+                ts = xyts_(sts, self.tz)
+                if ts is None:
+                    ret["send"] = f"ERROR: invalid TS {sts}\n"
+                    ret["done"] = 1
+                    return ret
             else:
                 res = self.sqc.execute('SELECT ts FROM columns WHERE hostname == ? AND column == ?', (hostname, service))
                 results = self.sqc.fetchall()
