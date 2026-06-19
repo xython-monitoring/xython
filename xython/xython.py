@@ -21,6 +21,7 @@ from random import randint
 import resource
 import shutil
 import socket
+import kombu
 from importlib.metadata import version
 try:
     import pika
@@ -2408,7 +2409,11 @@ class xythonsrv:
         self.celtasks.append(ctask)
 
     def do_tests(self):
-        self.celery_workers = celery.current_app.control.inspect().ping()
+        try:
+            self.celery_workers = celery.current_app.control.inspect().ping()
+        except kombu.exceptions.OperationalError:
+            self.error("ERROR: no celery workers")
+            return
         if self.celery_workers is None:
             self.error("ERROR: no celery workers")
             return
@@ -2465,7 +2470,11 @@ class xythonsrv:
 
     def do_tests_rip(self):
         ts_start = time.time()
-        self.celery_workers = celery.current_app.control.inspect().ping()
+        try:
+            self.celery_workers = celery.current_app.control.inspect().ping()
+        except kombu.exceptions.OperationalError:
+            self.error("ERROR: no celery workers")
+            return
         if self.celery_workers is None:
             self.error("ERROR: no celery workers")
             return
