@@ -5607,7 +5607,18 @@ class xythonsrv:
                     self.error(f"CLIENT MESSAGE IS BIGGER THAN {self.CLIENT_MSGMAX}")
                 message += data.decode("UTF8", 'surrogateescape')
                 if len(data) == 0:
-                    self.handle_net_message(message, peername)
+                    ret = self.handle_net_message(message, peername)
+                    ret = {}
+                    if "send" in ret:
+                        writer.write(ret["send"].encode("UTF8"))
+                    if "bsend" in ret:
+                        writer.write(ret["bsend"])
+                    try:
+                        await writer.drain()
+                    except BrokenPipeError as e:
+                        self.error(f"ERROR: handle_inet_client: {str(e)}")
+                    except ConnectionResetError as e:
+                        self.error(f"ERROR: handle_inet_client: {str(e)}")
                     writer.close()
                     return
                 await writer.drain()
