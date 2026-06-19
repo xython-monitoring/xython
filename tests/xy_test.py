@@ -1192,6 +1192,12 @@ def test_full():
     r = X.handle_net_message('GETRRD test1', '127.0.0.1')
     assert 'not enough' in r["send"]
 
+    # ping via telnet/netcat arrives with a trailing CR/LF and may be lowercase
+    # (per the xymon protocol). All these forms must reply with PONG.
+    for variant in ('PING', 'ping', 'PING\n', 'ping\n', 'ping\r\n', 'PING\r\n'):
+        r = X.handle_net_message(variant, '127.0.0.1')
+        assert r.get("send") == "PONG\n", f"ping variant {variant!r} ignored"
+
     # handle_drop must reject malformed hostnames before touching the FS.
     assert X.handle_drop('DROP ../etc') is False
     assert X.handle_drop('DROP test1 bad/col') is False

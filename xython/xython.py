@@ -5207,15 +5207,15 @@ class xythonsrv:
         # if buf is None:
         #    buf = C["buf"]
         sbuf = buf.split(" ")
-        cmd = sbuf[0]
+        cmd = sbuf[0].rstrip()
         ret["cmd"] = cmd
         # print(f"DEBUG: cmd={cmd}")
-        if cmd[0:4] == 'PING':
-            self.debug("PING PONG")
+        if cmd[0:4] == 'PING' or cmd == 'ping':
+            # self.debug("PING PONG")
             ret["send"] = "PONG\n"
             ret["done"] = 1
-        if cmd[0:4] == 'DROP' or cmd[0:4] == 'drop':
-            self.debug("DEBUG: DROP action")
+        elif cmd[0:4] == 'DROP' or cmd[0:4] == 'drop':
+            # self.debug("DEBUG: DROP action")
             self.handle_drop(buf)
             ret["done"] = 1
         elif cmd == 'GETPAGE':
