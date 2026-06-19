@@ -10,7 +10,7 @@ FROM debian:bookworm
 
 COPY --from=xython_deb_build /root/xython*deb /root/
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python3-tz python3-celery python3-requests adduser redis-server sudo python3-redis procps apache2 rabbitmq-server netcat-openbsd iputils-ping python3-rrdtool python3-pysnmp4 wget python3-pytest python3-paramiko python-is-python3 curl python3-coverage
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python3-tz python3-celery python3-requests adduser redis-server sudo python3-redis procps apache2 rabbitmq-server netcat-openbsd iputils-ping python3-rrdtool python3-pysnmp4 wget python3-pytest python3-paramiko python-is-python3 curl python3-coverage python3-pytest-asyncio
 
 RUN dpkg -i /root/xython_0*_amd64.deb
 RUN dpkg -i /root/xython-client_0*_amd64.deb
