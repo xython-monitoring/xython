@@ -4086,7 +4086,11 @@ class xythonsrv:
             # self.debug(f"DEBUG: SENSOR: check {line}XX")
             if len(line) > 0 and ':' not in line:
                 # self.debug(f"DEBUG: SENSOR: {hostname} adapter={line}")
-                adapter = line
+                # validate adapter name
+                if re.match("^[a-zA-Z0-9_.-]+$", line):
+                    adapter = line
+                else:
+                    self.error("ERROR: parse_sensors: invalid adapter name")
                 sbuf += '<br>\n' + line + '\n'
                 continue
             if adapter is not None:
