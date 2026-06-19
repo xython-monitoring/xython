@@ -42,7 +42,11 @@ def xyts(sts, tz='Europe/Paris'):
 
 def xyts_(sts, tz='Europe/Paris'):
     sts = re.sub(r'_([0-9])_', r'_0\1_', sts)
-    date = datetime.strptime(sts, "%a_%b_%d_%H:%M:%S_%Y")
+    try:
+        date = datetime.strptime(sts, "%a_%b_%d_%H:%M:%S_%Y")
+    except ValueError:
+        print(f"FATAL: impossible to convert {sts}")
+        return None
     date = timezone(tz).localize(date)
     return date.timestamp()
 
