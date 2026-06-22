@@ -86,9 +86,17 @@ except:
     print("showgraph: FAIL to connect to xythond")
     sys.exit(0)
 buf = f"GETRRD {hostname} {svc} {action}"
-sock.send(buf.encode("UTF8"))
-buf = sock.recv(640000)
-sys.stdout.buffer.write(buf)
+sock.sendall(buf.encode("UTF8"))
+# half-close so xythond sees EOF immediately instead of waiting for its
+# read timeout, and loop on recv since a PNG can exceed a single recv
+sock.shutdown(socket.SHUT_WR)
+chunks = []
+while True:
+    chunk = sock.recv(65536)
+    if not chunk:
+        break
+    chunks.append(chunk)
+sys.stdout.buffer.write(b"".join(chunks))
 sock.close()
 
 sys.exit(0)
