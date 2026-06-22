@@ -1439,23 +1439,23 @@ def test_rrd():
     assert 'Content-type: image/png' == buf.decode('UTF8')
     # now test the CGI
 
-    ret = subprocess.run('./xython/showgraph.py', capture_output=True, env=None)
+    ret = subprocess.run('./cgi/showgraph.py', capture_output=True, env=None)
     print(ret)
     assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno hostname\n\n'
 
     envi = {}
     envi['QUERY_STRING'] = 'hostname=invalid'
-    ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
+    ret = subprocess.run(['./cgi/showgraph.py'], capture_output=True, env=envi)
     print(ret)
     assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno service\n\n'
 
     envi['QUERY_STRING'] = f'hostname=invalid&service=invalid&sockpath={X.unixsock}'
-    ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
+    ret = subprocess.run(['./cgi/showgraph.py'], capture_output=True, env=envi)
     print(ret)
     # assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
 
     envi['QUERY_STRING'] = 'hostname=invalid&service=&sockpath={X.unixsock}'
-    ret = subprocess.run(['./xython/showgraph.py'], capture_output=True, env=envi)
+    ret = subprocess.run(['./cgi/showgraph.py'], capture_output=True, env=envi)
     print(ret)
     # assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
 
