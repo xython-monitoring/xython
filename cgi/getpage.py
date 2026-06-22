@@ -9,11 +9,21 @@
 
 import asyncio
 import os
+import re
 import sys
 import urllib.parse
 
 
 print("Content-type: text/html\n")
+
+
+def is_valid_page(page):
+    # page/subpage names are config tokens (e.g. "servers/linux"); allow the
+    # slash for subpages but reject whitespace/newlines that would break the
+    # GETPAGE command frame sent to the daemon
+    if not page:
+        return False
+    return re.match(r"^[a-zA-Z0-9_./:@-]+\Z", page) is not None
 
 POST = {}
 if "QUERY_STRING" in os.environ:
@@ -32,6 +42,9 @@ if "page" in POST:
 if page is None:
     print('ERROR: no page argument')
     sys.exit(0)
+if not is_valid_page(page):
+    print('ERROR: invalid page argument')
+    sys.exit(0)
 
 XYTHON_SOCK = '/run/xython/xython.sock'
 
@@ -42,10 +55,17 @@ buf = f"GETPAGE {page}"
 
 
 async def unix_xython(buf):
-    reader, writer = await asyncio.open_unix_connection(path=XYTHON_SOCK)
+    try:
+        reader, writer = await asyncio.open_unix_connection(path=XYTHON_SOCK)
+    except (FileNotFoundError, ConnectionRefusedError, ConnectionResetError) as e:
+        print(f"getpage: FAIL to connect to xythond {str(e)}")
+        return
     try:
         writer.write(buf.encode())
         await writer.drain()
+        # half-close so xythond sees EOF immediately instead of waiting for
+        # its read timeout before answering
+        writer.write_eof()
         # print(f"SEND {buf}")
         while True:
             r = await reader.read(640000)
