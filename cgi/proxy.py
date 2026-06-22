@@ -16,6 +16,9 @@ import sys
 XYTHON_SOCK = '/run/xython/xython.sock'
 ipaddr = None
 
+# upper bound on the request body we are willing to read into memory
+MAX_BODY = 10 * 1024 * 1024
+
 if "XYTHON_SOCK" in os.environ:
     XYTHON_SOCK = os.environ["XYTHON_SOCK"]
 
@@ -38,12 +41,30 @@ if 'multipart/form-data' not in contype:
 if 'boundary' not in contype:
     print("ERROR: no boundary in CONTENT_TYPE")
     sys.exit(0)
-ret = re.search(r"(boundary=)([a-zA-Z0-9-]*)", contype)
+ret = re.search(r"(boundary=)([a-zA-Z0-9-]+)", contype)
+if ret is None:
+    print("ERROR: no boundary in CONTENT_TYPE")
+    sys.exit(0)
 boundary = ret.group(2).rstrip()
 #print(contype)
 #print(ret.groups())
 #print(f"BOUNDARY={boundary}")
-data = sys.stdin.read()
+clen = os.environ.get('CONTENT_LENGTH')
+if clen is not None and clen != "":
+    try:
+        blen = int(clen)
+    except ValueError:
+        print("ERROR: invalid CONTENT_LENGTH")
+        sys.exit(0)
+    if blen < 0 or blen > MAX_BODY:
+        print("ERROR: body too large")
+        sys.exit(0)
+    data = sys.stdin.read(blen)
+else:
+    data = sys.stdin.read(MAX_BODY + 1)
+    if len(data) > MAX_BODY:
+        print("ERROR: body too large")
+        sys.exit(0)
 lines = data.split('\n')
 i = 0
 header = True
@@ -103,13 +124,21 @@ except ConnectionRefusedError:
     print(f"FAIL to connect to xythond")
     sys.exit(0)
 try:
-    sock.send(f"HTTPTLSproxy {ipaddr}\n".encode("UTF8"))
+    sock.sendall(f"HTTPTLSproxy {ipaddr}\n".encode("UTF8"))
     I = 100000
     for i in range(0, len(data), I):
         smsg = data[i:i+I]
-        sock.send(smsg.encode("UTF8"))
-    buf = sock.recv(640000)
-    print(buf.decode("UTF8"))
+        sock.sendall(smsg.encode("UTF8"))
+    # half-close so xythond sees EOF immediately instead of waiting for its
+    # read timeout before answering
+    sock.shutdown(socket.SHUT_WR)
+    chunks = []
+    while True:
+        chunk = sock.recv(65536)
+        if not chunk:
+            break
+        chunks.append(chunk)
+    print(b"".join(chunks).decode("UTF8"))
 except ConnectionResetError:
     # either we fail to write or read
     # cannot do anything
