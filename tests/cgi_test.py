@@ -419,6 +419,17 @@ def test_xythoncgi():
     assert "out" in ret
     assert ret["out"] == b'Content-type: text/html\n\nERROR: invalid action\n'
 
+    # state-changing actions must use POST (CSRF): a GET ack is refused
+    envi["QUERY_STRING"] = 'hostname=toto&SERVICE=test&action=ack&cause=test&duration=10y'
+    ret = run_cgi(cgibin, UNIXSOCK, envi, False)
+    print(f"RET={ret}")
+    assert "out" in ret
+    assert "recv" not in ret
+    assert ret["out"] == b'Content-type: text/html\n\nERROR: action requires POST\n'
+
+    # from here on the ack/disable form is submitted as POST
+    envi["REQUEST_METHOD"] = "POST"
+
     envi["QUERY_STRING"] = 'hostname=toto&SERVICE=test&action=ack'
     ret = run_cgi(cgibin, UNIXSOCK, envi, False)
     print(f"RET={ret}")
