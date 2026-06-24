@@ -9,6 +9,7 @@
 import asyncio
 import bz2
 import hashlib
+import heapq
 import logging
 import os
 import pytz
@@ -291,6 +292,11 @@ class xythonsrv:
         self.celtasks = []
         self.celerytasks = {}
         self.celery_workers = None
+        # in-memory scheduling queue: a min-heap of (next_ts, hostname, ttype)
+        # entries, ordered by due time. Replaces the former 'tests' sqlite
+        # table, which was non-authoritative (wiped at startup and rebuilt from
+        # config by gen_tests()).
+        self.test_heap = []
         # timestamp for doing actions
         self.ts_page = time.time()
         self.ts_tests = time.time()
@@ -2351,14 +2357,16 @@ class xythonsrv:
     def gen_tests(self):
         now = int(time.time())
         self.debug("DEBUG: GEN TESTS")
-        self.sqc.execute('DELETE FROM tests')
+        # rebuild the scheduling heap from scratch so stale entries from
+        # removed hosts do not linger across a config reload
+        self.test_heap = []
         for hostname in self.xy_hosts:
             H = self.xy_hosts[hostname]
             for T in H.tests:
                 self.debug("DEBUG: gentest %s %s" % (H.name, T.type))
                 # self.debug(T.urls)
                 tnext = now + randint(1, 10)
-                self.sqc.execute('INSERT OR REPLACE INTO tests(hostname, column, next) VALUES (?, ?, ?)', (H.name, T.type, tnext))
+                heapq.heappush(self.test_heap, (tnext, H.name, T.type))
 
     def dump_tests(self):
         for T in self.tests:
@@ -2424,15 +2432,19 @@ class xythonsrv:
             return
         ts_start = time.time()
         now = int(time.time())
-        self.sqc.execute(f'SELECT * FROM tests WHERE next < {now}')
-        results = self.sqc.fetchall()
-        self.log("tests", f"DEBUG: DO TESTS {len(results)}")
-        if len(results) == 0:
+        # pop every test whose due time has passed; re-push it for the next
+        # interval. Re-pushed entries have next > now so they are not popped
+        # again this cycle.
+        due = []
+        while self.test_heap and self.test_heap[0][0] < now:
+            next_ts, hostname, ttype = heapq.heappop(self.test_heap)
+            due.append((hostname, ttype))
+            heapq.heappush(self.test_heap, (now + self.NETTEST_INTERVAL, hostname, ttype))
+        self.log("tests", f"DEBUG: DO TESTS {len(due)}")
+        if len(due) == 0:
             return
         lag = 0
-        for test in results:
-            hostname = test[0]
-            ttype = test[1]
+        for hostname, ttype in due:
             self.debugdev("test", f"DEBUG: dotests {hostname} {ttype}")
             H = self.find_host(hostname)
             for T in H.tests:
@@ -2451,7 +2463,6 @@ class xythonsrv:
                     if T.type in self.protocols:
                         self.do_generic_proto(H, T)
                         continue
-        self.sqc.execute(f'UPDATE tests SET next = {now} + {self.NETTEST_INTERVAL} WHERE next < {now}')
         ts_end = time.time()
         self.stat("tests", ts_end - ts_start)
         self.stat("tests-lag", lag)
@@ -2584,9 +2595,7 @@ class xythonsrv:
         self.sqc.execute('SELECT count(DISTINCT hostname) FROM columns')
         results = self.sqc.fetchall()
         buf += f"Hosts: {results[0][0]}\n"
-        self.sqc.execute('SELECT count(next) FROM tests')
-        results = self.sqc.fetchall()
-        buf += f"Active tests: {results[0][0]}\n"
+        buf += f"Active tests: {len(self.test_heap)}\n"
         buf += f"hosts.cfg mtime {xytime(self.time_read_hosts)}\n"
         buf += f"xymonserver.cfg mtime {xytime(self.time_read_xserver_cfg)}\n"
         buf += f"Local time: {xytime(now)} TZ={self.tz}\n"
@@ -5466,11 +5475,8 @@ class xythonsrv:
             (hostname text, column text, ts date, duration int, color text, ocolor text)''')
         self.sqc.execute('CREATE INDEX IF NOT EXISTS idx_history_host_col_ts ON history(hostname, column, ts DESC)')
         self.sqc.execute('CREATE INDEX IF NOT EXISTS idx_history_ts ON history(ts DESC)')
-        self.sqc.execute('''CREATE TABLE IF NOT EXISTS tests
-            (hostname text, column text, next date, UNIQUE(hostname, column))''')
         self.sqc.execute('''CREATE TABLE IF NOT EXISTS pages
             (hostname text NOT NULL, pagename text NOT NULL, groupname TEXT, UNIQUE(hostname, pagename, groupname))''')
-        self.sqc.execute('DELETE FROM tests')
         ret = self.read_configs()
         if not ret:
             sys.exit(1)

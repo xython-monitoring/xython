@@ -848,8 +848,7 @@ def test_reload():
     H = X.find_host("ipv6")
     assert H is not None
     assert len(X.xy_hosts) == 2
-    X.sqc.execute('SELECT * FROM tests')
-    results = X.sqc.fetchall()
+    results = X.test_heap
     if len(results) != 2:
         print("=========================== test_reload")
         print(results)
@@ -863,8 +862,7 @@ def test_reload():
 2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc	ipv6 # noconn\n")
     X.read_configs()
     assert len(X.xy_hosts) == 3
-    X.sqc.execute('SELECT * FROM tests')
-    results = X.sqc.fetchall()
+    results = X.test_heap
     if len(results) != 2:
         print("=========================== test_reload2")
         print(results)
@@ -879,8 +877,7 @@ def test_reload():
 2a01:cb1d:3d5:a100:4a02:2aff:fe07:1efc	ipv6 # noconn\n")
     X.read_configs()
     assert len(X.xy_hosts) == 2
-    X.sqc.execute('SELECT * FROM tests')
-    results = X.sqc.fetchall()
+    results = X.test_heap
     assert len(results) == 1
     assert len(X.xy_hosts) == 2
 
