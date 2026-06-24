@@ -121,7 +121,10 @@ if "DSERVICE" in POST:
     dsvc = POST["DSERVICE"]
 if "dservice" in POST:
     dsvc = POST["dservice"]
-if dsvc is not None and not is_valid_column(dsvc):
+# '*' is a legitimate disable target meaning "blue every column of the host"
+# (handled by the daemon, see xython.disable). It is a single safe token, so
+# it cannot shift the positional arguments of the daemon command.
+if dsvc is not None and dsvc != '*' and not is_valid_column(dsvc):
     fail('ERROR: invalid dservice')
 
 if "TIMEBUF" in POST:

@@ -478,6 +478,18 @@ def test_xythoncgi():
     assert "out" in ret
     assert ret["out"] == b'Content-type: text/html\n\nSENDSTRING\n'
 
+    # blueing '*' (disable every column of the host) is a legitimate target
+    # and must reach the daemon, see xython.disable. The cgi hardening must not
+    # reject the '*' wildcard as an invalid dservice.
+    envi["QUERY_STRING"] = 'hostname=toto&service=test&action=disable&cause=test&duration=10y&dservice=*'
+    ret = run_cgi(cgibin, UNIXSOCK, envi, True, maxclient=2)
+    print(f"RET={ret}")
+    assert "out" in ret
+    # reaching GETSTATUS proves the '*' dservice passed validation instead of
+    # being rejected with 'ERROR: invalid dservice'
+    assert ret["recv"] == b'GETSTATUS toto test\n'
+    assert ret["out"] == b'Content-type: text/html\n\nSENDSTRING\n'
+
     envi["QUERY_STRING"] = 'HOST=toto&SERVICE=test&TIMEBUF=tutu'
     ret = run_cgi(cgibin, UNIXSOCK, envi, False)
     print(f"RET={ret}")
