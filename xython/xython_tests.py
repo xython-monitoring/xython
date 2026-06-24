@@ -910,6 +910,12 @@ def get_cn(t):
         if p[0][0] == 'surname':
             r += f"/SN={p[0][1]}"
             continue
+        if p[0][0] == 'emailAddress':
+            r += f"/emailAddress={p[0][1]}"
+            continue
+        if p[0][0] == 'domainComponent':
+            r += f"/DC={p[0][1]}"
+            continue
         unk += str(p)
         print(f"UNK={p}")
     ret = {}
