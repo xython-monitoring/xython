@@ -2241,6 +2241,10 @@ def test_mdstat():
     md1 = f.read()
     f.close()
     X.parse_mdstat("test01", md1, "fake")
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test01" AND column == "mdstat"')
+    results = X.sqc.fetchall()
+    print(results)
+    assert len(results) == 1
 
     setup_clean(X)
 
