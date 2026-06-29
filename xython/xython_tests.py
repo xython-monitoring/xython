@@ -549,6 +549,13 @@ class xssh:
                     if self.sudo:
                         rcmd = 'sudo /tmp/xython-client'
                     stdin, stdout, stderr = client.exec_command(rcmd)
+                except FileNotFoundError as e:
+                    test_duration = time.time() - self.ts_start
+                    self.dret["color"] = 'red'
+                    self.dret["txt"] = f'ERROR: Failed to found xython-client {str(e)}'
+                    self.dret["txt"] += f"\nSeconds: {test_duration}\n"
+                    client.close()
+                    return self.dret
                 except paramiko.ssh_exception.SSHException as e:
                     test_duration = time.time() - self.ts_start
                     self.dret["color"] = 'red'
