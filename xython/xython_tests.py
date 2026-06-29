@@ -75,23 +75,13 @@ async def snmp_get71(oid, hostname, port, snmp_community):
     snmpEngine.close_dispatcher()
     return ret
 
-def snmp_get(oid, hostname, port, snmp_community):
+async def _snmp_get(oid, hostname, port, snmp_community):
     ret = {}
     ret["err"] = -1
     ret["snmpversion"] = pysnmp.__version__
-    #if Version(pv) > Version("5.1.0"):
     if not oldsnmp:
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError as e:
-            if str(e).startswith('There is no current event loop in thread'):
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            else:
-                ret["errmsg"] = str(e)
-                return ret
-        ret = loop.run_until_complete(asyncio.gather(snmp_get71(oid, hostname, port, snmp_community)))
-        return ret[0]
+        ret = await snmp_get71(oid, hostname, port, snmp_community)
+        return ret
     try:
         iterator = hlapi.getCmd(
             hlapi.SnmpEngine(),
@@ -124,40 +114,42 @@ def snmp_get(oid, hostname, port, snmp_community):
     return ret
 
 
-def do_snmpd_disk(hostname, hostip, snmp_community):
+def snmp_get(oid, hostname, port, snmp_community):
+    return asyncio.run(_snmp_get(oid, hostname, port, snmp_community))
+
+
+async def _do_snmpd_disk(hostname, hostip, snmp_community):
     buf = ""
     snmp_disk_oid = []
     i = 0
     while i < 100:
-        ret = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{i}', hostip, 161, snmp_community)
+        ret = await _snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{i}', hostip, 161, snmp_community)
         if ret['err'] == 0:
             partname = str(ret['v'])
-            oid = str(ret['oid'])
             if partname[0] == '/':
-                # print(f"DEBUG: SNMP found disk {partname}")
                 snmp_disk_oid.append(i)
         else:
-            if 'errmsg' in ret:
-                if 'timeout' in ret['errmsg']:
-                    return buf
+            if 'errmsg' in ret and 'timeout' in ret['errmsg']:
+                return buf
         i += 1
     buf += '[df]\n'
     for oid in snmp_disk_oid:
-        # print(f"DEBUG: SNMP DISK check {oid}")
-        disk_name = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{oid}', hostip, 161, snmp_community)
+        disk_name, disk_block_size, disk_total, disk_used = await asyncio.gather(
+            _snmp_get(f'.1.3.6.1.2.1.25.2.3.1.3.{oid}', hostip, 161, snmp_community),
+            _snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', hostip, 161, snmp_community),
+            _snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', hostip, 161, snmp_community),
+            _snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', hostip, 161, snmp_community),
+        )
         if disk_name['err'] != 0:
             buf += f'ERROR getting {oid}\n'
             continue
         dname = disk_name['v']
-        disk_block_size = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.4.{oid}', hostip, 161, snmp_community)
         if disk_block_size['err'] != 0:
             buf += f'ERROR getting {dname} block size\n'
             continue
-        disk_total = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.5.{oid}', hostip, 161, snmp_community)
         if disk_total['err'] != 0:
             buf += f'ERROR getting {dname} total size\n'
             continue
-        disk_used = snmp_get(f'.1.3.6.1.2.1.25.2.3.1.6.{oid}', hostip, 161, snmp_community)
         if disk_used['err'] != 0:
             buf += f'ERROR getting {dname} used size\n'
             continue
@@ -172,26 +164,32 @@ def do_snmpd_disk(hostname, hostip, snmp_community):
     return buf
 
 
-def do_snmpd_memory(hostname, hostip, snmp_community):
+def do_snmpd_disk(hostname, hostip, snmp_community):
+    return asyncio.run(_do_snmpd_disk(hostname, hostip, snmp_community))
+
+
+async def _do_snmpd_memory(hostname, hostip, snmp_community):
     ret = {}
     ret['snmp'] = ""
-    swap_total = snmp_get('.1.3.6.1.4.1.2021.4.3.0', hostip, 161, snmp_community)
+    swap_total = await _snmp_get('.1.3.6.1.4.1.2021.4.3.0', hostip, 161, snmp_community)
     if swap_total["err"] != 0:
         ret['snmp'] = f'&red do_snmpd_memory: error with swap_total: {swap_total["errmsg"]}\n'
         return ret
     ret['snmp'] += swap_total["pretty"]
-    swap_free = snmp_get('.1.3.6.1.4.1.2021.4.4.0', hostip, 161, snmp_community)
+    swap_free = await _snmp_get('.1.3.6.1.4.1.2021.4.4.0', hostip, 161, snmp_community)
     if swap_free["err"] != 0:
         ret['snmp'] = f'&red do_snmpd_memory: error with swap_free: {swap_free["errmsg"]}\n'
         return ret
-    memory_total = snmp_get('.1.3.6.1.4.1.2021.4.5.0', hostip, 161, snmp_community)
+    memory_total = await _snmp_get('.1.3.6.1.4.1.2021.4.5.0', hostip, 161, snmp_community)
     if memory_total["err"] != 0:
         ret['snmp'] = f'&red do_snmpd_memory: error with memory_total: {memory_total["errmsg"]}\n'
         return ret
-    memory_used = snmp_get('.1.3.6.1.4.1.2021.4.6.0', hostip, 161, snmp_community)
-    memory_free = snmp_get('.1.3.6.1.4.1.2021.4.11.0', hostip, 161, snmp_community)
-    memory_shared = snmp_get('.1.3.6.1.4.1.2021.4.13.0', hostip, 161, snmp_community)
-    memory_buffered = snmp_get('.1.3.6.1.4.1.2021.4.14.0', hostip, 161, snmp_community)
+    memory_used, memory_free, memory_shared, memory_buffered = await asyncio.gather(
+        _snmp_get('.1.3.6.1.4.1.2021.4.6.0', hostip, 161, snmp_community),
+        _snmp_get('.1.3.6.1.4.1.2021.4.11.0', hostip, 161, snmp_community),
+        _snmp_get('.1.3.6.1.4.1.2021.4.13.0', hostip, 161, snmp_community),
+        _snmp_get('.1.3.6.1.4.1.2021.4.14.0', hostip, 161, snmp_community),
+    )
     memt = memory_total['v']
     memf = memory_free['v']
     memu = memory_used['v']
@@ -206,12 +204,16 @@ def do_snmpd_memory(hostname, hostip, snmp_community):
     return ret
 
 
-def do_snmpd_client(hostname, hostip, snmp_columns, snmp_community):
+def do_snmpd_memory(hostname, hostip, snmp_community):
+    return asyncio.run(_do_snmpd_memory(hostname, hostip, snmp_community))
+
+
+async def _do_snmpd_client(hostname, hostip, snmp_columns, snmp_community):
     dret = {}
     color = 'green'
     status = ""
     # TODO check linux
-    sysdscr = snmp_get('.1.3.6.1.2.1.1.1.0', hostip, 161, snmp_community)
+    sysdscr = await _snmp_get('.1.3.6.1.2.1.1.1.0', hostip, 161, snmp_community)
     err = sysdscr['err']
     if err == 0:
         osname = str(sysdscr['v']).split(' ')[0].lower()
@@ -224,13 +226,13 @@ def do_snmpd_client(hostname, hostip, snmp_columns, snmp_community):
         color = 'red'
         status += f"&red do_snmpd_client: error with sysdscr: {sysdscr['errmsg']}\n"
     if 'memory' in snmp_columns:
-        ret = do_snmpd_memory(hostname, hostip, snmp_community)
+        ret = await _do_snmpd_memory(hostname, hostip, snmp_community)
         if 'buf' in ret:
             buf += ret['buf']
         if 'snmp' in ret:
             status += ret['snmp']
     if 'disk' in snmp_columns:
-        buf += do_snmpd_disk(hostname, hostip, snmp_community)
+        buf += await _do_snmpd_disk(hostname, hostip, snmp_community)
     buf += '[end]\n'
     dret["data"] = buf
     dret['txt'] = status
@@ -238,8 +240,7 @@ def do_snmpd_client(hostname, hostip, snmp_columns, snmp_community):
     return dret
 
 
-@app.task
-def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
+async def _do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
     ts_start = time.time()
     dret = {}
     dret["type"] = 'snmp'
@@ -249,7 +250,7 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
     buf = ''
     print(f"DEBUG: SNMP for {hostname} hostip={hostip} snmp_columns={snmp_columns} oids={oids}")
     if len(snmp_columns) > 0:
-        ret = do_snmpd_client(hostname, hostip, snmp_columns, snmp_community)
+        ret = await _do_snmpd_client(hostname, hostip, snmp_columns, snmp_community)
         buf += ret["txt"]
         dret["data"] = ret["data"]
         color = setcolor(ret["color"], color)
@@ -257,19 +258,20 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
         for rrd in oids:
             if rrd not in result:
                 result[rrd] = {}
-            # print(f"DEBUG: handle SNMP rrd={rrd}")
             for obj in oids[rrd]:
-                # print(f"DEBUG: handle SNMP rrd={rrd} obj={obj}")
                 rrdcolor = 'green'
                 rrdbuf = ""
                 dsnames = []
                 values = []
                 dsspecs = []
-                for oid in oids[rrd][obj]:
-                    # print(f"DEBUG: handle rrd={rrd} oid={oid}")
+                oid_list = oids[rrd][obj]
+                for oid in oid_list:
                     dsnames.append(oid['dsname'])
                     dsspecs.append(oid['dsspec'])
-                    ret = snmp_get(oid['oid'], hostip, 161, snmp_community)
+                snmp_results = await asyncio.gather(
+                    *[_snmp_get(oid['oid'], hostip, 161, snmp_community) for oid in oid_list]
+                )
+                for oid, ret in zip(oid_list, snmp_results):
                     if ret['err'] == 0:
                         buf += f"&green did {rrd} {obj} {oid['oid']} {oid['dsname']} value={ret['v']}\n"
                         rrdbuf += f"&green did {rrd} {obj} {oid['oid']} {oid['dsname']} value={ret['v']}\n"
@@ -279,7 +281,6 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
                         rrdbuf += f"&red did {rrd} {obj} {oid['oid']} {ret['errmsg']}\n"
                         color = 'red'
                         rrdcolor = 'red'
-                # print(f"DEBUG: value={values}")
                 r = {}
                 r["dsnames"] = ":".join(dsnames)
                 r["values"] = ":".join(values)
@@ -294,6 +295,11 @@ def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
     test_duration = now - ts_start
     dret["txt"] += f"\nSeconds: {test_duration}\n"
     return dret
+
+
+@app.task
+def do_snmp(hostname, hostip, snmp_community, snmp_columns, oids):
+    return asyncio.run(_do_snmp(hostname, hostip, snmp_community, snmp_columns, oids))
 
 
 # xssh://[username][:password]@target[:port][;edkey=path][;rsakey=path][;ping:target]
