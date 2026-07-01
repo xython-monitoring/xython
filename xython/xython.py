@@ -2502,7 +2502,15 @@ class xythonsrv:
         # RIP celery tasks
         rets = []
         for ctask in list(self.celtasks):
-            if ctask.ready():
+            # ctask.ready()/.get() hit the redis result backend. A transient
+            # redis outage (e.g. "Connection reset by peer") raises here; do
+            # NOT let it propagate -- it would crash the whole daemon (see the
+            # scheduler traceback). Skip the harvest for this cycle instead:
+            # the redis client reconnects on the next command and the task
+            # stays in celtasks to be retried next cycle.
+            try:
+                if not ctask.ready():
+                    continue
                 status = ctask.status
                 if status == 'FAILURE':
                     failed = None
@@ -2542,6 +2550,13 @@ class xythonsrv:
                 except BaseException as e:
                     self.error(f"ERROR: celery forget for {name} except {e}")
                 rets.append(ret)
+            except Exception as e:
+                # redis backend unreachable (ConnectionError) or any other
+                # unexpected backend error: stop harvesting this cycle rather
+                # than hammering a dead backend and spamming logs for every
+                # pending task. Remaining tasks are retried next cycle.
+                self.error(f"ERROR: celery task harvest failed: {e}")
+                break
         ts_end = time.time()
         self.stat("tests-rip", ts_end - ts_start)
         self.stat("tests-remains", len(self.celtasks))
