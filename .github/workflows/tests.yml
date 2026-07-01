@@ -6,6 +6,11 @@ on:  # yamllint disable-line rule:truthy
   push:
   pull_request:
 
+# wait for more tests for coverage
+#permissions:
+#  pages: write
+#  id-token: write
+
 jobs:
   build-without-pika:
     runs-on: ubuntu-latest
@@ -304,3 +309,39 @@ jobs:
           docker compose build
           docker compose up --abort-on-container-exit pytests
           docker compose up --abort-on-container-exit xythond xython-client xython-client-tls-curl
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install iputils-ping librrd-dev
+          python -m pip install --upgrade pip
+          pip install flake8 pytest coverage redis pysnmp setuptools pytest-asyncio
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e "."
+          pip install rrdtool
+      - name: Test with pytest
+        run: |
+          coverage run -p  -m pytest -rsfEx
+      - name: combine and report coverage
+        run: |
+          coverage combine
+          coverage report -m
+          coverage html
+      - name: Upload HTML coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-html
+          path: htmlcov
+#      - uses: actions/configure-pages@v6
+#      - uses: actions/upload-pages-artifact@v5
+#        with:
+#          path: htmlcov
+#      - uses: actions/deploy-pages@v5
