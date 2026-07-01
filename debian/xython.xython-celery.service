@@ -3,7 +3,8 @@ Description=xython celery worker
 After=network.target
 
 [Service]
-ExecStart=python3 -m celery -A xython worker
+EnvironmentFile=-/etc/default/xython-celery
+ExecStart=python3 -m celery -A xython worker $CELERY_OPTS
 WorkingDirectory=/var/lib/xython
 Restart=always
 User=xython
