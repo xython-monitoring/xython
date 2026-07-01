@@ -1135,7 +1135,7 @@ def test_full():
     X.handle_net_message("disable test1.invalid 60m test", "fake")
 
     # call the scheduler
-    X.scheduler()
+    asyncio.run(X.scheduler())
     # TODO find something that should changed after this call
 
     # test client data

@@ -2484,19 +2484,24 @@ class xythonsrv:
             status = f"{xytime(now)} - {rrd}\n" + buf
             self.column_update(hostname, rrd, rrdcolor, now, status, self.NETTEST_INTERVAL + 120, "xython-tests")
 
-    def do_tests_rip(self):
-        ts_start = time.time()
-        try:
-            self.celery_workers = celery.current_app.control.inspect().ping()
-        except kombu.exceptions.OperationalError:
-            self.error("ERROR: no celery workers")
-            return
+    def do_tests_rip_collect(self):
+        # Harvest finished celery tasks. This runs in a worker thread (see
+        # do_scheduler): it only does bounded result-backend I/O (.ready()/
+        # .get()/.forget(), i.e. plain redis GET/DEL -- safe from any thread)
+        # plus in-memory bookkeeping on celtasks/celerytasks, which no other
+        # thread touches. It must NOT touch sqlite or the control mailbox.
+        # It returns the result dicts for do_tests_rip_process() to apply on
+        # the event loop thread.
+        #
+        # Worker presence was already probed by do_tests() in this same
+        # scheduler cycle; reuse its result rather than re-pinging the control
+        # mailbox from a thread (where it is unreliable).
         if self.celery_workers is None:
-            self.error("ERROR: no celery workers")
-            return
+            return []
+        ts_start = time.time()
         # RIP celery tasks
-        now = int(time.time())
-        for ctask in self.celtasks:
+        rets = []
+        for ctask in list(self.celtasks):
             if ctask.ready():
                 status = ctask.status
                 if status == 'FAILURE':
@@ -2509,42 +2514,64 @@ class xythonsrv:
                     self.error(f"ERROR: celery task error for {failed}")
                     # TODO better handle this problem, easy to generate by removing ping
                     try:
-                        ret = ctask.get()
+                        # disable_sync_subtasks=False: we set
+                        # _set_task_join_will_block(True) to kill the blocking
+                        # pub/sub consumer (see xython_tests.py), which also
+                        # arms get()'s assert_will_not_block() guard. The result
+                        # is already ready() here, so get() never blocks.
+                        ret = ctask.get(disable_sync_subtasks=False)
                     except BaseException as e:
                         self.error(f"ERROR: celery task {failed} except {e}")
-                    ctask.forget()
+                    try:
+                        ctask.forget()
+                    except BaseException as e:
+                        self.error(f"ERROR: celery forget for {failed} except {e}")
                     continue
-                ret = ctask.get()
-                hostname = ret["hostname"]
-                testtype = ret["type"]
-                if testtype in ['snmp', 'tssh']:
-                    if ret["data"] is not None:
-                        self.parse_hostdata(ret["data"], f"{testtype} for {hostname}")
-                if "rrds" in ret:
-                    self.tests_rrd(hostname, ret["rrds"])
-                column = ret["column"]
-                self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
-                self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")
-                if "certs" in ret:
-                    # self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
-                    for url in ret["certs"]:
-                        H = self.find_host(ret["hostname"])
-                        H.certs[url] = ret["certs"][url]
-                    if len(ret["certs"]):
-                        self.do_sslcert(ret["hostname"])
+                # disable_sync_subtasks=False: see the failure path above --
+                # _set_task_join_will_block(True) arms the guard, but ready()
+                # has already returned True so this get() does not block.
+                ret = ctask.get(disable_sync_subtasks=False)
                 self.celtasks.remove(ctask)
                 name = f'{ret["hostname"]}_{ret["type"]}'
                 if name not in self.celerytasks:
                     self.error(f"ERROR: BUG {name} not found")
                 else:
                     del (self.celerytasks[name])
-                ctask.forget()
-                if testtype == 'conn' and "rtt_avg" in ret:
-                    self.do_rrd(hostname, column, "rtt", 'sec', ret["rtt_avg"], ['DS:sec:GAUGE:600:0:U'])
+                try:
+                    ctask.forget()
+                except BaseException as e:
+                    self.error(f"ERROR: celery forget for {name} except {e}")
+                rets.append(ret)
         ts_end = time.time()
         self.stat("tests-rip", ts_end - ts_start)
         self.stat("tests-remains", len(self.celtasks))
-        return
+        return rets
+
+    def do_tests_rip_process(self, rets):
+        # Apply harvested celery results. This half runs on the event loop
+        # thread because it writes to sqlite (column_update / rrd / sslcert),
+        # which the async client handlers also read.
+        now = int(time.time())
+        for ret in rets:
+            hostname = ret["hostname"]
+            testtype = ret["type"]
+            if testtype in ['snmp', 'tssh']:
+                if ret["data"] is not None:
+                    self.parse_hostdata(ret["data"], f"{testtype} for {hostname}")
+            if "rrds" in ret:
+                self.tests_rrd(hostname, ret["rrds"])
+            column = ret["column"]
+            self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
+            self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")
+            if "certs" in ret:
+                # self.debug(f"DEBUG: result for {ret['hostname']} {ret['column']} has certificate")
+                for url in ret["certs"]:
+                    H = self.find_host(ret["hostname"])
+                    H.certs[url] = ret["certs"][url]
+                if len(ret["certs"]):
+                    self.do_sslcert(ret["hostname"])
+            if testtype == 'conn' and "rtt_avg" in ret:
+                self.do_rrd(hostname, column, "rtt", 'sec', ret["rtt_avg"], ['DS:sec:GAUGE:600:0:U'])
 
     def do_sslcert(self, hostname):
         color = 'green'
@@ -2623,11 +2650,26 @@ class xythonsrv:
             ccolor = 'red'
         self.column_update(socket.gethostname(), "xythond", ccolor, now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
-    def scheduler(self):
+    async def scheduler(self, loop=None):
         now = time.time()
         if now > self.ts_tests + 5:
+            # do_tests dispatches new work and probes worker presence via
+            # celery's control mailbox (inspect().ping()). That mailbox is not
+            # reliable from a non-main thread -- replies get missed and it
+            # wrongly reports "no celery workers" -- so it must stay on the
+            # event loop. With _set_task_join_will_block(True) (see
+            # xython_tests.py) the dispatch path no longer touches redis pub/sub,
+            # so it cannot trigger the blocking-reconnect freeze.
             self.do_tests()
-            self.do_tests_rip()
+            # Harvesting only does bounded result-backend I/O (redis GET/DEL),
+            # which is safe from any thread; run it off the loop so a slow redis
+            # socket can never freeze xythond's single event loop. The
+            # sqlite-touching half (do_tests_rip_process) stays on this thread.
+            if loop is not None:
+                rets = await loop.run_in_executor(None, self.do_tests_rip_collect)
+            else:
+                rets = self.do_tests_rip_collect()
+            self.do_tests_rip_process(rets)
             self.stat("ts_tests", time.time() - now)
             self.ts_tests = now
         if now > self.ts_check + 1:
@@ -5569,11 +5611,12 @@ class xythonsrv:
         print(f"LOG is {self.xt_logdir}")
 
     async def do_scheduler(self):
+        loop = asyncio.get_running_loop()
         while True:
             if self.quit > 0:
                 if self.uptime_start + self.quit < time.time():
                     sys.exit(0)
-            self.scheduler()
+            await self.scheduler(loop)
             await asyncio.sleep(1)
 
     async def handle_unix_client(self, reader, writer):
