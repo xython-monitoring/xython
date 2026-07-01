@@ -1832,6 +1832,7 @@ class xythonsrv:
             H = self.find_host(hostname)
             if not H:
                 return 2
+        hostname = H.name
         if H.dialup:
             if cname == 'conn':
                 if color == 'red':
