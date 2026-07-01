@@ -1,0 +1,18 @@
+[run]
+parallel = true
+branch = True
+source = cgi, xython
+omit = misc
+data_file = /tmp/.coverage
+source_pkgs = xython
+disable_warnings =
+    module-not-imported
+
+[paths]
+source =
+    xython/
+    */dist-packages/xython
+    */site-packages/xython
+    cgi/
+    */dist-packages/cgi
+
