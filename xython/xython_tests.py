@@ -7,6 +7,7 @@
 """
 
 from celery import Celery
+from celery._state import _set_task_join_will_block
 import subprocess
 import os
 import paramiko
@@ -42,6 +43,44 @@ urllib3.disable_warnings()
 
 # TODO permit to configure localhost
 app = Celery('tasks', backend='redis://localhost', broker='redis://localhost')
+# The redis result backend talks over pub/sub; an idle connection that redis
+# drops will otherwise trigger a blocking reconnect (connect_check_health ->
+# subscribe) with no socket timeout, freezing xythond's single event loop
+# (seen on redis-py 5.x / Debian trixie).
+#
+# These keys are read directly from app.conf by celery's redis backend
+# (see celery/backends/redis.py RedisBackend.__init__, _get = app.conf.get):
+#   - redis_socket_timeout bounds every blocking socket read, so a stale
+#     connection raises instead of hanging forever.
+#   - redis_backend_health_check_interval refreshes idle connections before
+#     redis drops them, so the blocking reconnect path is not taken at all.
+# NOTE: health_check_interval MUST be set here and NOT inside
+# result_backend_transport_options -- the backend ignores the transport-options
+# copy for its own connection pool.
+app.conf.redis_socket_timeout = 5.0
+app.conf.redis_socket_connect_timeout = 5.0
+app.conf.redis_retry_on_timeout = True
+app.conf.redis_socket_keepalive = True
+app.conf.redis_backend_health_check_interval = 30
+
+# Definitive freeze fix: disable celery's async pub/sub result consumer.
+#
+# xythond never blocks waiting on a result -- it polls AsyncResult.ready() and
+# only calls .get() once a task is ready. But celery's redis backend, by
+# default, SUBSCRIBEs to a pub/sub channel for every dispatched task
+# (on_task_call -> ResultConsumer.consume_from) and later UNSUBSCRIBEs from it,
+# both on forget() and automatically when a result arrives
+# (on_state_change -> _maybe_cancel_ready_task -> cancel_for). When that pub/sub
+# connection has gone stale, the (un)subscribe triggers a blocking redis
+# reconnect (connect_check_health -> subscribe) that freezes xythond's single
+# event loop forever.
+#
+# task_join_will_block() == True makes the backend skip consume_from entirely:
+# no channel is ever subscribed, _pubsub stays None, and cancel_for() becomes a
+# no-op. Polling via .ready()/.get() is unaffected (those use plain GETs bounded
+# by redis_socket_timeout above). This removes the blocking pub/sub path no
+# matter which redis-py / celery version is installed.
+_set_task_join_will_block(True)
 
 async def snmp_get71(oid, hostname, port, snmp_community):
     ret = {}
