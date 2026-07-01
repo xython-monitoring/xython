@@ -2840,3 +2840,116 @@ def test_read_protocols():
 
     tmpdir.cleanup()
     setup_clean(X)
+
+
+def test_adapt_nettest_interval():
+    # backoff maths are pure; exercise them without any celery/redis I/O
+    X = xythonsrv()
+    setup_testdir(X, 'adaptinterval')
+    X.NETTEST_INTERVAL = X.NETTEST_INTERVAL_BASE
+
+    # lag raises the interval multiplicatively
+    X.adapt_nettest_interval(3)
+    assert X.NETTEST_INTERVAL == int(X.NETTEST_INTERVAL_BASE * 1.5)
+    prev = X.NETTEST_INTERVAL
+    X.adapt_nettest_interval(1)
+    assert X.NETTEST_INTERVAL == int(prev * 1.5)
+
+    # it is capped at MAX no matter how long lag persists
+    for _ in range(50):
+        X.adapt_nettest_interval(1)
+    assert X.NETTEST_INTERVAL == X.NETTEST_INTERVAL_MAX
+
+    # a clean cycle decays it additively, never below BASE
+    X.adapt_nettest_interval(0)
+    assert X.NETTEST_INTERVAL == X.NETTEST_INTERVAL_MAX - 15
+    for _ in range(1000):
+        X.adapt_nettest_interval(0)
+    assert X.NETTEST_INTERVAL == X.NETTEST_INTERVAL_BASE
+
+    setup_clean(X)
+
+
+def test_celery_guard(monkeypatch):
+    import xython.xython as xymod
+
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-load/'
+    X.lldebug = True
+    setup_testdir(X, 'celeryguard')
+    X.init()
+
+    class FakeTask:
+        def __init__(self):
+            self.n = 0
+
+        def delay(self, *a, **k):
+            self.n += 1
+            return ('ctask', self.n)
+
+    ft = FakeTask()
+    monkeypatch.setattr(xymod, 'task_fail', ft)
+
+    class T:
+        pass
+    t = T()
+    t.hostname = 'host1'
+    t.type = 'fail'
+
+    # first dispatch registers the task with a timestamp and type
+    assert X.dofail(t) is True
+    assert 'host1_fail' in X.celerytasks
+    assert X.celerytasks['host1_fail']['type'] == 'fail'
+    assert len(X.celtasks) == 1
+
+    # a second dispatch while the first is still in flight is skipped (lag):
+    # delay() is NOT called again and no orphan task piles up in celtasks
+    assert X.dofail(t) is False
+    assert ft.n == 1
+    assert len(X.celtasks) == 1
+
+    # oldest-age is derived from the stored dispatch timestamp
+    now = time.time()
+    X.celerytasks['host1_fail']['ts'] = now - 42
+    assert 41 <= X.celery_oldest_age(now) <= 43
+
+    setup_clean(X)
+
+
+def test_celery_startup_cleanup(monkeypatch):
+    import celery as celerymod
+
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-load/'
+    X.lldebug = True
+    setup_testdir(X, 'celeryclean')
+    X.init()
+
+    deleted = []
+
+    class FakeClient:
+        def scan_iter(self, match=None, count=None):
+            assert match == 'celery-task-meta-*'
+            return iter(['celery-task-meta-a', 'celery-task-meta-b'])
+
+        def delete(self, key):
+            deleted.append(key)
+
+    class FakeControl:
+        def purge(self):
+            return 5
+
+    class FakeBackend:
+        client = FakeClient()
+
+    class FakeApp:
+        control = FakeControl()
+        backend = FakeBackend()
+
+    monkeypatch.setattr(celerymod, 'current_app', FakeApp())
+
+    # must not raise; purges broker queue and deletes stale result keys
+    X.celery_startup_cleanup()
+    assert deleted == ['celery-task-meta-a', 'celery-task-meta-b']
+
+    setup_clean(X)
