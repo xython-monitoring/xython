@@ -1,5 +1,5 @@
 [Unit]
-Description=xython celery worker
+Description=xythond main daemon
 After=network.target
 
 [Service]

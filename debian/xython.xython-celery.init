@@ -14,9 +14,11 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/python3
-DAEMON_ARGS="-m celery -A xython worker"
 NAME=xython-celery
 DESC=xython-celery
+
+# Extra celery worker options, override in /etc/default/xython-celery.
+CELERY_OPTS=""
 
 RUNDIR=/run/xython-celery
 PIDFILE=$RUNDIR/xython-celery.pid
@@ -27,6 +29,8 @@ if [ -r /etc/default/$NAME ]
 then
 	. /etc/default/$NAME
 fi
+
+DAEMON_ARGS="-m celery -A xython worker $CELERY_OPTS"
 
 . /lib/lsb/init-functions
 

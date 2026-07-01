@@ -1,0 +1,10 @@
+# Defaults for the xython-celery service / init script
+# This file is sourced by /etc/init.d/xython-celery and read as an
+# EnvironmentFile by the systemd unit, so keep it to plain KEY=value lines.
+
+# Extra options passed to the celery worker.
+# They are appended to "celery -A xython worker".
+# Examples:
+#   CELERY_OPTS="--concurrency=4 --loglevel=INFO"
+#   CELERY_OPTS="--max-tasks-per-child=100"
+#CELERY_OPTS=""
