@@ -1225,6 +1225,52 @@ def test_full():
     setup_clean(X)
 
 
+def test_alias():
+    X = xythonsrv()
+    X.lldebug = True
+    X.etcdir = './tests/etc/full/'
+    setup_testdir(X, 'alias')
+    X.wwwdir = './tests/www/'
+    X.init()
+    X.webdir = './xymon/web/'
+    X.read_configs()
+
+    assert X.find_host("test15bis").name == "test15"
+    assert X.find_host("thon1").name == "test16"
+
+    # write a column addressing the host by its ALIAS
+    err = X.column_update('test15bis', 'aliascol', 'green', time.time(), 'test', 120, "xython-tests")
+    assert err == 1
+
+    # it must land under the CANONICAL name, not the alias
+    assert X.get_column_color('test15', 'aliascol') == 'green'
+    assert X.get_column_color('test15bis', 'aliascol') is None
+
+    # a multi-alias host resolves the same way
+    err = X.column_update('thon1', 'aliascol', 'green', time.time(), 'test', 120, "xython-tests")
+    assert err == 1
+    assert X.get_column_color('test16', 'aliascol') == 'green'
+    assert X.get_column_color('thon1', 'aliascol') is None
+
+    # a color change on the aliased column also runs history/state under the
+    # canonical name (err == 1 means the change was recorded)
+    err = X.column_update('test15bis', 'aliascol', 'red', time.time(), 'test', 120, "xython-tests")
+    assert err == 1
+    assert X.get_column_color('test15', 'aliascol') == 'red'
+
+    # end-to-end: the alias-written column must appear on the rendered page
+    # under the canonical host
+    html = X.html_page("all")
+    assert '<A NAME="test15">' in html
+    assert '<A NAME="test16">' in html
+    assert 'aliascol' in html
+    # the alias name must never appear as a host row
+    assert '<A NAME="test15bis">' not in html
+    assert '<A NAME="thon1">' not in html
+
+    setup_clean(X)
+
+
 def test_snmpd():
     X = xythonsrv()
     X.etcdir = './tests/etc/full/'
