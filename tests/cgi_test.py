@@ -206,6 +206,91 @@ def test_proxy():
         os.remove(UNIXSOCK)
 
 
+def test_showgraph():
+    cgibin = [sys.executable, "-m", "coverage", 'run', './cgi/showgraph.py']
+
+    # showgraph reads stdin unconditionally, so early-exit error cases must be
+    # fed a stdin to avoid inheriting/blocking on pytest's stdin.
+    empty = open("tests/cgi/empty.in")
+    ret = subprocess.run(cgibin, capture_output=True, env={}, stdin=empty)
+    empty.close()
+    print(ret)
+    assert ret.returncode == 0
+    assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno hostname\n\n'
+    assert ret.stderr == b''
+
+    envi = {}
+    envi["QUERY_STRING"] = 'hostname=toto'
+    empty = open("tests/cgi/empty.in")
+    ret = subprocess.run(cgibin, capture_output=True, env=envi, stdin=empty)
+    empty.close()
+    print(ret)
+    assert ret.returncode == 0
+    assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno service\n\n'
+    assert ret.stderr == b''
+
+    # hostname supplied via the POST body (stdin) instead of QUERY_STRING; a
+    # missing service still errors, proving the stdin parsing path works.
+    del(envi["QUERY_STRING"])
+    sin = open("tests/cgi/showgraph-post.in")
+    ret = subprocess.run(cgibin, capture_output=True, env=envi, stdin=sin)
+    sin.close()
+    print(ret)
+    assert ret.returncode == 0
+    assert ret.stdout == b'Status: 400 Bad Request\n\n\n\nno service\n\n'
+    assert ret.stderr == b''
+
+    # action=menu is answered without touching the daemon socket.
+    envi["QUERY_STRING"] = 'hostname=toto&service=test&action=menu'
+    empty = open("tests/cgi/empty.in")
+    ret = subprocess.run(cgibin, capture_output=True, env=envi, stdin=empty)
+    empty.close()
+    print(ret)
+    assert ret.returncode == 0
+    assert ret.stdout == b'Content-type: text/html\n\n<html>\n'
+    assert ret.stderr == b''
+
+    UNIXSOCK = "tests/cgi/xython-showgraph.sock"
+    envi["XYTHON_SOCK"] = UNIXSOCK
+
+    # no listener on the socket -> connection failure
+    if os.path.exists(UNIXSOCK):
+        os.unlink(UNIXSOCK)
+    envi["QUERY_STRING"] = 'hostname=toto&service=test'
+    empty = open("tests/cgi/empty.in")
+    ret = subprocess.run(cgibin, capture_output=True, env=envi, stdin=empty)
+    empty.close()
+    print(ret)
+    assert ret.returncode == 0
+    assert ret.stdout == b'Status: 500 Internal Server Error\n\n\nshowgraph: FAIL to connect to xythond\n'
+    assert ret.stderr == b''
+
+    # successful GETRRD: the daemon receives the request and its raw reply is
+    # streamed back verbatim (no Content-type header is added by showgraph).
+    envi["QUERY_STRING"] = 'HOST=toto&SERVICE=test'
+    ret = run_cgi(cgibin, UNIXSOCK, envi, False)
+    print(f"RET={ret}")
+    assert ret["recv"] == b'GETRRD toto test view'
+    assert ret["out"] == b'SENDSTRING'
+
+    # action overrides the default 'view' in the GETRRD request
+    envi["QUERY_STRING"] = 'HOST=toto&SERVICE=test&action=cpu'
+    ret = run_cgi(cgibin, UNIXSOCK, envi, False)
+    print(f"RET={ret}")
+    assert ret["recv"] == b'GETRRD toto test cpu'
+    assert ret["out"] == b'SENDSTRING'
+
+    # lower-case host/service aliases and the debug flag all reach the daemon
+    envi["QUERY_STRING"] = 'host=toto&service=test&debug=1'
+    ret = run_cgi(cgibin, UNIXSOCK, envi, False)
+    print(f"RET={ret}")
+    assert ret["recv"] == b'GETRRD toto test view'
+    assert ret["out"] == b'SENDSTRING'
+
+    if os.path.exists(UNIXSOCK):
+        os.remove(UNIXSOCK)
+
+
 def test_topchanges():
     cgibin = [sys.executable, "-m", "coverage", 'run', './cgi/topchanges.py']
     ret = subprocess.run(cgibin, capture_output=True, env=None)

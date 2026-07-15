@@ -58,6 +58,8 @@ if "debug" in POST:
     debug = True
 
 SOCKPATH = '/run/xython/xython.sock'
+if "XYTHON_SOCK" in os.environ:
+    SOCKPATH = os.environ["XYTHON_SOCK"]
 # if "sockpath" in POST:
 #    sockpath = POST['sockpath']
 #    print(f"DEBUG: check {sockpath}")
