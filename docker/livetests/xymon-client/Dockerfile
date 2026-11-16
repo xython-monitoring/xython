@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:trixie
 
 RUN apt-get update && apt-get -y install xymon-client
 RUN sed -i 's,XYMONSERVERS=.*,XYMONSERVERS=xythond,' /etc/default/xymon-client

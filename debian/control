@@ -33,6 +33,8 @@ Depends: lsb-base (>= 3.0-6),
 	 python3-rrdtool,
 	 python3-paramiko,
 	 python3-pysnmp4,
+	 python3-pyasyncore,
+	 python3-pytz,
 	 ${python3:Depends},
          ${misc:Depends},
          ${shlibs:Depends}

@@ -1,4 +1,4 @@
-FROM debian:bookworm AS xython_deb_build
+FROM debian:trixie AS xython_deb_build
 
 RUN apt-get update
 RUN apt-get -y install python3-tz python3-celery python3-requests python3-redis python3-coverage git dh-cmake dh-python devscripts python3-setuptools dh-apache2 python3-dev python3-rrdtool python3-pysnmp4 python3-paramiko
@@ -7,7 +7,7 @@ ADD . /root/xython
 RUN cd /root/xython/ && debuild -i -us -uc -b
 
 
-FROM debian:bookworm
+FROM debian:trixie
 
 COPY --from=xython_deb_build /root/xython*deb /root/
 RUN apt-get update

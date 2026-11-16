@@ -1,4 +1,4 @@
-FROM debian:bookworm AS xython_deb_build
+FROM debian:trixie AS xython_deb_build
 
 RUN apt-get update
 RUN apt-get -y install python3-tz python3-celery python3-requests python3-redis python3-coverage git dh-cmake dh-python devscripts python3-setuptools dh-apache2 python3-dev python3-rrdtool python3-pysnmp4 python3-paramiko
@@ -7,11 +7,11 @@ ADD . /root/xython
 RUN cd /root/xython/ && debuild -i -us -uc -b
 
 
-FROM debian:bookworm
+FROM debian:trixie
 
 COPY --from=xython_deb_build /root/xython*deb /root/
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python3-tz python3-celery python3-requests adduser redis-server sudo python3-redis procps apache2 rabbitmq-server netcat-openbsd iputils-ping python3-rrdtool python3-pysnmp4 wget python3-pytest python3-paramiko python-is-python3 curl iproute2
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python3-tz python3-celery python3-requests adduser redis-server sudo python3-redis procps apache2 rabbitmq-server netcat-openbsd iputils-ping python3-rrdtool python3-pysnmp4 wget python3-pytest python3-paramiko python-is-python3 curl iproute2 python3-pytz python3-pyasyncore
 
 RUN dpkg -i /root/xython_0*_amd64.deb
 RUN dpkg -i /root/xython-client_0*_amd64.deb
