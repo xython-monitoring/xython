@@ -13,10 +13,14 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   build-without-pika:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.9.20', "3.10.19", "3.11.9", "3.12.6", "3.13", "3.14"]
+        os: [ubuntu-latest]
+        python-version: ["3.10.22", "3.11.18", "3.12.16", "3.13", "3.14"]
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9.25"
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
@@ -66,10 +70,14 @@ jobs:
           xythond --quit 10 -d --logdir log -x 0 -R --wwwdir www --vardir data --tlskey tests/xython.key --tlscrt tests/xython.crt
 
   build-with-pika:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.9, "3.10.19", "3.11.5", "3.12", "3.13", "3.14"]
+        os: [ubuntu-latest]
+        python-version: ["3.10.22", "3.11.18", "3.12", "3.13", "3.14"]
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
@@ -130,10 +138,14 @@ jobs:
           xython-nshow -V
 
   build-with-rrdtool:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.9, "3.10.19", "3.11.5", "3.12", "3.13", "3.14"]
+        os: [ubuntu-24.04]
+        python-version: ["3.10.22", "3.11.18", "3.12", "3.13", "3.14"]
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
@@ -158,10 +170,14 @@ jobs:
           python setup.py install
 
   build-with-oldsnmp51:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.9, "3.10.19", "3.11.5", "3.12", "3.13", "3.14"]
+        os: [ubuntu-latest]
+        python-version: ["3.10.22", "3.11.18", "3.12", "3.13", "3.14"]
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
@@ -236,7 +252,7 @@ jobs:
       - name: Run markdownlint
         uses: actionshub/markdownlint@main
   ubuntu-pkg:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: build ubuntu package
     steps:
       - uses: actions/checkout@v7
@@ -311,7 +327,7 @@ jobs:
           docker compose up --abort-on-container-exit xythond xython-client xython-client-tls-curl
 
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
