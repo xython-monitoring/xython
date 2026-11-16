@@ -93,7 +93,7 @@ cd /tests
 pytest livetest.py
 
 echo "DEBUG: get memory page"
-wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=$(hostname)&SERVICE=memory" -O memory.html
+wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=$(hostname)&SERVICE=memory" -O memory.html || exit $?
 grep -q 'Real/Physical' memory.html
 if [ $? -ne 0 ];then
 	echo "ERROR: fail to find pattern in memory.html"
@@ -102,11 +102,11 @@ if [ $? -ne 0 ];then
 fi
 
 echo "DEBUG: stop xython-client"
-/etc/init.d/xython-client stop || exit $
+/etc/init.d/xython-client stop || exit $?
 sed -i 's,#USE_TLS=0,USE_TLS=1,' /etc/xython/xython-client.cfg
 sed -i 's,#XYTHON_PORT=1984,XYTHON_PORT=1985,' /etc/xython/xython-client.cfg
 echo "DEBUG: start xython-client with TLS"
-/etc/init.d/xython-client start || exit $
+/etc/init.d/xython-client start || exit $?
 sleep 10
 echo "DEBUG: check xython-client is still here" 
 ps aux |grep xython-client
@@ -114,7 +114,7 @@ ls -l /run/xython-client
 
 echo "DEBUG: try to access non-existing xtrahosts"
 # should not exists
-wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=xtrahosts&SERVICE=conn" -O conn.html -o result
+wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=xtrahosts&SERVICE=conn" -O conn.html -o result || exit $?
 grep -q 'ERROR: no service' conn.html
 if [ $? -ne 0 ];then
 	echo "ERROR: service conn for xtrahosts is present"
@@ -130,7 +130,7 @@ sleep 180
 
 echo "DEBUG: try to access existing xtrahosts"
 # should exists
-wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=xtrahosts&SERVICE=conn" -O conn.html -o result
+wget "http://127.0.0.1/xython-cgi/xythoncgi.py?HOST=xtrahosts&SERVICE=conn" -O conn.html -o result || exit $?
 grep -q 'ERROR: no service' conn.html
 if [ $? -eq 0 ];then
 	cat conn.html
