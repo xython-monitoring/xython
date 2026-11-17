@@ -1280,7 +1280,7 @@ class xythonsrv:
                     for alias in aliases:
                         HT = self.find_host(alias)
                         if HT:
-                            self.error("ERROR: {alias} already used")
+                            self.error(f"ERROR: {alias} already used")
                             continue
                         self.add_host_alias(H, alias)
                     H.tags_known.append(tag)
@@ -1892,7 +1892,7 @@ class xythonsrv:
             data = blue_header + data
         if color == 'purple':
             if ocolor == 'purple':
-                self.error("ERROR: cannot go from purple to purple")
+                self.error(f"ERROR: cannot go from purple to purple for {hostname}.{cname}")
                 return 2
         # self.debug("%s %s color=%s ocolor=%s ts=%s ots=%s" % (hostname, cname, ocolor, color, ts, ots))
         if color == ocolor:
@@ -2353,6 +2353,15 @@ class xythonsrv:
             hostname = col[0]
             column = col[1]
             expire = col[3]
+            # A row whose hostname is no longer a canonical host (host removed
+            # from hosts.cfg, or now an alias of another host) is stale
+            # column_update() would resolve it to the canonical host and purple
+            # *its* column, every second, since this row is never refreshed.
+            H = self.find_host(hostname)
+            if H is None or H.name != hostname:
+                self.log("purple", f"drop stale column {hostname}.{column} (now {H.name if H else 'removed'})")
+                self.sqc.execute('DELETE FROM columns WHERE hostname = ? AND column = ?', (hostname, column))
+                continue
             pdate = xytime(col[2])
             pedate = xytime(expire)
             pnow = xytime(now)
