@@ -110,20 +110,20 @@ def test_xytime():
     assert xyts('Wed Mar 15 09:16:16 2023', 'GMT') == 1678871776
     assert xyts('Wed Mar 15 09:16:16 2023', 'utc') == 1678871776
 
-    assert xyts('Wed Mar 15 10:16:16 2023', 'CET') == 1678871776
+    assert xyts('Wed Mar 15 10:16:16 2023', 'Europe/Berlin') == 1678871776
     assert xyts('Wed Mar 15 10:16:16 2023', 'Europe/Paris') == 1678871776
 
-    assert xyts_('Wed_Mar_15_10:16:16_2023', 'CET') == 1678871776
+    assert xyts_('Wed_Mar_15_10:16:16_2023', 'Europe/Berlin') == 1678871776
     assert xyts_('Wed_Mar_15_10:16:16_2023', 'Europe/Paris') == 1678871776
     assert not xyts_('Sun_May_17_17:05:28_2026n', 'Europe/Paris')
 
     assert xytime(1328630692) == 'Tue Feb 7 17:04:52 2012'
     assert xytime_(1328630692) == 'Tue_Feb_7_17:04:52_2012'
-    assert xyts_('Tue_Feb_7_17:04:52_2012', 'CET') == 1328630692
-    assert xyts('Tue Feb 7 17:04:52 2012', 'CET') == 1328630692
+    assert xyts_('Tue_Feb_7_17:04:52_2012', 'Europe/Berlin') == 1328630692
+    assert xyts('Tue Feb 7 17:04:52 2012', 'Europe/Berlin') == 1328630692
 
     assert xyevent(1702846434) == '2023/12/17@21:53:54'
-    assert xyevent_to_ts("2023/12/17@21:53:54", 'CET') == 1702846434
+    assert xyevent_to_ts("2023/12/17@21:53:54", 'Europe/Berlin') == 1702846434
     assert xyevent_to_ts("2023/12/17@21:53:54", 'Europe/Paris') == 1702846434
     assert xyevent_to_ts("") is None
     assert event_thisyear(1702846434) == '2023/01/01@00:00:00'
