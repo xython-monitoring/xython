@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:trixie
 ARG PACKAGES
 
 RUN apt-get update
@@ -23,7 +23,7 @@ RUN useradd xadmin -m
 RUN usermod -p '*' xadmin
 RUN echo "%xadmin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-RUN mkdir /run/sshd
+RUN mkdir -p /run/sshd
 RUN ssh-keygen -A
 
 RUN mkdir /home/userkey/.ssh
