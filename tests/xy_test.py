@@ -2902,6 +2902,32 @@ def test_ethtool():
     result = results[0]
     assert result[4] == 'green'
 
+    # test2 is a 100Mb/s link on a 1000Mb/s capable interface
+    f = open("./tests/ethtool/test2")
+    data = f.read()
+    f.close()
+    # test10 accepts 100 as green
+    X.parse_ethtools('test10', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test10" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    assert len(results) == 1
+    assert results[0][4] == 'green'
+    # test11 accepts 100 as yellow
+    X.parse_ethtools('test11', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test11" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    assert len(results) == 1
+    assert results[0][4] == 'yellow'
+    # test11 has a SPEED rule but half duplex must still be red
+    f = open("./tests/ethtool/test3")
+    data = f.read()
+    f.close()
+    X.parse_ethtools('test11', data, 'fake')
+    X.sqc.execute('SELECT * FROM columns WHERE hostname == "test11" AND column == "iflink"')
+    results = X.sqc.fetchall()
+    assert len(results) == 1
+    assert results[0][4] == 'red'
+
     f = open("./tests/ethtool/try2crash")
     data = f.read()
     f.close()

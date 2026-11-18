@@ -3256,6 +3256,28 @@ class xythonsrv:
             ret['ltoks'] = ltoks
             ret['setting'] = rs
             return ret
+        if arg == 'SPEED' or arg == 'speed':
+            # ETHTOOL ifname SPEED intspeed color
+            if len(ltoks) < 2:
+                self.error(f'ERROR: ETHTOOL: SPEED need a speed and a color {ltoks}')
+                ret['err'] = True
+                return ret
+            speed = ltoks.pop(0)
+            try:
+                rs["speed"] = int(speed)
+            except ValueError:
+                self.error(f'ERROR: ETHTOOL: invalid speed {speed}')
+                ret['err'] = True
+                return ret
+            color = ltoks.pop(0)
+            if not is_valid_color(color):
+                self.error(f'ERROR: ETHTOOL: invalid color {color}')
+                ret['err'] = True
+                return ret
+            rs["color"] = color
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
         self.error(f'ERROR: ETHTOOL: invalid config {arg}')
         ret['err'] = True
         return ret
@@ -3613,7 +3635,6 @@ class xythonsrv:
                         elif settingname == 'ETHTOOL':
                             if H.rules["ETHTOOL"] is None:
                                 H.rules["ETHTOOL"] = []
-                            print('============= ETHTOOL RULES')
                             H.rules["ETHTOOL"].append(setting)
                         elif settingname == 'SENSOR':
                             if H.rules["SENSOR"] is None:
@@ -4437,6 +4458,7 @@ class xythonsrv:
         bplink = None
         bestlink = None
         ignore = False
+        speedrules = {}
         for line in sline:
             if "Settings for" in line:
                 if ifname is not None:
@@ -4451,11 +4473,16 @@ class xythonsrv:
                 ifname = ifname.split(':')[0]
                 sbuf += f'<fieldset><legend>{ifname}</legend>\n'
                 sbuf += line + '\n'
-                # check for ignore
+                # check for ignore and accepted speeds
+                speedrules = {}
                 if H.rules['ETHTOOL'] is not None:
                     for rs in H.rules['ETHTOOL']:
-                        if rs['ignore'] and rs['if'] == ifname:
+                        if rs['if'] != ifname:
+                            continue
+                        if rs['ignore']:
                             ignore = True
+                        if 'speed' in rs:
+                            speedrules[rs['speed']] = rs['color']
                 continue
             sbuf += line + '\n'
             if ignore:
@@ -4491,8 +4518,12 @@ class xythonsrv:
                 speed = int(r.group(0))
                 if balink is not None:
                     if speed < bestlink[1]:
-                        sbuf += f'&red Speed {speed} below max {bestlink[1]}<br>\n'
-                        color = setcolor('red', color)
+                        scolor = speedrules.get(speed, 'red')
+                        if speed in speedrules:
+                            sbuf += f'&{scolor} Speed {speed} below max {bestlink[1]} (accepted by rule)<br>\n'
+                        else:
+                            sbuf += f'&red Speed {speed} below max {bestlink[1]}<br>\n'
+                        color = setcolor(scolor, color)
                     else:
                         sbuf += f'&green Speed {speed} is max<br>\n'
         if ifname is not None:

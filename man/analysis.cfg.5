@@ -233,14 +233,29 @@ lsmod will go red if nct6775 is not loaded
 
 .SH ETHTOOL STATUS COLUMN SETTINGS
 .sp
-.BR "ETHTOOL interface [IGNORE]"
-.sp
-For the moment, the only configuration possible is to ignore some interface for ethtool tests
+.BR "ETHTOOL interface IGNORE"
 .br
+.BR "ETHTOOL interface SPEED speed color"
+.sp
+By default, the iflink column goes red if an interface links at a speed below
+the best mode advertised by both the interface and its link partner.
+.sp
+IGNORE disables all ethtool tests for this interface.
+.sp
+SPEED accepts a link at exactly "speed" (in Mb/s) when it is below the maximum
+speed, reporting it with "color" instead of red.
+Several SPEED lines can be given for the same interface.
+Duplex checks are not affected.
 .sp
 Example:
 .br
-	SENSOR eth0 IGNORE
+	ETHTOOL eth1 IGNORE
+.br
+	ETHTOOL eth0 SPEED 1000 green
+.br
+	ETHTOOL eth0 SPEED 100 yellow
+.br
+eth1 is not checked, eth0 is green at 1000Mb/s and yellow at 100Mb/s even if it could do 2500Mb/s.
 .br
 .BR Xython: OK
 
