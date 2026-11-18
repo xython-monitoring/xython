@@ -718,6 +718,23 @@ def test_lmsensors():
     assert ret[1] == '4500'
     assert ret[2] == 'RPM'
 
+    ret = xs.is_sensor("power1: 23.00 W  (cap = 339.00 W)")
+    assert ret is not None
+    assert ret[0] == 'power1'
+    assert ret[1] == '23.00'
+    assert ret[2] == 'W'
+
+    ret = xs.is_sensor("power1:      1500.00 mW")
+    assert ret is not None
+    assert ret[0] == 'power1'
+    assert ret[1] == 1.5
+    assert ret[2] == 'W'
+
+    assert xs.is_sensor("power1: N/A mW") is None
+
+    ret = xs.check("fake", "power1:      1500.00 mW")
+    assert ret is not None
+
     ret = xs.is_sensor("CPU temperature: +30°C")
     assert ret is not None
     assert len(ret) == 3
@@ -825,6 +842,21 @@ def test_lmsensors():
     d = X.get_histlogs("test01", "sensor", ts)
     raw = ''.join(d['raw'])
     assert 'yellow pwm1 CHECK=(127.0 => 100.0)' in raw
+
+    # sensors9 has a mW value
+    f = open("./tests/sensors/sensors9")
+    data9 = f.read()
+    f.close()
+    X.parse_sensors("test01", data9, "fake")
+    res = X.sqc.execute('SELECT ts FROM columns WHERE hostname == "test01" AND column == "sensor"')
+    results = X.sqc.fetchall()
+    ts = results[0][0]
+    d = X.get_histlogs("test01", "sensor", ts)
+    raw = ''.join(d['raw'])
+    assert 'Chip 0 Vdd:              1000.00 mW' in raw
+    assert 'green Chip 0 Vdd CHECK=(0.65 < 0.8)' in raw
+    assert 'red Chip 0 Vdd CHECK=(1.0 => 1.0)' in raw
+    assert 'red Chip 0 Vdd CHECK=(1.63 => 1.0)' in raw
 
     setup_clean(X)
 

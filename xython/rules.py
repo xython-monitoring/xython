@@ -296,6 +296,12 @@ class xy_rule_sensors():
         if sline[1] == 'mA':
             rawv = float(sline[0]) / 1000
             return [sname, rawv, 'A']
+        if sline[1] == 'mW':
+            try:
+                rawv = float(sline[0]) / 1000
+            except ValueError:
+                return None
+            return [sname, rawv, 'W']
         if sline[1] == 'W':
             return [sname, sline[0], 'W']
         if sline[1] == '%':
