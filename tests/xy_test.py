@@ -2145,6 +2145,35 @@ def test_purple():
     assert X.parse_disable('disable testpurple.coltest 30d whynot')
     assert X.get_column_color('testpurple', 'coltest') == 'blue'
 
+    def blue_body():
+        st = X.get_column_state('testpurple', 'coltest')
+        rdata = X.get_histlogs('testpurple', 'coltest', st[2])
+        return ''.join(rdata["raw"])
+
+    # disabling again, or receiving status while blue, must not repeat the blue message
+    assert X.parse_disable('disable testpurple.coltest 30d whynot again')
+    assert X.get_column_color('testpurple', 'coltest') == 'blue'
+    body = blue_body()
+    assert body.count("Disabled until") == 1
+    assert body.count(X.BLUE_MARKER) == 1
+    assert body.count("Message received from") == 1
+    assert "whynot again" in body
+    assert body.count("test") == 1
+    for i in range(3):
+        X.column_update('testpurple', 'coltest', 'red', time.time(), f'redstatus{i}', 120, "xython-tests")
+        assert X.get_column_color('testpurple', 'coltest') == 'blue'
+        body = blue_body()
+        assert body.startswith("blue Disabled until")
+        assert body.count("Disabled until") == 1
+        assert body.count(X.BLUE_MARKER) == 1
+        assert body.count("Message received from") == 1
+        assert f'redstatus{i}' in body
+    assert X.parse_disable('disable testpurple.coltest 30d whynot3')
+    body = blue_body()
+    assert body.count("Disabled until") == 1
+    assert body.count("Message received from") == 1
+    assert 'redstatus2' in body
+
     # TODO test enable
     #err = X.parse_enable('enable testpurple.coltest')
 

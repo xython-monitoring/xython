@@ -1884,12 +1884,7 @@ class xythonsrv:
             if rdata is None:
                 self.error("ERROR: keeping blue without status")
                 return 2
-            odata = ''.join(rdata["raw"])
-            lodata = odata.split("\n\n")
-            firsts = lodata[0].split(" ", 1)[1]
-            # remove the first colour
-            blue_header = firsts + "\n\n" + lodata[1] + "\n\n"
-            data = blue_header + data
+            data = self.histlog_blue_header(rdata) + data
         if color == 'purple':
             if ocolor == 'purple':
                 self.error(f"ERROR: cannot go from purple to purple for {hostname}.{cname}")
@@ -2012,6 +2007,34 @@ class xythonsrv:
         ret["changed"] = data.pop(-1)
         ret["data"] = data
         return ret
+
+    BLUE_MARKER = "Status message when disabled follows:\n\n"
+
+    # return the status message stored in a histlog, without the footer added
+    # by save_histlogs (status unchanged/Message received/Client data ID).
+    # For a blue histlog, return the original status (the one after BLUE_MARKER)
+    # so that it is never wrapped twice in a blue header.
+    def histlog_status(self, rdata):
+        body = ''.join([rdata["first"]] + rdata["data"]).rstrip("\n")
+        if body.startswith("blue "):
+            idx = body.find(self.BLUE_MARKER)
+            if idx >= 0:
+                return body[idx + len(self.BLUE_MARKER):]
+        return body
+
+    # return the blue header (Disabled until ... BLUE_MARKER) of a blue histlog
+    # without the leading color
+    def histlog_blue_header(self, rdata):
+        body = ''.join([rdata["first"]] + rdata["data"])
+        body = body.split(" ", 1)[1]
+        idx = body.find(self.BLUE_MARKER)
+        if idx >= 0:
+            return body[:idx + len(self.BLUE_MARKER)]
+        # histlog written without the marker
+        lodata = body.split("\n\n")
+        if len(lodata) < 2:
+            return lodata[0].rstrip("\n") + "\n\n" + self.BLUE_MARKER
+        return lodata[0] + "\n\n" + lodata[1] + "\n\n" + self.BLUE_MARKER
 
     def save_histlogs(self, hostname, column, buf, ts, color, updater):
         if self.readonly:
@@ -4673,7 +4696,7 @@ class xythonsrv:
         else:
             columns.append(testname)
         for cname in columns:
-            blue_status = f"Disabled until {xytime(expire, self.tz)}\n\n{why}\n\nStatus message when disabled follows:\n\n"
+            blue_status = f"Disabled until {xytime(expire, self.tz)}\n\n{why}\n\n{self.BLUE_MARKER}"
             result = self.get_column_state(hostname, cname)
             if result is None:
                 self.error("ERROR: cannot disable an empty column")
@@ -4682,8 +4705,8 @@ class xythonsrv:
             rdata = self.get_histlogs(hostname, cname, ots)
             if rdata is None:
                 return False
-            data = ''.join(rdata["raw"])
-            blue_status += data
+            # if already blue, only keep the original status, not the old blue header
+            blue_status += self.histlog_status(rdata)
             self.column_update(hostname, cname, "blue", dstart, blue_status, howlongs, "bluter")
         return True
 
