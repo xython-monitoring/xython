@@ -2377,7 +2377,7 @@ class xythonsrv:
             column = col[1]
             expire = col[3]
             # A row whose hostname is no longer a canonical host (host removed
-            # from hosts.cfg, or now an alias of another host) is stale
+            # from hosts.cfg, or now an alias of another host is stale
             # column_update() would resolve it to the canonical host and purple
             # *its* column, every second, since this row is never refreshed.
             H = self.find_host(hostname)
