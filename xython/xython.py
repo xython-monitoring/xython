@@ -43,6 +43,7 @@ from .xython_tests import do_snmp
 from .xython_tests import do_generic_proto
 import celery
 from .common import xytime
+from .common import tssh_expand_url
 from .common import xytime_
 from .common import xyts
 from .common import xyts_
@@ -118,6 +119,8 @@ class xy_host:
         self.snmp_disk_oid = []
         self.snmp_columns = []
         self.snmp_community = 'public'
+        # username used by tssh when not set in the URL
+        self.tssh_username = 'root'
         # last time we read analysis
         self.rules["DISK"] = None
         self.rules["INODE"] = None
@@ -326,6 +329,8 @@ class xythonsrv:
         # each time read_hosts is called, read_hosts_cnt is ++ abd all hosts found are set to this value
         # so all hosts with a lower value need to be removed
         self.read_hosts_cnt = 0
+        # current value of tssh_default_username while reading hosts.cfg
+        self.tssh_default_username = 'root'
         self.daemon_name = "xythond"
         self.protocols = {}
         self.time_read_protocols = 0
@@ -1261,6 +1266,14 @@ class xythonsrv:
                     H.pages.remove('all')
                     H.tags_known.append(tag)
                     continue
+                if tag == 'tssh' or tag[0:5] == 'tssh;' or tag[0:7] == 'tssh://':
+                    url = tssh_expand_url(tag, H.name, H.tssh_username)
+                    if url is None:
+                        H.tags_error.append(tag)
+                        continue
+                    H.tags_known.append(tag)
+                    H.add_test("tssh", url, None, "tssh", True, False)
+                    continue
                 tokens = tag.split(':')
                 test = tokens[0]
                 if test in self.protocols:
@@ -1351,10 +1364,6 @@ class xythonsrv:
                     H.add_test("snmp", None, None, "snmp", True, False)
                     H.tags_known.append(tag)
                     continue
-                if tag[0:7] == 'tssh://':
-                    H.tags_known.append(tag)
-                    H.add_test("tssh", tag, None, "tssh", True, False)
-                    continue
                 if tag[0:8] == 'ssldays=':
                     tokens = tag[8:].split(':')
                     if len(tokens) != 2:
@@ -1426,6 +1435,8 @@ class xythonsrv:
         self.debug(f"DEBUG: read_hosts in {self.etcdir}")
         self.read_hosts_cnt += 1
         # TODO prevent inifine loop (like having directory hosts.d in hosts.d/file)
+        # tssh_default_username is linear along hosts.cfg (and include/directory)
+        self.tssh_default_username = 'root'
         return self.read_hosts_file(self.etcdir + "/hosts.cfg")
 
     def create_host(self, host_name, host_ip, tags):
@@ -1448,6 +1459,7 @@ class xythonsrv:
         else:
             self.debugdev('loading', f"host {H.name} with no changes")
         H.tags = tags
+        H.tssh_username = self.tssh_default_username
         self.add_host(H)
         return self.RET_OK
 
@@ -1533,6 +1545,13 @@ class xythonsrv:
                            'subparent',
                            'vpage', 'vsubpage', 'vsubparent']:
                 self.log(self.daemon_name, f"UNHANDLED {keyword}")
+                continue
+            if keyword == 'tssh_default_username':
+                uname = sline.pop(0)
+                if len(sline) > 0 or re.search(r'[@:;/]', uname):
+                    self.error(f"ERROR: invalid username in {line}")
+                    continue
+                self.tssh_default_username = uname
                 continue
             if keyword == 'include':
                 dname = sline.pop(0)

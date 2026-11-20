@@ -31,6 +31,7 @@ from xython.common import event_yesterday
 from xython.common import event_today
 from xython.common import setcolor
 from xython.common import is_valid_hostname
+from xython.common import tssh_expand_url
 from xython.common import is_valid_color
 from xython.common import is_valid_column
 from xython.common import is_valid_port_str
@@ -3084,5 +3085,76 @@ def test_celery_startup_cleanup(monkeypatch):
     # must not raise; purges broker queue and deletes stale result keys
     X.celery_startup_cleanup()
     assert deleted == ['celery-task-meta-a', 'celery-task-meta-b']
+
+    setup_clean(X)
+
+
+def test_tssh_expand_url():
+    assert tssh_expand_url('tssh', 'h', 'root') == 'tssh://root@h'
+    assert tssh_expand_url('tssh;client', 'h', 'root') == 'tssh://root@h;client'
+    assert tssh_expand_url('tssh://;client', 'h', 'root') == 'tssh://root@h;client'
+    assert tssh_expand_url('tssh://gw;client', 'h', 'mon') == 'tssh://mon@gw;client'
+    assert tssh_expand_url('tssh://gw:2222;client', 'h', 'mon') == 'tssh://mon@gw:2222;client'
+    assert tssh_expand_url('tssh://:2222;client', 'h', 'mon') == 'tssh://mon@h:2222;client'
+    assert tssh_expand_url('tssh://admin@;client', 'h', 'mon') == 'tssh://admin@h;client'
+    assert tssh_expand_url('tssh://admin@:2222;client', 'h', 'mon') == 'tssh://admin@h:2222;client'
+    assert tssh_expand_url('tssh://@gw;client', 'h', 'mon') == 'tssh://mon@gw;client'
+    assert tssh_expand_url('tssh://:pass@gw;client', 'h', 'mon') == 'tssh://mon:pass@gw;client'
+    assert tssh_expand_url('tssh://admin:pass@gw:22;sudo;client', 'h', 'mon') == 'tssh://admin:pass@gw:22;sudo;client'
+    assert tssh_expand_url(f'tssh://;ping:{DEFAULT_PING_TARGET}', 'h', 'mon') == f'tssh://mon@h;ping:{DEFAULT_PING_TARGET}'
+    assert tssh_expand_url('tsshx;client', 'h', 'root') is None
+    assert tssh_expand_url('http://h', 'h', 'root') is None
+    assert tssh_expand_url(None, 'h', 'root') is None
+
+
+def test_tssh_default_username():
+    X = xythonsrv()
+    setup_testdir(X, 'tsshdefault')
+    etcdir = f'{X.xt_data}/etc'
+    shutil.copytree('./tests/etc/xython-load', etcdir, ignore=shutil.ignore_patterns('hosts*'))
+    X.etcdir = etcdir
+    with open(f'{etcdir}/hosts.cfg', 'w') as f:
+        f.write("0.0.0.0 tssh01 tssh;client\n")
+        f.write("tssh_default_username mon\n")
+        f.write("0.0.0.0 tssh02 tssh://;client\n")
+        f.write("0.0.0.0 tssh03 tssh://admin@gw:2222;client\n")
+        f.write("tssh_default_username in:valid\n")
+        f.write("0.0.0.0 tssh04 tssh://admin@;client\n")
+        f.write("include hosts-tssh.cfg\n")
+        f.write("0.0.0.0 tssh06 tssh://gw;client\n")
+    with open(f'{etcdir}/hosts-tssh.cfg', 'w') as f:
+        f.write("0.0.0.0 tssh05 tssh;client\n")
+        f.write("tssh_default_username backup\n")
+    # init() read hosts.cfg and check tags
+    X.init()
+
+    def tssh_urls(hostname):
+        H = X.find_host(hostname)
+        assert H is not None
+        for T in H.tests:
+            if T.type == 'tssh':
+                return T.urls
+        return None
+
+    assert tssh_urls('tssh01') == ['tssh://root@tssh01;client']
+    assert tssh_urls('tssh02') == ['tssh://mon@tssh02;client']
+    assert tssh_urls('tssh03') == ['tssh://admin@gw:2222;client']
+    # invalid value is ignored
+    assert tssh_urls('tssh04') == ['tssh://admin@tssh04;client']
+    # value goes in include, and change in include is kept (linear)
+    assert tssh_urls('tssh05') == ['tssh://mon@tssh05;client']
+    assert tssh_urls('tssh06') == ['tssh://backup@gw;client']
+
+    # on reload default is reset to root
+    time.sleep(0.1)
+    with open(f'{etcdir}/hosts.cfg', 'w') as f:
+        f.write("0.0.0.0 tssh01 tssh;client\n")
+        f.write("0.0.0.0 tssh02 tssh://;client\n")
+    os.utime(f'{etcdir}/hosts.cfg', (time.time() + 10, time.time() + 10))
+    assert X.read_hosts() == X.RET_NEW
+    X.hosts_check_tags()
+    assert tssh_urls('tssh01') == ['tssh://root@tssh01;client']
+    assert tssh_urls('tssh02') == ['tssh://root@tssh02;client']
+    assert X.find_host('tssh06') is None
 
     setup_clean(X)

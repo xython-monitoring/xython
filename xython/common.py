@@ -231,6 +231,41 @@ def is_valid_hostname(hostname):
     return re.match("^[a-zA-Z0-9_.-]+$", hostname)
 
 
+# expand a tssh tag from hosts.cfg into a full tssh://user@host[:port];actions URL
+# missing username is replaced by default_user, missing host by hostname
+# tssh;client                 => tssh://default_user@hostname;client
+# tssh://;client              => tssh://default_user@hostname;client
+# tssh://host:port;client     => tssh://default_user@host:port;client
+# tssh://user@;client         => tssh://user@hostname;client
+# tssh://:password@host;...   => tssh://default_user:password@host;...
+# tssh://user@:port;client    => tssh://user@hostname:port;client
+# return None if tag is not a tssh tag
+def tssh_expand_url(tag, hostname, default_user):
+    if tag is None or hostname is None or default_user is None:
+        return None
+    if tag == 'tssh' or tag[0:5] == 'tssh;':
+        tag = 'tssh://' + tag[4:]
+    if tag[0:7] != 'tssh://':
+        return None
+    rest = tag[7:]
+    if ';' in rest:
+        base, actions = rest.split(';', 1)
+        actions = ';' + actions
+    else:
+        base = rest
+        actions = ''
+    if '@' in base:
+        user, host = base.rsplit('@', 1)
+    else:
+        user = ''
+        host = base
+    if user == '' or user[0] == ':':
+        user = default_user + user
+    if host == '' or host[0] == ':':
+        host = hostname + host
+    return f"tssh://{user}@{host}{actions}"
+
+
 def is_valid_column(column):
     if column is None:
         return False

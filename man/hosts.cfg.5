@@ -906,7 +906,28 @@ default via the \-\-trace option.
 .BR Xython: TODO
 
 .SH Running remote tests via SSH
-.IP tssh://username[:password]@fqdn;list-of-actions-separated-by-semicolon[ping:target|client|sudo]
+.IP tssh[://[[username][:password]@][fqdn][:port]];list-of-actions-separated-by-semicolon[ping:target|client|sudo]
+If username is omitted, the value of tssh_default_username is used (root by default).
+If fqdn is omitted, the hostname of the host is used.
+So "0.0.0.0 test01 tssh;client" is the same as "0.0.0.0 test01 tssh://root@test01;client".
+
+.IP "tssh_default_username username"
+This directive is a line on its own in hosts.cfg (not a host tag).
+It sets the default username for all tssh tests of hosts defined after it.
+It could be changed several times along hosts.cfg, its value is kept across
+include and directory files (a change inside an included file applies to
+the rest of hosts.cfg).
+It is reset to root each time hosts.cfg is reloaded.
+
+Example:
+.br
+tssh_default_username monitor
+.br
+0.0.0.0 test01 tssh;client
+.br
+0.0.0.0 test02 tssh://gw:2222;ping:a.b.c.d
+
+This is only supported by xython
 
 
 .IP ping:target
