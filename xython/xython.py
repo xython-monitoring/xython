@@ -303,7 +303,8 @@ class xythonsrv:
         self.ts_check = time.time()
         self.ts_read_configs = time.time()
         self.ts_genrrd = time.time()
-        self.ts_xythond = time.time()
+        # 0 so the xythond column is generated at the first scheduler run
+        self.ts_xythond = 0
         self.time_read_analysis = 0
         self.expires = []
         self.stats = {}
@@ -2741,7 +2742,45 @@ class xythonsrv:
             cdata += "</fieldset>\n"
         self.column_update(hostname, "sslcert", color, int(time.time()), cdata, self.NETTEST_INTERVAL + 120, "sslcert")
 
-    # TODO hardcoded hostname
+    # find under which name the xython server is known in hosts.cfg
+    # socket.gethostname() could be short while hosts.cfg use the FQDN (or the reverse)
+    def get_local_hostname(self):
+        candidates = []
+        try:
+            candidates.append(socket.gethostname())
+        except OSError:
+            pass
+        try:
+            candidates.append(socket.getfqdn())
+        except OSError:
+            pass
+        for name in list(candidates):
+            short = name.split('.')[0]
+            if short not in candidates:
+                candidates.append(short)
+        # Prefer hosts coming from hosts.cfg (rhcnt > 0) over ghost hosts
+        # (rhcnt == 0): a client reporting with our short name creates a ghost
+        # which would otherwise steal the xythond column from the real host,
+        # leaving the hosts.cfg one to go purple.
+        for name in candidates:
+            H = self.find_host(name) if name else None
+            if H is not None and H.rhcnt > 0:
+                return H.name
+        # also try hosts.cfg entries whose short name match ours
+        for name in candidates:
+            short = name.split('.')[0]
+            for hostname in self.xy_hosts:
+                if self.xy_hosts[hostname].rhcnt > 0 and hostname.split('.')[0] == short:
+                    return hostname
+        # fallback to an already known ghost host
+        for name in candidates:
+            H = self.find_host(name) if name else None
+            if H is not None:
+                return H.name
+        if candidates:
+            return candidates[0]
+        return 'localhost'
+
     def do_xythond(self):
         ccolor = 'green'
         now = int(time.time())
@@ -2821,7 +2860,10 @@ class xythonsrv:
                 continue
             buf += f'&red ERROR: {elog["msg"]}\n'
             ccolor = 'red'
-        self.column_update(socket.gethostname(), "xythond", ccolor, now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
+        hostname = self.get_local_hostname()
+        if self.find_host(hostname) is None:
+            self.error(f"ERROR: xythond: local host {hostname} is not in hosts.cfg, xythond column could be missing")
+        self.column_update(hostname, "xythond", ccolor, now, buf, self.XYTHOND_INTERVAL + 60, "xythond")
 
     async def scheduler(self, loop=None):
         now = time.time()
