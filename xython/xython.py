@@ -42,6 +42,7 @@ from .xython_tests import do_tssh
 from .xython_tests import do_snmp
 from .xython_tests import do_generic_proto
 import celery
+from celery import states as celery_states
 from .common import xytime
 from .common import tssh_expand_url
 from .common import xytime_
@@ -366,7 +367,15 @@ class xythonsrv:
         self.NETTEST_INTERVAL_BASE = 2 * 60
         self.NETTEST_INTERVAL_MAX = 10 * 60
         # number of lagging redispatches skipped during the last do_tests cycle
+        # because the previous task was still queued (worker pool saturated)
         self.tests_lag = 0
+        # number of redispatches skipped during the last do_tests cycle because
+        # the previous task is running but slow (does not slow down other tests)
+        self.tests_stuck = 0
+        # an in-flight celery task older than this is considered lost (worker
+        # died, message lost...) and is dropped so the test can be redispatched.
+        # Must be greater than celery task_time_limit (see xython_tests.py)
+        self.CELERY_TASK_EXPIRE = 20 * 60
         self.XYTHOND_INTERVAL = 2 * 60
         self.GENPAGE_INTERVAL = 30
         # xymon use 512K by default
@@ -1387,6 +1396,8 @@ class xythonsrv:
             if need_conn:
                 H.add_test("conn", "conn", None, "conn", True, False)
             self.gen_column_info(H.name)
+            # H is recreated on each hosts.cfg reload, so tags need to be checked only once
+            H.tags_read = True
 
 # read hosts.cfg
 # return RET_OK if nothing new was read
@@ -2439,7 +2450,12 @@ class xythonsrv:
         # second task on the already-saturated worker pool and, worse, orphan
         # the pending one in celtasks (leaking its redis result). Skip instead
         # and let the caller count it as lag.
+        # A task already started by a worker is only slow (or hung, until the
+        # celery time limit kills it): it says nothing about the worker pool,
+        # so it is counted in tests_stuck instead of driving the backoff.
         if name in self.celerytasks:
+            if self.celerytasks[name].get("state") == 'STARTED':
+                self.tests_stuck += 1
             self.error(f"ERROR: lagging test for {name}")
             return True
         return False
@@ -2448,8 +2464,47 @@ class xythonsrv:
         # Record a dispatched task in both bookkeeping structures. The dict
         # value carries the dispatch timestamp and type so we can report the
         # age of the oldest in-flight task (see celery_oldest_age / do_xythond).
-        self.celerytasks[name] = {"task": ctask, "ts": time.time(), "type": ttype}
+        # name is always f"{hostname}_{ttype}"
+        hostname = name[:-(len(ttype) + 1)]
+        self.celerytasks[name] = {"task": ctask, "ts": time.time(), "type": ttype,
+                                  "hostname": hostname, "state": "PENDING"}
         self.celtasks.append(ctask)
+
+    def celery_failed_ret(self, name, msg):
+        # Build a red result for a celery task which failed or was lost, so the
+        # problem is shown on the test column instead of it silently going
+        # purple. The column is resolved later by do_tests_rip_process().
+        entry = self.celerytasks[name]
+        return {"hostname": entry["hostname"], "type": entry["type"], "column": None,
+                "color": "red", "data": None,
+                "txt": f"&red {msg}\nTest started at {xytime(entry['ts'])}\n"}
+
+    def celery_expire(self, now):
+        # Drop in-flight tasks which will never come back (worker killed,
+        # message lost, result expired...). Without this, such a task blocks
+        # its host/type forever. Runs on the event loop thread since revoke()
+        # uses the control mailbox.
+        for name in list(self.celerytasks):
+            if now - self.celerytasks[name]["ts"] < self.CELERY_TASK_EXPIRE:
+                continue
+            ctask = self.celerytasks[name]["task"]
+            state = self.celerytasks[name].get("state")
+            msg = f"celery task for {name} lost or expired after {int(now - self.celerytasks[name]['ts'])}s (state={state})"
+            self.error(f"ERROR: {msg}")
+            ret = self.celery_failed_ret(name, msg)
+            del self.celerytasks[name]
+            if ctask in self.celtasks:
+                self.celtasks.remove(ctask)
+            try:
+                ctask.revoke()
+            except BaseException as e:
+                self.error(f"ERROR: celery revoke for {name} except {e}")
+            try:
+                ctask.forget()
+            except BaseException as e:
+                self.error(f"ERROR: celery forget for {name} except {e}")
+            # celery_expire runs on the event loop thread, safe to write sqlite
+            self.do_tests_rip_process([ret])
 
     def celery_oldest_age(self, now):
         # Age (seconds) of the oldest in-flight celery task, 0 if none.
@@ -2527,6 +2582,7 @@ class xythonsrv:
             return
         ts_start = time.time()
         now = int(time.time())
+        self.celery_expire(now)
         # pop every test whose due time has passed; re-push it for the next
         # interval. Re-pushed entries have next > now so they are not popped
         # again this cycle.
@@ -2539,6 +2595,7 @@ class xythonsrv:
         if len(due) == 0:
             return
         lag = 0
+        self.tests_stuck = 0
         for hostname, ttype in due:
             self.debugdev("test", f"DEBUG: dotests {hostname} {ttype}")
             H = self.find_host(hostname)
@@ -2566,6 +2623,8 @@ class xythonsrv:
                         if not self.do_generic_proto(H, T):
                             lag += 1
                         continue
+        # skips of tasks already running are not a sign of a saturated pool
+        lag -= self.tests_stuck
         self.tests_lag = lag
         self.adapt_nettest_interval(lag)
         ts_end = time.time()
@@ -2652,6 +2711,9 @@ class xythonsrv:
         ts_start = time.time()
         # RIP celery tasks
         rets = []
+        names = {}
+        for name in self.celerytasks:
+            names[id(self.celerytasks[name]["task"])] = name
         for ctask in list(self.celtasks):
             # ctask.ready()/.get() hit the redis result backend. A transient
             # redis outage (e.g. "Connection reset by peer") raises here; do
@@ -2660,18 +2722,19 @@ class xythonsrv:
             # the redis client reconnects on the next command and the task
             # stays in celtasks to be retried next cycle.
             try:
-                if not ctask.ready():
+                status = ctask.state
+                if status not in celery_states.READY_STATES:
+                    # remember if a worker started it (see celery_lagging)
+                    name = names.get(id(ctask))
+                    if name is not None:
+                        self.celerytasks[name]["state"] = status
                     continue
-                status = ctask.status
-                if status == 'FAILURE':
-                    failed = None
-                    for name in list(self.celerytasks):
-                        if self.celerytasks[name]["task"] == ctask:
-                            failed = name
-                            del (self.celerytasks[name])
+                if status != 'SUCCESS':
+                    # FAILURE (including TimeLimitExceeded) or REVOKED
+                    failed = names.get(id(ctask))
                     self.celtasks.remove(ctask)
-                    self.error(f"ERROR: celery task error for {failed}")
-                    # TODO better handle this problem, easy to generate by removing ping
+                    self.error(f"ERROR: celery task error for {failed} (state={status})")
+                    reason = status
                     try:
                         # disable_sync_subtasks=False: we set
                         # _set_task_join_will_block(True) to kill the blocking
@@ -2681,10 +2744,14 @@ class xythonsrv:
                         ret = ctask.get(disable_sync_subtasks=False)
                     except BaseException as e:
                         self.error(f"ERROR: celery task {failed} except {e}")
+                        reason = f"{status}: {type(e).__name__} {e}"
                     try:
                         ctask.forget()
                     except BaseException as e:
                         self.error(f"ERROR: celery forget for {failed} except {e}")
+                    if failed is not None:
+                        rets.append(self.celery_failed_ret(failed, f"celery task failed ({reason})"))
+                        del self.celerytasks[failed]
                     continue
                 # disable_sync_subtasks=False: see the failure path above --
                 # _set_task_join_will_block(True) arms the guard, but ready()
@@ -2726,6 +2793,15 @@ class xythonsrv:
                     self.parse_hostdata(ret["data"], f"{testtype} for {hostname}")
             if "rrds" in ret:
                 self.tests_rrd(hostname, ret["rrds"])
+            if ret["column"] is None:
+                # result of a failed celery task, use the column of the test
+                ret["column"] = testtype
+                H = self.find_host(hostname)
+                if H is None:
+                    continue
+                for T in H.tests:
+                    if T.type == testtype and T.column:
+                        ret["column"] = T.column
             column = ret["column"]
             self.debugdev('celery', f'DEBUG: result for {ret["hostname"]} \t{ret["type"]}\t{ret["color"]}')
             self.column_update(ret["hostname"], ret["column"], ret["color"], now, ret["txt"], self.NETTEST_INTERVAL + 120, "xython-tests")
@@ -2847,7 +2923,7 @@ class xythonsrv:
         if self.NETTEST_INTERVAL >= self.NETTEST_INTERVAL_MAX or oldest > 3 * self.NETTEST_INTERVAL_BASE:
             clag_color = '&red'
             ccolor = 'red'
-        buf += f'{clag_color} Celery: interval={self.NETTEST_INTERVAL}s (base {self.NETTEST_INTERVAL_BASE}s) in-flight={inflight} lag={self.tests_lag} oldest={oldest}s\n'
+        buf += f'{clag_color} Celery: interval={self.NETTEST_INTERVAL}s (base {self.NETTEST_INTERVAL_BASE}s) in-flight={inflight} lag={self.tests_lag} stuck={self.tests_stuck} oldest={oldest}s\n'
         if inflight > 0:
             # list the oldest lagging tests (bounded) so the operator can see
             # which hosts/types are stuck

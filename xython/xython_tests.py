@@ -82,6 +82,16 @@ app.conf.redis_backend_health_check_interval = 30
 # matter which redis-py / celery version is installed.
 _set_task_join_will_block(True)
 
+# A test task must never run forever: a hung task keeps its host/type
+# "in flight" in xythond, so it is never redispatched and it inflates the
+# adaptive test interval for every other host. The hard limit kills the worker
+# child running it; xythond then harvests a FAILURE (TimeLimitExceeded).
+# Tests have their own timeouts (60s by default), this is the last guard.
+app.conf.task_time_limit = 15 * 60
+# Report STARTED in the result backend, so xythond can tell a task waiting in
+# the queue (worker pool saturated) from a task that is running but slow.
+app.conf.task_track_started = True
+
 async def snmp_get71(oid, hostname, port, snmp_community):
     ret = {}
     ret["err"] = -1
@@ -580,14 +590,19 @@ class xssh:
                 try:
                     with transport.open_channel(kind='session') as channel:
                         file_data = open('/usr/bin/xython-client', 'rb').read()
+                        channel.settimeout(self.timeout)
                         channel.exec_command('cat > /tmp/xython-client')
                         channel.sendall(file_data)
                     with transport.open_channel(kind='session') as channel:
+                        channel.settimeout(self.timeout)
                         channel.exec_command('chmod 770 /tmp/xython-client')
                     rcmd = '/tmp/xython-client'
                     if self.sudo:
                         rcmd = 'sudo /tmp/xython-client'
-                    stdin, stdout, stderr = client.exec_command(rcmd)
+                    stdin, stdout, stderr = client.exec_command(rcmd, timeout=self.timeout)
+                    output, errorlog = self.read_output(stdout, stderr)
+                except socket.timeout as e:
+                    return self.ret_timeout(client, action, e)
                 except FileNotFoundError as e:
                     test_duration = time.time() - self.ts_start
                     self.dret["color"] = 'red'
@@ -602,14 +617,17 @@ class xssh:
                     self.dret["txt"] += f"\nSeconds: {test_duration}\n"
                     client.close()
                     return self.dret
-                errorlog = '"'.join(stderr.readlines())
                 if errorlog:
                     acolor = 'yellow'
                 self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
-                self.dret["data"] = ''.join(stdout.readlines())
+                self.dret["data"] = output
             if action['type'] == 'ping':
                 try:
-                    stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}')
+                    stdin, stdout, stderr = client.exec_command(f'ping -c4 {action["target"]}', timeout=self.timeout)
+                    output, errorlog = self.read_output(stdout, stderr)
+                    exit_status = stdout.channel.recv_exit_status()
+                except socket.timeout as e:
+                    return self.ret_timeout(client, action, e)
                 except paramiko.ssh_exception.SSHException as e:
                     test_duration = time.time() - self.ts_start
                     self.dret["color"] = 'red'
@@ -617,12 +635,11 @@ class xssh:
                     self.dret["txt"] += f"\nSeconds: {test_duration}\n"
                     client.close()
                     return self.dret
-                errorlog = '"'.join(stderr.readlines())
                 if errorlog:
                     acolor = 'yellow'
-                if stdout.channel.recv_exit_status() != 0:
+                if exit_status != 0:
                     acolor = 'red'
-                self.dret["txt"] += f'&{acolor}ping {action["target"]}\n<fieldset><legend>output log</legend>\n' + ''.join(stdout.readlines()) + "\n</fieldset>"
+                self.dret["txt"] += f'&{acolor}ping {action["target"]}\n<fieldset><legend>output log</legend>\n' + output + "\n</fieldset>"
                 self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
             self.dret["color"] = setcolor(acolor, self.dret["color"])
         client.close()
@@ -633,14 +650,37 @@ class xssh:
         self.dret["txt"] += f"\nSeconds: {test_duration}\n"
         return self.dret
 
+    # Read the whole output of a command.
+    # stdout is read first: it could be bigger than the SSH window, and reading
+    # stderr first would deadlock (remote blocked writing stdout while we wait
+    # for stderr EOF). Raise socket.timeout if the remote stays silent more
+    # than the channel timeout (set via exec_command(timeout=)).
+    def read_output(self, stdout, stderr):
+        output = ''.join(stdout.readlines())
+        errorlog = '"'.join(stderr.readlines())
+        return output, errorlog
+
+    def ret_timeout(self, client, action, e):
+        test_duration = time.time() - self.ts_start
+        self.dret["color"] = 'red'
+        self.dret["txt"] = f'ERROR: timeout ({self.timeout}s) while running {action["type"]} on {self.chostname} {str(e)}'
+        self.dret["txt"] += f"\nSeconds: {test_duration}\n"
+        client.close()
+        return self.dret
+
     def upload(self, client):
         transport = client.get_transport()
         try:
             with transport.open_channel(kind='session') as channel:
                 file_data = open('/usr/bin/xython-client', 'rb').read()
+                channel.settimeout(self.timeout)
                 channel.exec_command('cat > /tmp/xython-client')
                 channel.sendall(file_data)
                 self.dret["txt"] += 'Upload OK\n<br>'
+        except socket.timeout as e:
+            self.dret["color"] = 'red'
+            self.dret["txt"] = f'ERROR: timeout while uploading xython-client {str(e)}'
+            return False
         except paramiko.ssh_exception.SSHException as e:
             self.dret["color"] = 'red'
             self.dret["txt"] = f'ERROR: Failed to upload xython-client {str(e)}'
@@ -651,8 +691,13 @@ class xssh:
         transport = client.get_transport()
         try:
             with transport.open_channel(kind='session') as channel:
+                channel.settimeout(self.timeout)
                 channel.exec_command('chmod 770 /tmp/xython-client')
                 self.dret["txt"] += 'Chmod OK\n<br>'
+        except socket.timeout as e:
+            self.dret["color"] = 'red'
+            self.dret["txt"] += f'ERROR: timeout while chmod xython-client {str(e)}'
+            return False
         except paramiko.ssh_exception.SSHException as e:
             self.dret["color"] = 'red'
             self.dret["txt"] += f'ERROR: Failed to chmod xython-client {str(e)}'
@@ -661,16 +706,20 @@ class xssh:
 
     def doclient(self, client):
         try:
-            stdin, stdout, stderr = client.exec_command('/tmp/xython-client')
+            stdin, stdout, stderr = client.exec_command('/tmp/xython-client', timeout=self.timeout)
+            output, errorlog = self.read_output(stdout, stderr)
+        except socket.timeout as e:
+            self.dret["color"] = 'red'
+            self.dret["txt"] += f'ERROR: timeout ({self.timeout}s) while running xython-client {str(e)}'
+            return False
         except paramiko.ssh_exception.SSHException as e:
             self.dret["color"] = 'red'
             self.dret["txt"] += f'ERROR: Failed to run xython-client {str(e)}'
             return False
-        errorlog = '"'.join(stderr.readlines())
         if errorlog:
             self.dret["color"] = setcolor('yellow', self.dret["color"])
         self.dret["txt"] += '<fieldset><legend>error log</legend>\n' + errorlog + "\n</fieldset>"
-        self.dret["data"] = ''.join(stdout.readlines())
+        self.dret["data"] = output
         return True
 
 

@@ -3050,6 +3050,79 @@ def test_celery_guard(monkeypatch):
     setup_clean(X)
 
 
+def test_celery_stuck_expire():
+    X = xythonsrv()
+    X.etcdir = './tests/etc/xython-load/'
+    X.lldebug = True
+    setup_testdir(X, 'celerystuck')
+    X.init()
+
+    class FakeResult:
+        def __init__(self, state, ret=None):
+            self.state = state
+            self.ret = ret
+            self.revoked = False
+            self.forgotten = False
+
+        def get(self, **k):
+            if self.state == 'FAILURE':
+                raise TimeoutError('TimeLimitExceeded(900)')
+            return self.ret
+
+        def revoke(self):
+            self.revoked = True
+
+        def forget(self):
+            self.forgotten = True
+
+    X.celery_workers = {'w1': 'pong'}
+    queued = FakeResult('PENDING')
+    running = FakeResult('STARTED')
+    done = FakeResult('SUCCESS', {"hostname": "h3", "type": "fail"})
+    timelimit = FakeResult('FAILURE')
+    X.celery_register('h1_fail', queued, 'fail')
+    X.celery_register('test01_tssh', running, 'tssh')
+    X.celery_register('h3_fail', done, 'fail')
+    X.celery_register('my_host_conn', timelimit, 'conn')
+    assert X.celerytasks['my_host_conn']['hostname'] == 'my_host'
+
+    rets = X.do_tests_rip_collect()
+    # finished and failed tasks are harvested, others stay in flight
+    assert len(rets) == 2
+    assert {"hostname": "h3", "type": "fail"} in rets
+    # a failed task gives a red result for its column
+    fret = [r for r in rets if r["type"] == 'conn'][0]
+    assert fret["hostname"] == 'my_host'
+    assert fret["color"] == 'red'
+    assert fret["column"] is None
+    assert 'TimeLimitExceeded(900)' in fret["txt"]
+    assert sorted(X.celerytasks) == ['h1_fail', 'test01_tssh']
+    assert len(X.celtasks) == 2
+    assert X.celerytasks['h1_fail']['state'] == 'PENDING'
+    assert X.celerytasks['test01_tssh']['state'] == 'STARTED'
+
+    # only a skip of a running task is counted as stuck
+    X.tests_stuck = 0
+    assert X.celery_lagging('h1_fail')
+    assert X.tests_stuck == 0
+    assert X.celery_lagging('test01_tssh')
+    assert X.tests_stuck == 1
+    assert not X.celery_lagging('h3_fail')
+
+    # old in-flight tasks are dropped, revoked and forgotten
+    # and reported red on the test column
+    now = time.time()
+    X.celerytasks['test01_tssh']['ts'] = now - X.CELERY_TASK_EXPIRE - 1
+    X.celery_expire(now)
+    assert list(X.celerytasks) == ['h1_fail']
+    assert X.celtasks == [queued]
+    assert running.revoked and running.forgotten
+    assert not queued.revoked
+    assert X.get_column_color('test01', 'tssh') == 'red'
+
+    setup_clean(X)
+
+
 def test_celery_startup_cleanup(monkeypatch):
     import celery as celerymod
 
@@ -3144,6 +3217,12 @@ def test_tssh_default_username():
     # value goes in include, and change in include is kept (linear)
     assert tssh_urls('tssh05') == ['tssh://mon@tssh05;client']
     assert tssh_urls('tssh06') == ['tssh://backup@gw;client']
+
+    # checking tags again must not duplicate tests
+    X.hosts_check_tags()
+    assert tssh_urls('tssh01') == ['tssh://root@tssh01;client']
+    H = X.find_host('tssh01')
+    assert len([T for T in H.tests if T.type == 'conn']) == 1
 
     # on reload default is reset to root
     time.sleep(0.1)
