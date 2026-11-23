@@ -570,11 +570,6 @@ class xssh:
             client.close()
             return ret
 
-        if state == 'client-chmod':
-            ret = self.chmod(client)
-            client.close()
-            return ret
-
         if state == 'client-run':
             ret = self.doclient(client)
             client.close()
@@ -586,6 +581,8 @@ class xssh:
             # action client
             if action['type'] == 'client':
                 # handle case where sftp-server is not present
+                # TODO: do not upload in /tmp, any local user could replace
+                # /tmp/xython-client and get it run (as root with sudo)
                 transport = client.get_transport()
                 try:
                     with transport.open_channel(kind='session') as channel:
@@ -593,12 +590,10 @@ class xssh:
                         channel.settimeout(self.timeout)
                         channel.exec_command('cat > /tmp/xython-client')
                         channel.sendall(file_data)
-                    with transport.open_channel(kind='session') as channel:
-                        channel.settimeout(self.timeout)
-                        channel.exec_command('chmod 770 /tmp/xython-client')
-                    rcmd = '/tmp/xython-client'
+                    # run via sh, so it works even if /tmp is mounted noexec
+                    rcmd = 'sh /tmp/xython-client'
                     if self.sudo:
-                        rcmd = 'sudo /tmp/xython-client'
+                        rcmd = 'sudo sh /tmp/xython-client'
                     stdin, stdout, stderr = client.exec_command(rcmd, timeout=self.timeout)
                     output, errorlog = self.read_output(stdout, stderr)
                 except socket.timeout as e:
@@ -687,26 +682,9 @@ class xssh:
             return False
         return True
 
-    def chmod(self, client):
-        transport = client.get_transport()
-        try:
-            with transport.open_channel(kind='session') as channel:
-                channel.settimeout(self.timeout)
-                channel.exec_command('chmod 770 /tmp/xython-client')
-                self.dret["txt"] += 'Chmod OK\n<br>'
-        except socket.timeout as e:
-            self.dret["color"] = 'red'
-            self.dret["txt"] += f'ERROR: timeout while chmod xython-client {str(e)}'
-            return False
-        except paramiko.ssh_exception.SSHException as e:
-            self.dret["color"] = 'red'
-            self.dret["txt"] += f'ERROR: Failed to chmod xython-client {str(e)}'
-            return False
-        return True
-
     def doclient(self, client):
         try:
-            stdin, stdout, stderr = client.exec_command('/tmp/xython-client', timeout=self.timeout)
+            stdin, stdout, stderr = client.exec_command('sh /tmp/xython-client', timeout=self.timeout)
             output, errorlog = self.read_output(stdout, stderr)
         except socket.timeout as e:
             self.dret["color"] = 'red'
@@ -728,7 +706,6 @@ def do_tssh(hostname, urls):
     tssh = xssh(hostname, urls[0])
     if tssh.one_by_one:
         tssh.run(state = 'client-upload')
-        tssh.run(state = 'client-chmod')
         tssh.run(state = 'client-run')
         return tssh.dret
     return tssh.run()
