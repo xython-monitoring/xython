@@ -90,19 +90,31 @@ do_smart() {
 		XYTHON_CLIENT_ETC="/etc/xython"
 	fi
 	echo "[smart]"
-	# smartctl --scan output looks like "/dev/sda -d scsi # /dev/sda, SCSI device"
-	# only the device name is used, smartctl autodetects the type
-	for disk in $($SMARTCTL --scan 2>/dev/null | awk '/^\/dev\// { print $1 }' | sort -u)
+	# smartctl --scan output looks like:
+	# /dev/sda -d scsi # /dev/sda, SCSI device
+	# /dev/bus/0 -d megaraid,1 # /dev/bus/0 [megaraid_disk_01], SCSI device
+	# print "device devtype" with devtype "-" when absent
+	$SMARTCTL --scan 2>/dev/null | awk '/^\/dev\// && !seen[$0]++ { if ($2 == "-d" && $3 != "") print $1 " " $3; else print $1 " -" }' |
+	while read disk devtype
 	do
-		echo "SMARTHEADER:device=$disk"
+		DEVTYPE=""
+		HEADER="SMARTHEADER:device=$disk"
+		# "-d scsi" is what --scan reports for SATA disks too, using it
+		# would prevent the SAT autodetection and lose ATA attributes
+		if [ "$devtype" != '-' -a "$devtype" != 'scsi' ];then
+			DEVTYPE="-d $devtype"
+			HEADER="$HEADER:devtype=$devtype"
+		fi
+		echo "$HEADER"
 		if [ -e "$XYTHON_CLIENT_ETC/smart.conf" ];then
-			grep "^$disk:IGNORE" "$XYTHON_CLIENT_ETC/smart.conf"
+			# either /dev/sda:IGNORE or /dev/bus/0,megaraid,1:IGNORE
+			awk -v a="$disk:IGNORE" -v b="$disk,$devtype:IGNORE" 'index($0, a) == 1 || index($0, b) == 1 { f = 1; print } END { exit !f }' "$XYTHON_CLIENT_ETC/smart.conf"
 			if [ $? -eq 0 ];then
 				echo "IGNORED"
 				continue
 			fi
 		fi
-		$SMARTCTL -a $disk
+		$SMARTCTL $DEVTYPE -a $disk < /dev/null
 		echo "SMART_RETURNCODE=$?"
 	done
 }

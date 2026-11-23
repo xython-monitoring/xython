@@ -5446,6 +5446,7 @@ class xythonsrv:
                     color = setcolor(ret["color"], color)
                     state += "</fieldset>"
                 smartdata = []
+                devtype = None
                 params = line.split(":")
                 param = params.pop(0)
                 for param in params:
@@ -5455,7 +5456,12 @@ class xythonsrv:
                         continue
                     if tokens[0] == 'device':
                         device = tokens[1]
-                state += f"<fieldset><legend>{device}</legend>\n"
+                    if tokens[0] == 'devtype':
+                        devtype = tokens[1]
+                if devtype is not None:
+                    state += f"<fieldset><legend>{device} ({devtype})</legend>\n"
+                else:
+                    state += f"<fieldset><legend>{device}</legend>\n"
             else:
                 smartdata.append(line)
         ret = self.parse_smartoutput(smartdata)
