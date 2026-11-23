@@ -71,35 +71,39 @@ run_less() {
 	return 0
 }
 
+find_smartctl() {
+	SMARTCTL=""
+	for candidate in smartctl /usr/sbin/smartctl /sbin/smartctl /usr/local/sbin/smartctl
+	do
+		$candidate --version 2>/dev/null >/dev/null
+		if [ $? -eq 0 ];then
+			SMARTCTL="$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
 do_smart() {
 	XYTHON_CLIENT_ETC="/run/xython-client"
 	if [ -e /etc/xython ];then
 		XYTHON_CLIENT_ETC="/etc/xython"
 	fi
 	echo "[smart]"
-	for i in a b c d e f g
+	# smartctl --scan output looks like "/dev/sda -d scsi # /dev/sda, SCSI device"
+	# only the device name is used, smartctl autodetects the type
+	for disk in $($SMARTCTL --scan 2>/dev/null | awk '/^\/dev\// { print $1 }' | sort -u)
 	do
-		if [ -e /dev/sd$i ];then
-			DEVTYPE=""
-			echo "SMARTHEADER:device=/dev/sd$i"
-			if [ -e "$XYTHON_CLIENT_ETC/smart.conf" ];then
-				grep "^/dev/sd$i:IGNORE" "$XYTHON_CLIENT_ETC/smart.conf"
-				if [ $? -eq 0 ];then
-					echo "IGNORED"
-					continue
-				fi
+		echo "SMARTHEADER:device=$disk"
+		if [ -e "$XYTHON_CLIENT_ETC/smart.conf" ];then
+			grep "^$disk:IGNORE" "$XYTHON_CLIENT_ETC/smart.conf"
+			if [ $? -eq 0 ];then
+				echo "IGNORED"
+				continue
 			fi
-			smartctl $DEVTYPE -a /dev/sd$i
-			echo "SMART_RETURNCODE=$?"
 		fi
-	done
-	for i in $(seq 0 5)
-	do
-		if [ -e /dev/nvme$i ];then
-			echo "SMARTHEADER:device=/dev/nvme$i"
-			smartctl -a /dev/nvme$i
-			echo "SMART_RETURNCODE=$?"
-		fi
+		$SMARTCTL -a $disk
+		echo "SMART_RETURNCODE=$?"
 	done
 }
 
@@ -477,13 +481,13 @@ if [ $ISLINUX -eq 1 ];then
 			rpm -qa | sort
 		fi
 	fi
+fi
 
-	run_less 3600 smart
+run_less 3600 smart
+if [ $? -eq 0 ];then
+	find_smartctl
 	if [ $? -eq 0 ];then
-		smartctl --version 2>/dev/null >/dev/null
-		if [ $? -eq 0 ];then
-			do_smart
-		fi
+		do_smart
 	fi
 fi
 
