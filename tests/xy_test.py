@@ -2662,6 +2662,48 @@ def test_smart():
     print(ret)
     assert ret["color"] == 'green'
 
+    # analysis.cfg SMART rules
+    with open("tests/smart/smart.raptor") as f:
+        good = f.read()
+    with open("tests/smart/gs9") as f:
+        bad = f.read()
+
+    def smartdev(header, data, rc):
+        return f"SMARTHEADER:{header}\n{data}\nSMART_RETURNCODE={rc}\n"
+
+    hdata = smartdev("device=/dev/sda", good, 0)
+    # red but ignored
+    hdata += smartdev("device=/dev/sdb", bad, 0)
+    # rc 4 is green only for megaraid,2
+    hdata += smartdev("device=/dev/bus/0:devtype=megaraid,2", good, 4)
+    X.parse_smart("test01", hdata, "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+
+    # rc 2 is yellow on all devices of test01
+    X.parse_smart("test01", hdata + smartdev("device=/dev/sdc", good, 2), "fake")
+    assert X.get_column_color('test01', 'smart') == 'yellow'
+
+    # rc 8 is yellow via DEFAULT
+    X.parse_smart("test01", hdata + smartdev("device=/dev/sdc", good, 8), "fake")
+    assert X.get_column_color('test01', 'smart') == 'yellow'
+
+    # rc 4 on another megaraid disk is still red
+    X.parse_smart("test01", hdata + smartdev("device=/dev/bus/0:devtype=megaraid,1", good, 4), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+
+    # QEMU disks are ignored by default, even with a red return code
+    with open("tests/smart/smart.qemu") as f:
+        qemu = f.read()
+    X.parse_smart("test01", smartdev("device=/dev/sde", qemu, 4), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    ret = X.parse_smartoutput(qemu.split("\n"))
+    assert X.smart_is_virtual(qemu.split("\n"))
+    assert not X.smart_is_virtual(good.split("\n"))
+
+    # without rule, the ignored device would be red
+    X.parse_smart("test01", smartdev("device=/dev/sdd", bad, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+
     setup_clean(X)
 
 def test_time():

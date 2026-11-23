@@ -134,6 +134,7 @@ class xy_host:
         self.rules["SENSOR"] = None
         self.rules["LSMOD"] = {}
         self.rules["ETHTOOL"] = {}
+        self.rules["SMART"] = []
         self.certs = {}
         self.sslwarn = 30
         self.sslalarm = 10
@@ -292,6 +293,7 @@ class xythonsrv:
         self.rules["CPU"] = None
         self.rules["SENSOR"] = None
         self.rules["LSMOD"] = {}
+        self.rules["SMART"] = []
         self.autoreg = True
         self.celtasks = []
         self.celerytasks = {}
@@ -3419,6 +3421,50 @@ class xythonsrv:
         ret['err'] = True
         return ret
 
+    def analysis_smart(self, ltoks):
+        # SMART device IGNORE
+        # SMART device RETURNCODE value color
+        ret = {}
+        ret['err'] = False
+        ret['ltoks'] = ltoks
+        rs = {}
+        rs["ignore"] = False
+        if len(ltoks) < 2:
+            self.error(f'ERROR: missing SMART parameter in {ltoks}')
+            ret['err'] = True
+            return ret
+        rs["device"] = ltoks.pop(0)
+        arg = ltoks.pop(0)
+        if arg in ['IGNORE', 'ignore']:
+            rs["ignore"] = True
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        if arg in ['RETURNCODE', 'returncode']:
+            if len(ltoks) < 2:
+                self.error(f'ERROR: SMART: RETURNCODE need a value and a color {ltoks}')
+                ret['err'] = True
+                return ret
+            rc = ltoks.pop(0)
+            try:
+                rs["rc"] = int(rc)
+            except ValueError:
+                self.error(f'ERROR: SMART: invalid return code {rc}')
+                ret['err'] = True
+                return ret
+            color = ltoks.pop(0)
+            if not is_valid_color(color):
+                self.error(f'ERROR: SMART: invalid color {color}')
+                ret['err'] = True
+                return ret
+            rs["color"] = color
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        self.error(f'ERROR: SMART: invalid config {arg}')
+        ret['err'] = True
+        return ret
+
     def analysis_sensor(self, ltoks):
         ret = {}
         ret['err'] = False
@@ -3538,6 +3584,7 @@ class xythonsrv:
         self.rules["SENSOR"].add("DEFAULT V 1000 2000 -1 -2")
         self.rules["SENSOR"].add("DEFAULT RPM 4000 5000 100 0")
         self.rules["ETHTOOL"] = None
+        self.rules["SMART"] = []
         for hostname in self.xy_hosts:
             H = self.xy_hosts[hostname]
             H.rules["CPU"] = None
@@ -3551,6 +3598,7 @@ class xythonsrv:
             H.rules["SENSOR"] = None
             H.rules["ETHTOOL"] = None
             H.rules["LSMOD"] = {}
+            H.rules["SMART"] = []
         # TODO handle PermissionError:
         f = open(f"{self.etcdir}/analysis.cfg", 'r')
         selector = None
@@ -3643,6 +3691,13 @@ class xythonsrv:
                         continue
                     self.debugdev("todo", f"TODO: SVC")
                     ltoks = ret["ltoks"]
+                elif keyword == 'SMART':
+                    ret = self.analysis_smart(ltoks)
+                    if ret["err"]:
+                        continue
+                    ltoks = ret["ltoks"]
+                    setting = ret["setting"]
+                    settingname = "SMART"
                 elif keyword == 'LSMOD':
                     ret = self.analysis_lsmod(ltoks)
                     if ret["err"]:
@@ -3733,6 +3788,8 @@ class xythonsrv:
                         self.rules[settingname] = xy_rule_mem()
                         self.rules[settingname].warn = setting["warn"]
                         self.rules[settingname].panic = setting["panic"]
+                    elif settingname == 'SMART':
+                        self.rules["SMART"].append(setting)
                     else:
                         self.error(f"ERROR: unsupported {settingname} in DEFAULT")
                     continue
@@ -3782,6 +3839,8 @@ class xythonsrv:
                                 setting["panic"],
                                 setting["mwarn"],
                                 setting["mpanic"])
+                        elif settingname == 'SMART':
+                            H.rules["SMART"].append(setting)
                         elif settingname == 'LSMOD':
                             mname = setting["module_name"]
                             H.rules["LSMOD"][mname] = {}
@@ -5095,7 +5154,33 @@ class xythonsrv:
         H.coltime["time"] = now
         return True
 
-    def parse_smartoutput(self, data):
+    def smart_is_virtual(self, smartdata):
+        # virtual disks have no meaningful SMART data, ignore them by default
+        for line in smartdata:
+            tokens = line.split(":", 1)
+            if len(tokens) != 2:
+                continue
+            if tokens[0].strip() == 'Vendor' and tokens[1].strip().upper() == 'QEMU':
+                return True
+        return False
+
+    def smart_find_rule(self, rules, device, devtype, kind, rc=None):
+        # rules are ordered host rules first, then DEFAULT ones
+        # a rule on "device" or "device,devtype" win over "*"
+        keys = [device]
+        if devtype is not None:
+            keys.insert(0, f"{device},{devtype}")
+        for wanted in keys + ['*']:
+            for rule in rules:
+                if rule["device"] != wanted:
+                    continue
+                if kind == 'ignore' and rule["ignore"]:
+                    return rule
+                if kind == 'rc' and not rule["ignore"] and rule["rc"] == rc:
+                    return rule
+        return None
+
+    def parse_smartoutput(self, data, rules=None, device=None, devtype=None):
         ret = {}
         ret["color"] = 'green'
         ret["html"] = ""
@@ -5420,8 +5505,15 @@ class xythonsrv:
                     ret["html"] += "&red invalid\n"
                     ret["color"] = setcolor('red', ret["color"])
                     continue
-                if returncode != 0 and returncode != 64:
-                    ret["html"] += "&red return code\n"
+                rule = None
+                if rules:
+                    rule = self.smart_find_rule(rules, device, devtype, 'rc', returncode)
+                if rule is not None:
+                    rcolor = rule["color"]
+                    ret["html"] += f"&{rcolor} return code {returncode} (analysis.cfg)\n"
+                    ret["color"] = setcolor(rcolor, ret["color"])
+                elif returncode != 0 and returncode != 64:
+                    ret["html"] += f"&red return code {returncode}\n"
                     ret["color"] = setcolor('red', ret["color"])
                 else:
                     ret["html"] += "&green return code\n"
@@ -5436,15 +5528,32 @@ class xythonsrv:
         if H is None:
             self.error(f"ERROR: fail to find {hostname} for smart")
             return False
+        # host rules first, so they win over DEFAULT ones
+        rules = H.rules["SMART"] + self.rules["SMART"]
+
+        def end_device(device, devtype, smartdata):
+            reason = None
+            if device is not None and self.smart_find_rule(rules, device, devtype, 'ignore'):
+                reason = "analysis.cfg"
+            elif self.smart_is_virtual(smartdata):
+                reason = "virtual disk"
+            if reason is not None:
+                html = f"&clear ignored ({reason})\n"
+                for line in smartdata:
+                    html += line + "\n"
+                return ['clear', html + "</fieldset>"]
+            ret = self.parse_smartoutput(smartdata, rules, device, devtype)
+            return [ret["color"], ret["html"] + "</fieldset>"]
+
         device = None
+        devtype = None
         smartdata = []
         for line in hdata.split("\n"):
             if line[:12] == 'SMARTHEADER:':
                 if device is not None:
-                    ret = self.parse_smartoutput(smartdata)
-                    state += ret["html"]
-                    color = setcolor(ret["color"], color)
-                    state += "</fieldset>"
+                    dcolor, html = end_device(device, devtype, smartdata)
+                    state += html
+                    color = setcolor(dcolor, color)
                 smartdata = []
                 devtype = None
                 params = line.split(":")
@@ -5464,10 +5573,9 @@ class xythonsrv:
                     state += f"<fieldset><legend>{device}</legend>\n"
             else:
                 smartdata.append(line)
-        ret = self.parse_smartoutput(smartdata)
-        state += ret["html"]
-        color = setcolor(ret["color"], color)
-        state += "</fieldset>"
+        dcolor, html = end_device(device, devtype, smartdata)
+        state += html
+        color = setcolor(dcolor, color)
         tend = time.time()
         state += f"Seconds: {tend - now}"
         self.column_update(hostname, self.colnames["smart"], color, int(tend), state, 2 * 60 * 60, sender)

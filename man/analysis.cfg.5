@@ -259,6 +259,41 @@ eth1 is not checked, eth0 is green at 1000Mb/s and yellow at 100Mb/s even if it 
 .br
 .BR Xython: OK
 
+.SH SMART STATUS COLUMN SETTINGS
+.sp
+.BR "SMART device IGNORE"
+.br
+.BR "SMART device RETURNCODE value color"
+.sp
+"device" is the device name reported by the client, for example /dev/sda.
+A disk behind a RAID controller is written device,type with the type given
+by "smartctl --scan", for example /dev/bus/0,megaraid,2.
+"*" matches all devices.
+A rule for a device wins over a rule for "*", and a host rule wins over a DEFAULT one.
+.sp
+IGNORE keeps the smartctl output of the device on the page,
+but its result does not change the color of the smart column.
+Virtual disks (Vendor: QEMU) are always ignored.
+.sp
+By default, the smart column goes red when smartctl exits with a value other than 0 or 64.
+RETURNCODE reports the exact smartctl return code "value" with "color" instead.
+The smartctl return code is a bitmask, see smartctl(8), the rule matches only the exact value.
+.sp
+Example:
+.br
+	HOST=server1
+.br
+	SMART /dev/sdb IGNORE
+.br
+	SMART /dev/bus/0,megaraid,2 RETURNCODE 4 green
+.br
+	SMART * RETURNCODE 192 yellow
+.br
+/dev/sdb is not checked, return code 4 is green for the megaraid disk 2,
+return code 192 is yellow for all devices of server1.
+.br
+.BR Xython: OK
+
 .SH SENSOR STATUS COLUMN SETTINGS
 .sp
 .BR "SENSOR adapter sensorname warnmax criticmax [minwarn mincritic]"

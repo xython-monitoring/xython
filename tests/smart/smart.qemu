@@ -1,0 +1,23 @@
+smartctl 7.4 2023-08-01 r5530 [x86_64-linux-6.12.116+deb13-amd64] (local build)
+Copyright (C) 2002-23, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               QEMU
+Product:              QEMU HARDDISK
+Revision:             2.5+
+Compliance:           SPC-3
+User Capacity:        12,884,901,888 bytes [12.8 GB]
+Logical block size:   512 bytes
+LU is thin provisioned, LBPRZ=0
+Device type:          disk
+Local Time is:        Mon Nov 23 17:11:47 2026 CET
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+Current Drive Temperature:     0 C
+Drive Trip Temperature:        0 C
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+
