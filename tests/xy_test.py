@@ -2729,6 +2729,71 @@ def test_smart():
     X.parse_smart("test01", smartdev("device=/dev/sdd", bad, 0), "fake")
     assert X.get_column_color('test01', 'smart') == 'red'
 
+    # NAND flash attributes (grown bad blocks, program/erase failures)
+    with open("tests/smart/smartctl-Samsung-SSD-850-PRO-2TB.txt") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["nand"]["Runtime_Bad_Block"] == 101
+    assert ret["nand"]["Program_Fail_Cnt_Total"] == 0
+    assert "&yellow Runtime_Bad_Block 101 > 0\n" in ret["html"]
+
+    # 175 raw is vendor-encoded on this HPE disk, it must not be counted
+    with open("tests/smart/smart.ssdnvidia") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'green'
+    assert "Program_Fail_Count_Chip" not in ret["nand"]
+    assert "&clear Program_Fail_Count_Chip raw value looks vendor-encoded, ignored\n" in ret["html"]
+
+    # factory bad blocks are only reported
+    with open("tests/smart/wrap") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["nand"]["Initial_Bad_Block_Count"] == 18
+    assert "&clear Initial_Bad_Block_Count 18 (includes factory defects)\n" in ret["html"]
+
+    with open("tests/smart/wd-blue-wds240g2g0b") as f:
+        data = f.read()
+    ret = X.parse_smartoutput(data.split("\n"))
+    assert ret["color"] == 'green'
+    assert ret["nand"]["Total_Bad_Blocks"] == 87
+    assert ret["nand"]["Grown_Bad_Blocks"] == 0
+    assert ret["nand"]["Program_Fail_Count"] == 0
+    assert ret["nand"]["Erase_Fail_Count"] == 0
+
+    for sample in ["gs16", "windriver_smartctl_-_ada0"]:
+        with open(f"tests/smart/{sample}") as f:
+            data = f.read()
+        ret = X.parse_smartoutput(data.split("\n"))
+        assert ret["nand"]["Program_Fail_Count"] == 0
+        assert ret["nand"]["Erase_Fail_Count"] == 0
+
+    # analysis.cfg SMART ATTRIBUTE rules
+    nand = "ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE\n"
+    nand += "183 Runtime_Bad_Block       0x0013   099   099   010    Pre-fail  Always       -       101\n"
+    # default is yellow
+    X.parse_smart("test01", smartdev("device=/dev/sdf", nand, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'yellow'
+    # exact attribute rule
+    X.parse_smart("test01", smartdev("device=/dev/sdg", nand, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+    # NAND rule to clear
+    X.parse_smart("test01", smartdev("device=/dev/sdh", nand, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    # exact attribute rule win over NAND, whatever the order
+    X.parse_smart("test01", smartdev("device=/dev/sdi", nand, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+
+    # invalid ATTRIBUTE rules
+    r = X.analysis_smart(["*", "ATTRIBUTE", "Runtime_Bad_Block"])
+    assert r['err']
+    r = X.analysis_smart(["*", "ATTRIBUTE", "Runtime_Bad_Block", "pink"])
+    assert r['err']
+    r = X.analysis_smart(["*", "ATTRIBUTE", "NAND", "red"])
+    assert not r['err']
+    assert r['setting']['kind'] == 'attr'
+    assert r['setting']['attr'] == 'NAND'
+
     setup_clean(X)
 
 def test_time():

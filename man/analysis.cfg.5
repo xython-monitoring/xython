@@ -264,6 +264,8 @@ eth1 is not checked, eth0 is green at 1000Mb/s and yellow at 100Mb/s even if it 
 .BR "SMART device IGNORE"
 .br
 .BR "SMART device RETURNCODE value color"
+.br
+.BR "SMART device ATTRIBUTE name color"
 .sp
 "device" is the device name reported by the client, for example /dev/sda.
 A disk behind a RAID controller is written device,type with the type given
@@ -281,6 +283,23 @@ By default, the smart column goes red when smartctl exits with a value other tha
 RETURNCODE reports the exact smartctl return code "value" with "color" instead.
 The smartctl return code is a bitmask, see smartctl(8), the rule matches only the exact value.
 .sp
+SSD flash wear attributes go yellow by default when their raw value is above 0:
+.br
+Grown_Bad_Blocks and Runtime_Bad_Block count the flash blocks retired during use
+(the SSD equivalent of Reallocated_Sector_Ct),
+.br
+Program_Fail_Count, Program_Fail_Cnt_Total and Program_Fail_Count_Chip count failed writes of flash pages,
+.br
+Erase_Fail_Count, Erase_Fail_Count_Total and Erase_Fail_Count_Chip count failed erases of flash blocks.
+.br
+Total_Bad_Blocks and Initial_Bad_Block_Count include factory defects and are only reported.
+Raw values of 2^32 or more are packed vendor data, not counters, and are ignored.
+.br
+ATTRIBUTE reports the attribute "name" with "color" instead of yellow.
+"name" is the attribute name printed by smartctl, or NAND for all the attributes above.
+A rule for an exact name wins over a NAND rule for the same device.
+"clear" shows the value without changing the color of the smart column.
+.sp
 Example:
 .br
 	HOST=server1
@@ -291,8 +310,13 @@ Example:
 .br
 	SMART * RETURNCODE 192 yellow
 .br
+	SMART * ATTRIBUTE Runtime_Bad_Block red
+.br
+	SMART /dev/sdc ATTRIBUTE NAND clear
+.br
 /dev/sdb is not checked, return code 4 is green for the megaraid disk 2,
-return code 192 is yellow for all devices of server1.
+return code 192 is yellow for all devices of server1,
+a retired flash block is red, and flash wear on /dev/sdc does not change the color.
 .br
 .BR Xython: OK
 

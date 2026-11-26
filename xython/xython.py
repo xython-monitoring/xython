@@ -84,6 +84,27 @@ RRD_COLOR = ["0000FF", "FF0000", "00CC00", "FF00FF", "555555", "880000", "000088
              "AAFFAA", "AAFFFF", "FFAAFF", "FFAA55", "55AAFF", "AA55FF"]
 COLUMN_COLOR = 4
 
+# NAND flash health attributes (SSD), matched by name because IDs differ per vendor
+# (ID 170 is Grown_Bad_Blocks on WD but reserved space on Intel).
+# Grown_Bad_Blocks (170, WD) / Runtime_Bad_Block (183, Samsung, SK hynix, Intel):
+#   blocks retired during use, the SSD equivalent of Reallocated_Sector_Ct.
+# Program_Fail_* (171/175/181): a write (program) of a flash page failed.
+# Erase_Fail_* (172/176/182): an erase of a flash block failed.
+# Each program/erase failure usually retires the block, so those counters rise
+# with the grown bad blocks: a non-zero value means the flash is wearing out.
+# The color (yellow by default) can be changed with "SMART device ATTRIBUTE name color"
+# in analysis.cfg, NAND as name matches all of them.
+SMART_NAND_ALERT = ["Grown_Bad_Blocks", "Runtime_Bad_Block",
+                    "Program_Fail_Count", "Program_Fail_Cnt_Total", "Program_Fail_Count_Chip",
+                    "Erase_Fail_Count", "Erase_Fail_Count_Total", "Erase_Fail_Count_Chip"]
+# Total_Bad_Blocks (169) and Initial_Bad_Block_Count (163) include factory
+# defects, so they are only reported, never alerted on.
+SMART_NAND_INFO = ["Total_Bad_Blocks", "Initial_Bad_Block_Count"]
+# Some vendors pack other data in the raw value: HPE MK0400GEYKD and Intel DC S3700
+# report 175 as 433791707806 and 1215479152641 (on Intel DC drives 175 is really a
+# power-loss capacitor test). Raw values from this limit are not counters and are ignored.
+SMART_NAND_RAW_MAX = 2 ** 32
+
 
 class xy_protocol:
     def __init__(self):
@@ -3424,11 +3445,13 @@ class xythonsrv:
     def analysis_smart(self, ltoks):
         # SMART device IGNORE
         # SMART device RETURNCODE value color
+        # SMART device ATTRIBUTE name color
         ret = {}
         ret['err'] = False
         ret['ltoks'] = ltoks
         rs = {}
         rs["ignore"] = False
+        rs["kind"] = None
         if len(ltoks) < 2:
             self.error(f'ERROR: missing SMART parameter in {ltoks}')
             ret['err'] = True
@@ -3437,6 +3460,7 @@ class xythonsrv:
         arg = ltoks.pop(0)
         if arg in ['IGNORE', 'ignore']:
             rs["ignore"] = True
+            rs["kind"] = 'ignore'
             ret['ltoks'] = ltoks
             ret['setting'] = rs
             return ret
@@ -3458,6 +3482,24 @@ class xythonsrv:
                 ret['err'] = True
                 return ret
             rs["color"] = color
+            rs["kind"] = 'rc'
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        if arg in ['ATTRIBUTE', 'attribute']:
+            # name is a smartctl attribute name, or NAND for all SMART_NAND_ALERT
+            if len(ltoks) < 2:
+                self.error(f'ERROR: SMART: ATTRIBUTE need a name and a color {ltoks}')
+                ret['err'] = True
+                return ret
+            rs["attr"] = ltoks.pop(0)
+            color = ltoks.pop(0)
+            if not is_valid_color(color):
+                self.error(f'ERROR: SMART: invalid color {color}')
+                ret['err'] = True
+                return ret
+            rs["color"] = color
+            rs["kind"] = 'attr'
             ret['ltoks'] = ltoks
             ret['setting'] = rs
             return ret
@@ -5164,21 +5206,42 @@ class xythonsrv:
                 return True
         return False
 
-    def smart_find_rule(self, rules, device, devtype, kind, rc=None):
+    def smart_find_rule(self, rules, device, devtype, kind, rc=None, attr=None):
         # rules are ordered host rules first, then DEFAULT ones
         # a rule on "device" or "device,devtype" win over "*"
+        # for kind 'attr', an exact attribute name win over NAND on the same device level
         keys = [device]
         if devtype is not None:
             keys.insert(0, f"{device},{devtype}")
+        attrs = [attr]
+        if attr in SMART_NAND_ALERT:
+            attrs.append('NAND')
         for wanted in keys + ['*']:
-            for rule in rules:
-                if rule["device"] != wanted:
-                    continue
-                if kind == 'ignore' and rule["ignore"]:
-                    return rule
-                if kind == 'rc' and not rule["ignore"] and rule["rc"] == rc:
-                    return rule
+            for aname in attrs:
+                for rule in rules:
+                    if rule["device"] != wanted or rule.get("kind") != kind:
+                        continue
+                    if kind == 'ignore':
+                        return rule
+                    if kind == 'rc' and rule["rc"] == rc:
+                        return rule
+                    if kind == 'attr' and rule["attr"] == aname:
+                        return rule
         return None
+
+    def smart_attr_raw(self, line, attr_ids):
+        # return (name, raw) of a smartctl attribute line, raw is None if it is not an integer
+        # the name is the exact ATTRIBUTE_NAME column, raw the first token of RAW_VALUE
+        # since it can be followed by details like "34 (Min/Max 16/51)"
+        tokens = line.split()
+        if len(tokens) <= attr_ids["RAW_VALUE"] or len(tokens) <= attr_ids["ATTRIBUTE_NAME"]:
+            return (None, None)
+        name = tokens[attr_ids["ATTRIBUTE_NAME"]]
+        try:
+            raw = int(tokens[attr_ids["RAW_VALUE"]])
+        except ValueError:
+            raw = None
+        return (name, raw)
 
     def parse_smartoutput(self, data, rules=None, device=None, devtype=None):
         ret = {}
@@ -5303,6 +5366,32 @@ class xythonsrv:
                     idx = attr_ids["ATTRIBUTE_NAME"]
                     name = tokens[idx]
                     ret["FAIL"][name] = 0
+
+            if section == 'Attributes' and "ATTRIBUTE_NAME" in attr_ids and "RAW_VALUE" in attr_ids:
+                name, raw = self.smart_attr_raw(line, attr_ids)
+                if name in SMART_NAND_ALERT or name in SMART_NAND_INFO:
+                    if "nand" not in ret:
+                        ret["nand"] = {}
+                    if raw is None or raw >= SMART_NAND_RAW_MAX:
+                        ret["html"] += f"&clear {name} raw value looks vendor-encoded, ignored\n"
+                    elif name in SMART_NAND_INFO:
+                        ret["nand"][name] = raw
+                        ret["html"] += f"&clear {name} {raw} (includes factory defects)\n"
+                    elif raw == 0:
+                        ret["nand"][name] = raw
+                        ret["html"] += f"&green {name} {raw}\n"
+                    else:
+                        ret["nand"][name] = raw
+                        rule = None
+                        if rules:
+                            rule = self.smart_find_rule(rules, device, devtype, 'attr', attr=name)
+                        if rule is not None:
+                            acolor = rule["color"]
+                            ret["html"] += f"&{acolor} {name} {raw} > 0 (analysis.cfg)\n"
+                        else:
+                            acolor = 'yellow'
+                            ret["html"] += f"&{acolor} {name} {raw} > 0\n"
+                        ret["color"] = setcolor(acolor, ret["color"])
 
             if line[:3] == 'ID#':
                 tokens = line.split()
