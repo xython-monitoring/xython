@@ -5213,11 +5213,10 @@ class xythonsrv:
                 prevsection = None
                 limit = 45
                 if "tpower" in ret and limit > 0:
-                    diff = ret["tpower"] - first_self_test
-                    if "wrap" in ret:
-                        while diff > 65536:
-                            ret["html"] == 'Handle wrapping\n'
-                            diff -= 65536
+                    # the self-test log LifeTime(hours) is a 16-bit counter while
+                    # Power_On_Hours is not, so it wraps even when the log does not show it
+                    diff = (ret["tpower"] - first_self_test) % 65536
+                    ret["selftest_age"] = diff
                     if diff/24 > limit:
                         ret["html"] += f"&yellow Last selftest is too old {diff/24} days ago > {limit}\n"
                         ret["color"] = setcolor('yellow', ret["color"])

@@ -2662,6 +2662,25 @@ def test_smart():
     print(ret)
     assert ret["color"] == 'green'
 
+    # Power_On_Hours > 65535 but the 16-bit self-test log did not wrap yet
+    def smart_selftest(poh, last):
+        return [
+            "ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE",
+            f"  9 Power_On_Hours          0x0012   001   001   000    Old_age   Always       -       {poh}",
+            "",
+            "SMART Self-test log structure revision number 1",
+            "Num  Test_Description    Status                  Remaining  LifeTime(hours)  LBA_of_first_error",
+            f"# 1  Extended offline    Completed without error       00%     {last}         -",
+            "# 2  Extended offline    Completed without error       00%     42503         -",
+            "SMART Selective self-test log data structure revision number 1",
+        ]
+    ret = X.parse_smartoutput(smart_selftest(110208, 43396))
+    assert ret["selftest_age"] == 1276
+    assert ret["color"] == 'yellow'
+    ret = X.parse_smartoutput(smart_selftest(110208, 44600))
+    assert ret["selftest_age"] == 72
+    assert ret["color"] == 'green'
+
     # analysis.cfg SMART rules
     with open("tests/smart/smart.raptor") as f:
         good = f.read()
