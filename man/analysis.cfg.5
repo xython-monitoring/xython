@@ -268,6 +268,8 @@ eth1 is not checked, eth0 is green at 1000Mb/s and yellow at 100Mb/s even if it 
 "device" is the device name reported by the client, for example /dev/sda.
 A disk behind a RAID controller is written device,type with the type given
 by "smartctl --scan", for example /dev/bus/0,megaraid,2.
+The disks behind a HP Smart Array controller are reported by the client as
+device,cciss,N, for example /dev/sda,cciss,1.
 "*" matches all devices.
 A rule for a device wins over a rule for "*", and a host rule wins over a DEFAULT one.
 .sp

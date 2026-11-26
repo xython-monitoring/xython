@@ -2700,6 +2700,12 @@ def test_smart():
     assert X.smart_is_virtual(qemu.split("\n"))
     assert not X.smart_is_virtual(good.split("\n"))
 
+    # HP Smart Array disks: /dev/sda,cciss,1 is ignored, cciss,0 is not
+    X.parse_smart("test01", hdata + smartdev("device=/dev/sda:devtype=cciss,1", bad, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    X.parse_smart("test01", hdata + smartdev("device=/dev/sda:devtype=cciss,0", bad, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+
     # without rule, the ignored device would be red
     X.parse_smart("test01", smartdev("device=/dev/sdd", bad, 0), "fake")
     assert X.get_column_color('test01', 'smart') == 'red'

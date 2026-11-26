@@ -84,38 +84,165 @@ find_smartctl() {
 	return 1
 }
 
+# print "device devtype" for each device to check, devtype is "-" when absent
+# devices come from smartctl --scan, plus devices with a CCISS line in smart.conf
+smart_devices() {
+	# smartctl --scan output looks like:
+	# /dev/sda -d scsi # /dev/sda, SCSI device
+	# /dev/bus/0 -d megaraid,1 # /dev/bus/0 [megaraid_disk_01], SCSI device
+	$SMARTCTL --scan 2>/dev/null | awk -v conf="$SMART_CONF" '
+	/^\/dev\// && !seen[$0]++ {
+		dev[$1] = 1
+		if ($2 == "-d" && $3 != "") print $1 " " $3; else print $1 " -"
+	}
+	END {
+		while ((getline l < conf) > 0) {
+			if (l !~ /^\/dev\/[^:]*:CCISS[ \t]/) continue
+			d = substr(l, 1, index(l, ":") - 1)
+			if (!(d in dev)) { dev[d] = 1; print d " -" }
+		}
+	}'
+}
+
+# return 0 (and print the matching line) if a line of smart.conf starts with $1
+smart_conf_match() {
+	[ -e "$SMART_CONF" ] || return 1
+	awk -v a="$1" -v b="$2" 'index($0, a) == 1 || (b != "" && index($0, b) == 1) { f = 1; print } END { exit !f }' "$SMART_CONF"
+}
+
+# print the indexes of a "/dev/sda:CCISS 0-3,6" line of smart.conf, one per line
+smart_conf_cciss() {
+	[ -e "$SMART_CONF" ] || return 1
+	awk -v a="$1:CCISS" 'index($0, a) == 1 { sub(/^[^ \t]*[ \t]+/, ""); print; exit }' "$SMART_CONF" |
+	tr -d ' \t' | tr ',' '\n' |
+	awk -F- '/^[0-9]+$/ { print; next } /^[0-9]+-[0-9]+$/ { for (i = $1; i <= $2; i++) print i }'
+}
+
+# print the SCSI host number if $1 is a logical volume of a controller
+# supporting -d cciss,N: HP Smart Array (hpsa) or Microchip SmartRAID/HPE SR (smartpqi)
+hpsa_host() {
+	dev="${1##*/}"
+	case "$dev" in
+	sd*)
+	;;
+	*)
+		return 1
+	;;
+	esac
+	[ -r "$SYSFS/block/$dev/device/model" ] || return 1
+	case "$(cat "$SYSFS/block/$dev/device/model" | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" in
+	"LOGICAL VOLUME"*)
+	;;
+	*)
+		return 1
+	;;
+	esac
+	# device links to .../host0/target0:1:0/0:1:0:0
+	hctl="$(readlink -f "$SYSFS/block/$dev/device")"
+	hctl="${hctl##*/}"
+	host="${hctl%%:*}"
+	[ -r "$SYSFS/class/scsi_host/host$host/proc_name" ] || return 1
+	case "$(cat "$SYSFS/class/scsi_host/host$host/proc_name")" in
+	hpsa|smartpqi)
+	;;
+	*)
+		return 1
+	;;
+	esac
+	echo "$host"
+	return 0
+}
+
+# report one disk, $3=1 for probing: return 1 without output if the device cannot be opened
+# sh has no local variables, so do not use the ones of do_smart
+smart_disk() {
+	sd_disk="$1"
+	sd_devtype="$2"
+	DEVTYPE=""
+	HEADER="SMARTHEADER:device=$sd_disk"
+	# "-d scsi" is what --scan reports for SATA disks too, using it
+	# would prevent the SAT autodetection and lose ATA attributes
+	if [ "$sd_devtype" != '-' -a "$sd_devtype" != 'scsi' ];then
+		DEVTYPE="-d $sd_devtype"
+		HEADER="$HEADER:devtype=$sd_devtype"
+	fi
+	# either /dev/sda:IGNORE or /dev/bus/0,megaraid,1:IGNORE
+	IGNORE_LINE="$(smart_conf_match "$sd_disk:IGNORE" "$sd_disk,$sd_devtype:IGNORE")"
+	if [ $? -eq 0 ];then
+		echo "$HEADER"
+		echo "$IGNORE_LINE"
+		echo "IGNORED"
+		return 0
+	fi
+	OUT="$($SMARTCTL $DEVTYPE -a $sd_disk < /dev/null)"
+	RC=$?
+	# bit 1: device open failed, for example an empty bay of a RAID controller
+	if [ "$3" = 1 -a $((RC & 2)) -ne 0 ];then
+		return 1
+	fi
+	echo "$HEADER"
+	echo "$OUT"
+	echo "SMART_RETURNCODE=$RC"
+	return 0
+}
+
 do_smart() {
 	XYTHON_CLIENT_ETC="/run/xython-client"
 	if [ -e /etc/xython ];then
 		XYTHON_CLIENT_ETC="/etc/xython"
 	fi
+	SMART_CONF="$XYTHON_CLIENT_ETC/smart.conf"
+	SYSFS="${SYSFS:-/sys}"
+	# highest cciss index probed on a HP Smart Array
+	CCISS_MAX="${CCISS_MAX:-15}"
 	echo "[smart]"
-	# smartctl --scan output looks like:
-	# /dev/sda -d scsi # /dev/sda, SCSI device
-	# /dev/bus/0 -d megaraid,1 # /dev/bus/0 [megaraid_disk_01], SCSI device
-	# print "device devtype" with devtype "-" when absent
-	$SMARTCTL --scan 2>/dev/null | awk '/^\/dev\// && !seen[$0]++ { if ($2 == "-d" && $3 != "") print $1 " " $3; else print $1 " -" }' |
+	# SCSI hosts of HP Smart Array already probed
+	CCISS_HOSTS=" "
+	smart_devices |
 	while read disk devtype
 	do
-		DEVTYPE=""
-		HEADER="SMARTHEADER:device=$disk"
-		# "-d scsi" is what --scan reports for SATA disks too, using it
-		# would prevent the SAT autodetection and lose ATA attributes
-		if [ "$devtype" != '-' -a "$devtype" != 'scsi' ];then
-			DEVTYPE="-d $devtype"
-			HEADER="$HEADER:devtype=$devtype"
+		host="$(hpsa_host "$disk")"
+		if [ -n "$host" ];then
+			case "$CCISS_HOSTS" in
+			*" $host "*)
+				# another logical volume of an already probed controller
+				continue
+			;;
+			esac
 		fi
-		echo "$HEADER"
-		if [ -e "$XYTHON_CLIENT_ETC/smart.conf" ];then
-			# either /dev/sda:IGNORE or /dev/bus/0,megaraid,1:IGNORE
-			awk -v a="$disk:IGNORE" -v b="$disk,$devtype:IGNORE" 'index($0, a) == 1 || index($0, b) == 1 { f = 1; print } END { exit !f }' "$XYTHON_CLIENT_ETC/smart.conf"
-			if [ $? -eq 0 ];then
-				echo "IGNORED"
+		# /dev/sda:IGNORE ignores the whole device, do not expand it
+		if smart_conf_match "$disk:IGNORE" > /dev/null;then
+			smart_disk "$disk" "$devtype" 0
+			[ -n "$host" ] && CCISS_HOSTS="$CCISS_HOSTS$host "
+			continue
+		fi
+		# physical disks behind a HP Smart Array, given in smart.conf:
+		# /dev/sda:CCISS 0-3,6
+		INDEXES="$(smart_conf_cciss "$disk")"
+		if [ -n "$INDEXES" ];then
+			for n in $INDEXES
+			do
+				smart_disk "$disk" "cciss,$n" 0
+			done
+			[ -n "$host" ] && CCISS_HOSTS="$CCISS_HOSTS$host "
+			continue
+		fi
+		# physical disks behind a HP Smart Array, autodetected
+		# smartctl --scan only reports the logical volume
+		if [ -n "$host" ];then
+			found=0
+			n=0
+			while [ $n -le $CCISS_MAX ]
+			do
+				smart_disk "$disk" "cciss,$n" 1 && found=1
+				n=$((n + 1))
+			done
+			if [ $found -eq 1 ];then
+				CCISS_HOSTS="$CCISS_HOSTS$host "
 				continue
 			fi
 		fi
-		$SMARTCTL $DEVTYPE -a $disk < /dev/null
-		echo "SMART_RETURNCODE=$?"
+		smart_disk "$disk" "$devtype" 0
 	done
 }
 
