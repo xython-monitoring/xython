@@ -51,7 +51,7 @@ run_less() {
 				return 1
 			fi
 		else
-			# stat is not availlable on some platform
+			# stat is not available on some platform
 			# busybox stat do not support format=%Y
 			STAT="$(stat --format=%Y $STATEFILE 2>/dev/null)"
 			if [ $? -ne 0 ];then
@@ -246,7 +246,7 @@ do_smart() {
 	done
 }
 
-SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This systems operating system in lowercase
+SERVEROSTYPE="$(uname -s | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ/' 'abcdefghijklmnopqrstuvwxyz_')"	# This system's operating system in lowercase
 MACHINEDOTS="$(uname -n)"
 DPKG=0
 RPM=0
@@ -424,7 +424,7 @@ if [ -n "$IWHICH" ];then
 	fi
 	if [ $PORTS_DONE -eq 0 ];then
 		echo "[ports]"
-		# Bug in RedHat's netstat spews annoying error messages. 
+		# Bug in RedHat's netstat spews annoying error messages.
 		netstat -antu 2>/dev/null
 		PORTS_DONE=1
 	fi
@@ -523,7 +523,7 @@ then
 	case $(uname) in
 	Linux)
 	export CPULOOP ; CPULOOP=1 ;
-	$TOP -b -n 1 
+	$TOP -b -n 1
 	# Some top versions do not finish off the last line of output
 	echo ""
 	;;
