@@ -162,7 +162,7 @@ smart_disk() {
 	HEADER="SMARTHEADER:device=$sd_disk"
 	# "-d scsi" is what --scan reports for SATA disks too, using it
 	# would prevent the SAT autodetection and lose ATA attributes
-	if [ "$sd_devtype" != '-' -a "$sd_devtype" != 'scsi' ];then
+	if [ "$sd_devtype" != '-' ] && [ "$sd_devtype" != 'scsi' ];then
 		DEVTYPE="-d $sd_devtype"
 		HEADER="$HEADER:devtype=$sd_devtype"
 	fi
@@ -177,7 +177,7 @@ smart_disk() {
 	OUT="$($SMARTCTL $DEVTYPE -a $sd_disk < /dev/null)"
 	RC=$?
 	# bit 1: device open failed, for example an empty bay of a RAID controller
-	if [ "$3" = 1 -a $((RC & 2)) -ne 0 ];then
+	if [ "$3" = 1 ] && [ $((RC & 2)) -ne 0 ];then
 		return 1
 	fi
 	echo "$HEADER"
@@ -199,7 +199,7 @@ do_smart() {
 	# SCSI hosts of HP Smart Array already probed
 	CCISS_HOSTS=" "
 	smart_devices |
-	while read disk devtype
+	while read -r disk devtype
 	do
 		host="$(hpsa_host "$disk")"
 		if [ -n "$host" ];then
