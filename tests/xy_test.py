@@ -2666,7 +2666,7 @@ def test_smart():
     def smart_selftest(poh, last):
         return [
             "ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE",
-            f"  9 Power_On_Hours          0x0012   001   001   000    Old_age   Always       -       {poh}",
+            f"  9 Power_On_Hours          0x0012   024   024   000    Old_age   Always       -       {poh}",
             "",
             "SMART Self-test log structure revision number 1",
             "Num  Test_Description    Status                  Remaining  LifeTime(hours)  LBA_of_first_error",
@@ -2793,6 +2793,94 @@ def test_smart():
     assert not r['err']
     assert r['setting']['kind'] == 'attr'
     assert r['setting']['attr'] == 'NAND'
+
+    # normalized value at the bottom of the vendor scale (THRESH 0 attributes never fail in smartctl)
+    # Synthetic sample built from the values seen on nvidia8 (ST1000NX0313), see smart-audit.md
+    lowv = "ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE\n"
+    lowv += "  9 Power_On_Hours          0x0032   061   061   000    Old_age   Always       -       34512\n"
+    lowv += "192 Power-Off_Retract_Count 0x0032   001   001   000    Old_age   Always       -       246113\n"
+    lowv += "193 Load_Cycle_Count        0x0032   001   001   000    Old_age   Always       -       246154\n"
+    ret = X.parse_smartoutput(lowv.split("\n"))
+    assert ret["color"] == 'yellow'
+    assert ret["lowvalue"] == {"Power-Off_Retract_Count": 1, "Load_Cycle_Count": 1}
+    assert "&yellow Load_Cycle_Count (ID 193) normalized value 1 (worst 1, threshold 0) <= 10" in ret["html"]
+    assert "raw 246154\n" in ret["html"]
+    # no rule: yellow
+    X.parse_smart("test01", smartdev("device=/dev/sdk", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'yellow'
+    # LOWVALUE group rule
+    X.parse_smart("test01", smartdev("device=/dev/sdj", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    # rules by attribute ID
+    X.parse_smart("test01", smartdev("device=/dev/sdl", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+    # limit 0 disables the check
+    X.parse_smart("test01", smartdev("device=/dev/sdm", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    ret = X.parse_smartoutput(lowv.split("\n"), X.find_host("test01").rules["SMART"], "/dev/sdm")
+    assert "lowvalue" not in ret
+    # exact name win over the LOWVALUE group
+    X.parse_smart("test01", smartdev("device=/dev/sdn", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+    # Hardware_ECC_Recovered is ignored by default, except with an explicit rule
+    ecc = lowv.split("\n")[0] + "\n"
+    ecc += "195 Hardware_ECC_Recovered  0x001a   001   001   000    Old_age   Always       -       148592\n"
+    ret = X.parse_smartoutput(ecc.split("\n"))
+    assert ret["color"] == 'green'
+    assert "lowvalue" not in ret
+    assert "(not meaningful for this attribute, ignored)" in ret["html"]
+    X.parse_smart("test01", smartdev("device=/dev/sdj", ecc, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    X.parse_smart("test01", smartdev("device=/dev/sdo", ecc, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'red'
+    # limit: 5 is above a limit of 3, but below the default 10
+    five = lowv.split("\n")[0] + "\n"
+    five += "177 Wear_Leveling_Count     0x0013   005   005   000    Pre-fail  Always       -       1048\n"
+    X.parse_smart("test01", smartdev("device=/dev/sdp", five, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    X.parse_smart("test01", smartdev("device=/dev/sdk", five, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'yellow'
+    # host LOWVALUE rule win over DEFAULT, DEFAULT applies without host rule
+    X.parse_smart("test01", smartdev("device=/dev/sdq", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'yellow'
+    X.parse_smart("test01", smartdev("device=/dev/sdr", lowv, 0), "fake")
+    assert X.get_column_color('test01', 'smart') == 'green'
+    # THRESH > 0 is left to smartctl, VALUE 0 means not used, --- is not a number
+    other = lowv.split("\n")[0] + "\n"
+    other += "  5 Reallocated_Sector_Ct   0x0033   005   005   005    Pre-fail  Always       -       0\n"
+    other += "241 Lifetime_Writes_GiB     0x0032   000   000   000    Old_age   Always       -       5176\n"
+    other += "199 UDMA_CRC_Error_Count    0x003e   ---   ---   ---    Old_age   Always       -       0\n"
+    ret = X.parse_smartoutput(other.split("\n"))
+    assert ret["color"] == 'green'
+    assert "lowvalue" not in ret
+    # brief format (smartctl -f brief) has the same columns
+    brief = "ID# ATTRIBUTE_NAME          FLAGS    VALUE WORST THRESH FAIL RAW_VALUE\n"
+    brief += "193 Load_Cycle_Count        -O--CK   002   002   000    -    246154\n"
+    ret = X.parse_smartoutput(brief.split("\n"))
+    assert ret["lowvalue"] == {"Load_Cycle_Count": 2}
+    # real captures
+    expected = {"ST4000NM0265_2024-02-08.txt": {"Reported_Uncorrect": 1},
+                "gs9": {"High_Fly_Writes": 1},
+                "hitashi": {"Current_Pending_Sector": 1},
+                "smartctl-SKhynix-SC308SATA256GB.txt": {"Wear_Leveling_Count": 2}}
+    for sample in sorted(os.listdir("tests/smart")):
+        with open(f"tests/smart/{sample}", errors="replace") as f:
+            data = f.read()
+        ret = X.parse_smartoutput(data.split("\n"))
+        assert ret.get("lowvalue") == expected.get(sample), sample
+
+    # LOWVALUE and ATTRIBUTE id config
+    r = X.analysis_smart(["*", "LOWVALUE"])
+    assert r['err']
+    for bad in ["abc", "-1", "254"]:
+        r = X.analysis_smart(["*", "LOWVALUE", bad])
+        assert r['err']
+    r = X.analysis_smart(["*", "LOWVALUE", "0"])
+    assert not r['err']
+    assert r['setting']['kind'] == 'lowvalue'
+    assert r['setting']['limit'] == 0
+    r = X.analysis_smart(["*", "ATTRIBUTE", "005", "red"])
+    assert r['setting']['attr'] == '5'
 
     setup_clean(X)
 

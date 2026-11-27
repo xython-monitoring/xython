@@ -104,6 +104,18 @@ SMART_NAND_INFO = ["Total_Bad_Blocks", "Initial_Bad_Block_Count"]
 # report 175 as 433791707806 and 1215479152641 (on Intel DC drives 175 is really a
 # power-loss capacitor test). Raw values from this limit are not counters and are ignored.
 SMART_NAND_RAW_MAX = 2 ** 32
+# Normalized values (VALUE/WORST/THRESH columns) go from 100 or 200/253 down to 1.
+# When THRESH is 0 the attribute is advisory: smartctl never reports it as failing,
+# however low it goes. A VALUE between 1 and this limit means the attribute is at the
+# bottom of the vendor scale (worn out Load_Cycle_Count, Wear_Leveling_Count...).
+# VALUE 0 is skipped: some vendors (SandForce...) do not use normalized values at all.
+# The color (yellow by default) can be changed with "SMART device ATTRIBUTE name|id|LOWVALUE color"
+# and the limit with "SMART device LOWVALUE limit" (0 disables the check).
+SMART_LOWVALUE_LIMIT = 10
+SMART_LOWVALUE_COLOR = 'yellow'
+# attributes whose normalized value is meaningless at the bottom of the scale
+# Hardware_ECC_Recovered: normalized 1 on healthy Seagate and Samsung disks
+SMART_LOWVALUE_IGNORE = ["Hardware_ECC_Recovered"]
 
 
 class xy_protocol:
@@ -3446,6 +3458,7 @@ class xythonsrv:
         # SMART device IGNORE
         # SMART device RETURNCODE value color
         # SMART device ATTRIBUTE name color
+        # SMART device LOWVALUE limit
         ret = {}
         ret['err'] = False
         ret['ltoks'] = ltoks
@@ -3493,6 +3506,9 @@ class xythonsrv:
                 ret['err'] = True
                 return ret
             rs["attr"] = ltoks.pop(0)
+            if rs["attr"].isdigit():
+                # attribute ID, "005" and "5" are the same
+                rs["attr"] = str(int(rs["attr"]))
             color = ltoks.pop(0)
             if not is_valid_color(color):
                 self.error(f'ERROR: SMART: invalid color {color}')
@@ -3500,6 +3516,24 @@ class xythonsrv:
                 return ret
             rs["color"] = color
             rs["kind"] = 'attr'
+            ret['ltoks'] = ltoks
+            ret['setting'] = rs
+            return ret
+        if arg in ['LOWVALUE', 'lowvalue']:
+            if len(ltoks) < 1:
+                self.error(f'ERROR: SMART: LOWVALUE need a limit {ltoks}')
+                ret['err'] = True
+                return ret
+            limit = ltoks.pop(0)
+            try:
+                rs["limit"] = int(limit)
+            except ValueError:
+                rs["limit"] = -1
+            if rs["limit"] < 0 or rs["limit"] > 253:
+                self.error(f'ERROR: SMART: invalid LOWVALUE limit {limit}')
+                ret['err'] = True
+                return ret
+            rs["kind"] = 'lowvalue'
             ret['ltoks'] = ltoks
             ret['setting'] = rs
             return ret
@@ -5206,14 +5240,17 @@ class xythonsrv:
                 return True
         return False
 
-    def smart_find_rule(self, rules, device, devtype, kind, rc=None, attr=None):
+    def smart_find_rule(self, rules, device, devtype, kind, rc=None, attr=None, aliases=None):
         # rules are ordered host rules first, then DEFAULT ones
         # a rule on "device" or "device,devtype" win over "*"
-        # for kind 'attr', an exact attribute name win over NAND on the same device level
+        # for kind 'attr', names are tried in order on each device level: the exact
+        # attribute name, then aliases (attribute ID, group like LOWVALUE), then NAND
         keys = [device]
         if devtype is not None:
             keys.insert(0, f"{device},{devtype}")
         attrs = [attr]
+        if aliases is not None:
+            attrs += aliases
         if attr in SMART_NAND_ALERT:
             attrs.append('NAND')
         for wanted in keys + ['*']:
@@ -5221,7 +5258,7 @@ class xythonsrv:
                 for rule in rules:
                     if rule["device"] != wanted or rule.get("kind") != kind:
                         continue
-                    if kind == 'ignore':
+                    if kind in ['ignore', 'lowvalue']:
                         return rule
                     if kind == 'rc' and rule["rc"] == rc:
                         return rule
@@ -5242,6 +5279,62 @@ class xythonsrv:
         except ValueError:
             raw = None
         return (name, raw)
+
+    @staticmethod
+    def smart_attr_id(line):
+        # return the attribute ID of a smartctl attribute line as a string without leading 0
+        tokens = line.split()
+        if len(tokens) == 0 or not tokens[0].isdigit():
+            return None
+        return str(int(tokens[0]))
+
+    def smart_check_lowvalue(self, line, attr_ids, ret, rules, device, devtype):
+        # alert when an advisory attribute (THRESH 0) is at the bottom of its normalized scale
+        tokens = line.split()
+        attrid = self.smart_attr_id(line)
+        if attrid is None:
+            return
+        for col in ["ATTRIBUTE_NAME", "VALUE", "WORST", "THRESH"]:
+            if len(tokens) <= attr_ids[col]:
+                return
+        name = tokens[attr_ids["ATTRIBUTE_NAME"]]
+        try:
+            value = int(tokens[attr_ids["VALUE"]])
+            worst = int(tokens[attr_ids["WORST"]])
+            thresh = int(tokens[attr_ids["THRESH"]])
+        except ValueError:
+            # smartctl prints --- for unknown thresholds
+            return
+        limit = SMART_LOWVALUE_LIMIT
+        if rules:
+            rule = self.smart_find_rule(rules, device, devtype, 'lowvalue')
+            if rule is not None:
+                limit = rule["limit"]
+        # THRESH > 0 is already handled by smartctl (WHEN_FAILED/FAILING_NOW)
+        if limit <= 0 or thresh != 0 or value == 0 or value > limit:
+            return
+        raw = ' '.join(tokens[attr_ids["RAW_VALUE"]:]) if "RAW_VALUE" in attr_ids else '?'
+        rule = None
+        if rules:
+            # an exact name or ID always wins, LOWVALUE only for attributes not ignored by default
+            rule = self.smart_find_rule(rules, device, devtype, 'attr', attr=name, aliases=[attrid])
+        msg = f"{name} (ID {attrid}) normalized value {value} (worst {worst}, threshold {thresh}) <= {limit}"
+        msg += f", at the bottom of the vendor scale, raw {raw}"
+        if rule is None and name in SMART_LOWVALUE_IGNORE:
+            ret["html"] += f"&clear {msg} (not meaningful for this attribute, ignored)\n"
+            return
+        if "lowvalue" not in ret:
+            ret["lowvalue"] = {}
+        ret["lowvalue"][name] = value
+        if rule is None and rules:
+            rule = self.smart_find_rule(rules, device, devtype, 'attr', attr=name, aliases=[attrid, 'LOWVALUE'])
+        if rule is not None:
+            acolor = rule["color"]
+            msg += " (analysis.cfg)"
+        else:
+            acolor = SMART_LOWVALUE_COLOR
+        ret["html"] += f"&{acolor} {msg}\n"
+        ret["color"] = setcolor(acolor, ret["color"])
 
     def parse_smartoutput(self, data, rules=None, device=None, devtype=None):
         ret = {}
@@ -5384,7 +5477,8 @@ class xythonsrv:
                         ret["nand"][name] = raw
                         rule = None
                         if rules:
-                            rule = self.smart_find_rule(rules, device, devtype, 'attr', attr=name)
+                            rule = self.smart_find_rule(rules, device, devtype, 'attr', attr=name,
+                                                        aliases=[self.smart_attr_id(line)])
                         if rule is not None:
                             acolor = rule["color"]
                             ret["html"] += f"&{acolor} {name} {raw} > 0 (analysis.cfg)\n"
@@ -5392,6 +5486,9 @@ class xythonsrv:
                             acolor = 'yellow'
                             ret["html"] += f"&{acolor} {name} {raw} > 0\n"
                         ret["color"] = setcolor(acolor, ret["color"])
+
+            if section == 'Attributes' and all(c in attr_ids for c in ["ATTRIBUTE_NAME", "VALUE", "WORST", "THRESH"]):
+                self.smart_check_lowvalue(line, attr_ids, ret, rules, device, devtype)
 
             if line[:3] == 'ID#':
                 tokens = line.split()
@@ -5402,7 +5499,7 @@ class xythonsrv:
                         ret["html"] += "&red Invalid ID line\n"
                         ret["color"] = setcolor('red', ret["color"])
                         continue
-                    for aname in ["RAW_VALUE", "FAIL", "ATTRIBUTE_NAME"]:
+                    for aname in ["RAW_VALUE", "FAIL", "ATTRIBUTE_NAME", "VALUE", "WORST", "THRESH"]:
                         if p == aname:
                             attr_ids[aname] = i
                     if p == 'WHEN_FAILED':

@@ -266,6 +266,8 @@ eth1 is not checked, eth0 is green at 1000Mb/s and yellow at 100Mb/s even if it 
 .BR "SMART device RETURNCODE value color"
 .br
 .BR "SMART device ATTRIBUTE name color"
+.br
+.BR "SMART device LOWVALUE limit"
 .sp
 "device" is the device name reported by the client, for example /dev/sda.
 A disk behind a RAID controller is written device,type with the type given
@@ -294,10 +296,24 @@ Erase_Fail_Count, Erase_Fail_Count_Total and Erase_Fail_Count_Chip count failed 
 .br
 Total_Bad_Blocks and Initial_Bad_Block_Count include factory defects and are only reported.
 Raw values of 2^32 or more are packed vendor data, not counters, and are ignored.
+.sp
+Attributes with a threshold (THRESH) of 0 are advisory: smartctl never reports them as failing,
+however low their normalized value goes.
+Such an attribute goes yellow by default when its normalized value (VALUE column) is between 1 and 10,
+the bottom of the vendor scale, for example a worn out Load_Cycle_Count or Wear_Leveling_Count.
+A normalized value of 0 is ignored, some vendors do not use normalized values.
+Hardware_ECC_Recovered is ignored, its normalized value is meaningless on Seagate and Samsung disks,
+unless an ATTRIBUTE rule names it.
+Attributes with a threshold above 0 are left to smartctl, which reports them as failing.
 .br
+LOWVALUE changes the limit (10 by default) for the device, from 0 to 253. A limit of 0 disables this check.
+.sp
 ATTRIBUTE reports the attribute "name" with "color" instead of yellow.
-"name" is the attribute name printed by smartctl, or NAND for all the attributes above.
-A rule for an exact name wins over a NAND rule for the same device.
+"name" is the attribute name printed by smartctl, the attribute ID (for example 193),
+NAND for all the flash wear attributes above,
+or LOWVALUE for all the attributes at the bottom of their normalized scale.
+For the same device, a rule for an exact name or ID wins over a NAND or LOWVALUE rule.
+The color applies to every alert of the attribute.
 "clear" shows the value without changing the color of the smart column.
 .sp
 Example:
@@ -314,9 +330,15 @@ Example:
 .br
 	SMART /dev/sdc ATTRIBUTE NAND clear
 .br
+	SMART /dev/sdd ATTRIBUTE 193 green
+.br
+	SMART /dev/sde LOWVALUE 5
+.br
 /dev/sdb is not checked, return code 4 is green for the megaraid disk 2,
 return code 192 is yellow for all devices of server1,
-a retired flash block is red, and flash wear on /dev/sdc does not change the color.
+a retired flash block is red, flash wear on /dev/sdc does not change the color,
+a worn out Load_Cycle_Count (ID 193) on /dev/sdd is green,
+and /dev/sde goes yellow only when a normalized value is 5 or less.
 .br
 .BR Xython: OK
 
